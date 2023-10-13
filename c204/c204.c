@@ -54,7 +54,22 @@ bool solved;
  * @param postfixExpressionLength Ukazatel na aktuální délku výsledného postfixového výrazu
  */
 void untilLeftPar( Stack *stack, char *postfixExpression, unsigned *postfixExpressionLength ) {
-	solved = false; /* V případě řešení, smažte tento řádek! */
+	//solved = false; /* V případě řešení, smažte tento řádek! */
+    while (!Stack_IsEmpty(stack)) 
+	{
+        char topElement;
+        Stack_Top(stack, &topElement);
+        
+        if (topElement == '(') 
+		{
+            Stack_Pop(stack);
+            return;
+        } else 
+		{
+            postfixExpression[(*postfixExpressionLength)++] = topElement;
+            Stack_Pop(stack);
+        }
+    }
 }
 
 /**
