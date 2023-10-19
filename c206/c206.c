@@ -308,7 +308,16 @@ void DLL_SetValue( DLList *list, int data ) {
  * @param list Ukazatel na inicializovanou strukturu dvousměrně vázaného seznamu
  */
 void DLL_Next( DLList *list ) {
-	solved = false; /* V případě řešení, smažte tento řádek! */
+	//solved = false; /* V případě řešení, smažte tento řádek! */
+    if (list->activeElement != NULL) 
+	{
+        list->activeElement = list->activeElement->nextElement; 
+    }
+
+    if (list->activeElement == list->lastElement) 
+	{
+        list->activeElement = NULL;
+    }
 }
 
 
@@ -320,7 +329,16 @@ void DLL_Next( DLList *list ) {
  * @param list Ukazatel na inicializovanou strukturu dvousměrně vázaného seznamu
  */
 void DLL_Previous( DLList *list ) {
-	solved = false; /* V případě řešení, smažte tento řádek! */
+	//solved = false; /* V případě řešení, smažte tento řádek! */
+    if (list->activeElement != NULL) 
+	{
+        list->activeElement = list->activeElement->previousElement; 
+    }
+
+    if (list->activeElement == list->firstElement) 
+	{
+        list->activeElement = NULL;
+    }
 }
 
 /**
