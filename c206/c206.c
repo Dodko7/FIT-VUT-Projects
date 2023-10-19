@@ -106,7 +106,28 @@ void DLL_Dispose( DLList *list ) {
  * @param data Hodnota k vložení na začátek seznamu
  */
 void DLL_InsertFirst( DLList *list, int data ) {
-	solved = false; /* V případě řešení, smažte tento řádek! */
+	//solved = false; /* V případě řešení, smažte tento řádek! */
+    DLLElementPtr newElement = (DLLElementPtr) malloc(sizeof(struct DLLElement));
+    
+    if (newElement == NULL) 
+	{
+        DLL_Error();
+    } else 
+	{
+        newElement->data = data;
+        newElement->previousElement = NULL;
+
+        if (DLL_IsEmpty(list)) 
+		{
+            newElement->nextElement = NULL;
+            list->lastElement = newElement;
+        } else 
+		{
+            newElement->nextElement = list->firstElement;
+            list->firstElement->previousElement = newElement;
+        }
+        list->firstElement = newElement;
+    }
 }
 
 /**
@@ -118,7 +139,28 @@ void DLL_InsertFirst( DLList *list, int data ) {
  * @param data Hodnota k vložení na konec seznamu
  */
 void DLL_InsertLast( DLList *list, int data ) {
-	solved = false; /* V případě řešení, smažte tento řádek! */
+	//solved = false; /* V případě řešení, smažte tento řádek! */
+    DLLElementPtr newElement = (DLLElementPtr) malloc(sizeof(struct DLLElement));
+    
+    if (newElement == NULL) 
+	{
+        DLL_Error();
+    } else 
+	{
+        newElement->data = data;
+        newElement->nextElement = NULL;
+
+        if (DLL_IsEmpty(list)) 
+		{
+            newElement->previousElement = NULL;
+            list->firstElement = newElement;
+        } else 
+		{
+            newElement->previousElement = list->lastElement;
+            list->lastElement->nextElement = newElement;
+        }
+        list->lastElement = newElement;
+    }
 }
 
 /**
@@ -281,7 +323,7 @@ void DLL_DeleteBefore( DLList *list ) {
     if (DLL_IsActive(list) && list->activeElement->previousElement != NULL) 
 	{
         DLLElementPtr elementToDelete = list->activeElement->previousElement;
-		
+
         if (elementToDelete == list->firstElement) 
 		{
             list->firstElement = list->activeElement;
