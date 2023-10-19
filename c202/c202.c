@@ -198,7 +198,8 @@ void Stack_Push( Stack *stack, char data ) {
  */
 void Stack_Dispose( Stack *stack ) {
 	//solved = false; /* V případě řešení, smažte tento řádek! */
-    if (stack->array != NULL) {
+    if (stack->array != NULL) 
+	{
         free(stack->array);
     }
     stack->topIndex = -1;
