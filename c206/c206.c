@@ -56,6 +56,7 @@
 **/
 
 #include "c206.h"
+#include <stdio.h>
 
 bool error_flag;
 bool solved;
@@ -80,6 +81,12 @@ void DLL_Error(void) {
  */
 void DLL_Init( DLList *list ) {
 	//solved = false; /* V případě řešení, smažte tento řádek! */
+	if (list == NULL)
+	{
+		DLL_Error();
+		return;
+	}
+	
 	list->activeElement = NULL;
 	list->lastElement = NULL;
 	list->firstElement = NULL;
@@ -93,8 +100,20 @@ void DLL_Init( DLList *list ) {
  * @param list Ukazatel na inicializovanou strukturu dvousměrně vázaného seznamu
  */
 void DLL_Dispose( DLList *list ) {
-	solved = false; /* V případě řešení, smažte tento řádek! */
+	//solved = false; /* V případě řešení, smažte tento řádek! */
+    DLLElementPtr currentElement = list->firstElement;
+    DLLElementPtr nextElement;
 
+    while (currentElement != NULL) 
+	{
+        nextElement = currentElement->nextElement;
+        free(currentElement);
+        currentElement = nextElement;
+    }
+
+    list->firstElement = NULL;
+    list->lastElement = NULL;
+    list->activeElement = NULL;
 }
 
 /**
@@ -112,12 +131,13 @@ void DLL_InsertFirst( DLList *list, int data ) {
     if (newElement == NULL) 
 	{
         DLL_Error();
+		return;
     } else 
 	{
         newElement->data = data;
         newElement->previousElement = NULL;
 
-        if (DLL_IsEmpty(list)) 
+        if (list->firstElement == NULL) 
 		{
             newElement->nextElement = NULL;
             list->lastElement = newElement;
@@ -145,12 +165,13 @@ void DLL_InsertLast( DLList *list, int data ) {
     if (newElement == NULL) 
 	{
         DLL_Error();
+		return;
     } else 
 	{
         newElement->data = data;
         newElement->nextElement = NULL;
 
-        if (DLL_IsEmpty(list)) 
+        if (list->firstElement == NULL) 
 		{
             newElement->previousElement = NULL;
             list->firstElement = newElement;
@@ -202,6 +223,7 @@ void DLL_GetFirst( DLList *list, int *dataPtr ) {
     } else 
 	{
         DLL_Error(); 
+		return;
     }
 }
 
@@ -220,6 +242,7 @@ void DLL_GetLast( DLList *list, int *dataPtr ) {
     } else 
 	{
         DLL_Error(); 
+		return;
     }
 }
 
@@ -251,7 +274,10 @@ void DLL_DeleteFirst( DLList *list ) {
         }
 
         free(elementToDelete);
-    }
+    }else
+	{
+		return;
+	}
 }
 
 /**
@@ -283,7 +309,10 @@ void DLL_DeleteLast( DLList *list ) {
         }
 
         free(elementToDelete); 
-    }
+    }else
+	{
+		return;
+	}
 }
 
 /**
@@ -295,7 +324,7 @@ void DLL_DeleteLast( DLList *list ) {
  */
 void DLL_DeleteAfter( DLList *list ) {
 	//solved = false; /* V případě řešení, smažte tento řádek! */
-    if (DLL_IsActive(list) && list->activeElement->nextElement != NULL) 
+    if (list->activeElement != NULL && list->activeElement->nextElement != NULL) 
 	{
         DLLElementPtr elementToDelete = list->activeElement->nextElement;
         list->activeElement->nextElement = elementToDelete->nextElement;
@@ -308,7 +337,10 @@ void DLL_DeleteAfter( DLList *list ) {
             elementToDelete->nextElement->previousElement = list->activeElement;
         }
         free(elementToDelete);
-    }
+    }else
+	{
+		return;
+	}
 }
 
 /**
@@ -320,7 +352,7 @@ void DLL_DeleteAfter( DLList *list ) {
  */
 void DLL_DeleteBefore( DLList *list ) {
 	//solved = false; /* V případě řešení, smažte tento řádek! */
-    if (DLL_IsActive(list) && list->activeElement->previousElement != NULL) 
+    if (list->activeElement != NULL && list->activeElement->previousElement != NULL) 
 	{
         DLLElementPtr elementToDelete = list->activeElement->previousElement;
 
@@ -334,7 +366,10 @@ void DLL_DeleteBefore( DLList *list ) {
             elementToDelete->previousElement->nextElement = list->activeElement;
         }
         free(elementToDelete);
-    }
+    }else
+	{
+		return;
+	}
 }
 
 /**
@@ -348,7 +383,7 @@ void DLL_DeleteBefore( DLList *list ) {
  */
 void DLL_InsertAfter( DLList *list, int data ) {
 	//solved = false; /* V případě řešení, smažte tento řádek! */
-    if (DLL_IsActive(list)) 
+    if (list->activeElement != NULL) 
 	{
         DLLElementPtr newElement = malloc(sizeof(struct DLLElement)); 
 
@@ -387,7 +422,7 @@ void DLL_InsertAfter( DLList *list, int data ) {
  */
 void DLL_InsertBefore( DLList *list, int data ) {
 	//solved = false; /* V případě řešení, smažte tento řádek! */
-    if (DLL_IsActive(list)) 
+    if (list->activeElement != NULL) 
 	{
         DLLElementPtr newElement = malloc(sizeof(struct DLLElement));
 
@@ -430,6 +465,7 @@ void DLL_GetValue( DLList *list, int *dataPtr ) {
     } else 
 	{
         DLL_Error(); 
+		return;
 	}
 }
 
