@@ -286,7 +286,14 @@ void DLL_InsertBefore( DLList *list, int data ) {
  * @param dataPtr Ukazatel na cílovou proměnnou
  */
 void DLL_GetValue( DLList *list, int *dataPtr ) {
-	solved = false; /* V případě řešení, smažte tento řádek! */
+	//solved = false; /* V případě řešení, smažte tento řádek! */
+    if (list->activeElement != NULL) 
+	{
+        *dataPtr = list->activeElement->data; 
+    } else 
+	{
+        DLL_Error(); 
+	}
 }
 
 /**
@@ -297,7 +304,11 @@ void DLL_GetValue( DLList *list, int *dataPtr ) {
  * @param data Nová hodnota právě aktivního prvku
  */
 void DLL_SetValue( DLList *list, int data ) {
-	solved = false; /* V případě řešení, smažte tento řádek! */
+	//solved = false; /* V případě řešení, smažte tento řádek! */
+	if (list->activeElement != NULL) 
+	{
+		list->activeElement->data = data;
+	}
 }
 
 /**
