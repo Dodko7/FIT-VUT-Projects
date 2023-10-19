@@ -53,7 +53,7 @@ bool solved;
  * @param postfixExpression Znakový řetězec obsahující výsledný postfixový výraz
  * @param postfixExpressionLength Ukazatel na aktuální délku výsledného postfixového výrazu
  */
-void untilLeftPar( Stack *stack, char *postfixExpression, unsigned *postfixExpressionLength ) {
+void untilLeftPar(Stack *stack, char *postfixExpression, unsigned *postfixExpressionLength) {
 	//solved = false; /* V případě řešení, smažte tento řádek! */
     while (!Stack_IsEmpty(stack)) 
 	{
@@ -89,7 +89,8 @@ void untilLeftPar( Stack *stack, char *postfixExpression, unsigned *postfixExpre
  * @param postfixExpressionLength Ukazatel na aktuální délku výsledného postfixového výrazu
  */
 void doOperation( Stack *stack, char c, char *postfixExpression, unsigned *postfixExpressionLength ) {
-	solved = false; /* V případě řešení, smažte tento řádek! */
+	//solved = false; /* V případě řešení, smažte tento řádek! */
+
 }
 
 /**
@@ -141,7 +142,14 @@ void doOperation( Stack *stack, char c, char *postfixExpression, unsigned *postf
  * @returns znakový řetězec obsahující výsledný postfixový výraz
  */
 char *infix2postfix( const char *infixExpression ) {
-	solved = false; /* V případě řešení, smažte tento řádek! */
+	//solved = false; /* V případě řešení, smažte tento řádek! */
+	/* for (size_t i = 0; i < count; i++)
+	{
+		code
+	} */
+	
+	//if(infixExpression[])
+
 	return NULL;
 }
 
