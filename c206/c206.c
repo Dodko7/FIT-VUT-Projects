@@ -276,7 +276,33 @@ void DLL_DeleteBefore( DLList *list ) {
  * @param data Hodnota k vložení do seznamu za právě aktivní prvek
  */
 void DLL_InsertAfter( DLList *list, int data ) {
-	solved = false; /* V případě řešení, smažte tento řádek! */
+	//solved = false; /* V případě řešení, smažte tento řádek! */
+    if (DLL_IsActive(list)) 
+	{
+        DLLElementPtr newElement = malloc(sizeof(struct DLLElement)); 
+
+        if (newElement == NULL) 
+		{
+            DLL_Error(); 
+            return;
+        }
+
+        newElement->data = data; 
+        newElement->nextElement = list->activeElement->nextElement; 
+        newElement->previousElement = list->activeElement; 
+        
+		if (list->activeElement->nextElement != NULL) 
+		{
+            list->activeElement->nextElement->previousElement = newElement; 
+        } else 
+		{
+            list->lastElement = newElement; 
+        }
+        list->activeElement->nextElement = newElement; 
+    } else 
+	{
+        return;
+    }
 }
 
 /**
@@ -289,7 +315,33 @@ void DLL_InsertAfter( DLList *list, int data ) {
  * @param data Hodnota k vložení do seznamu před právě aktivní prvek
  */
 void DLL_InsertBefore( DLList *list, int data ) {
-	solved = false; /* V případě řešení, smažte tento řádek! */
+	//solved = false; /* V případě řešení, smažte tento řádek! */
+    if (DLL_IsActive(list)) 
+	{
+        DLLElementPtr newElement = malloc(sizeof(struct DLLElement));
+
+        if (newElement == NULL) 
+		{
+            DLL_Error(); 
+            return;
+        }
+
+        newElement->data = data; 
+        newElement->nextElement = list->activeElement; 
+        newElement->previousElement = list->activeElement->previousElement; 
+
+        if (list->activeElement->previousElement != NULL) 
+		{
+            list->activeElement->previousElement->nextElement = newElement; 
+        } else 
+		{
+            list->firstElement = newElement; 
+        }
+        list->activeElement->previousElement = newElement; 
+    } else 
+	{
+        return;
+    }
 }
 
 /**
