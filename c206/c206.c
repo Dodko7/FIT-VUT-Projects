@@ -495,12 +495,13 @@ void DLL_Next( DLList *list ) {
 	//solved = false; /* V případě řešení, smažte tento řádek! */
     if (list->activeElement != NULL) 
 	{
-        list->activeElement = list->activeElement->nextElement; 
-    }
-
-    if (list->activeElement == list->lastElement) 
-	{
-        list->activeElement = NULL;
+        if (list->activeElement == list->lastElement) 
+		{
+            list->activeElement = NULL;
+        } else 
+		{
+            list->activeElement = list->activeElement->nextElement;
+        }
     }
 }
 
@@ -516,12 +517,13 @@ void DLL_Previous( DLList *list ) {
 	//solved = false; /* V případě řešení, smažte tento řádek! */
     if (list->activeElement != NULL) 
 	{
-        list->activeElement = list->activeElement->previousElement; 
-    }
-
-    if (list->activeElement == list->firstElement) 
-	{
-        list->activeElement = NULL;
+        if (list->activeElement == list->firstElement) 
+		{
+            list->activeElement = NULL;
+        } else 
+		{
+            list->activeElement = list->activeElement->previousElement;
+        }
     }
 }
 
