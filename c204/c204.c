@@ -54,21 +54,22 @@ bool solved;
  * @param postfixExpressionLength Ukazatel na aktuální délku výsledného postfixového výrazu
  */
 void untilLeftPar(Stack *stack, char *postfixExpression, unsigned *postfixExpressionLength) {
-	//solved = false; /* V případě řešení, smažte tento řádek! */
-    while (!Stack_IsEmpty(stack)) 
+    int i = 0;
+	while (!Stack_IsEmpty(stack)) 		// cyklus na vyprázdnenie zásobníka
 	{
-        char topElement;
-        Stack_Top(stack, &topElement);
+        char topElement;				// pomocná premenná
+        Stack_Top(stack, &topElement);	// načítanie vrcholu zásobníka
         
-        if (topElement == '(') 
+        if (topElement == '(') 			// ak je na vrchole zásobníka '('
 		{
-            Stack_Pop(stack);
+            Stack_Pop(stack);			// odstráni '(' zo zásobníka
             return;
         } else 
 		{
-            postfixExpression[(*postfixExpressionLength)++] = topElement;
-            Stack_Pop(stack);
-        }
+			i++;
+            postfixExpression[(*postfixExpressionLength)+i] = topElement;	// vloží znak do výstupného poľa
+            Stack_Pop(stack);												// odstráni znak zo zásobníka
+		}
     }
 }
 
@@ -89,8 +90,47 @@ void untilLeftPar(Stack *stack, char *postfixExpression, unsigned *postfixExpres
  * @param postfixExpressionLength Ukazatel na aktuální délku výsledného postfixového výrazu
  */
 void doOperation( Stack *stack, char c, char *postfixExpression, unsigned *postfixExpressionLength ) {
-	//solved = false; /* V případě řešení, smažte tento řádek! */
+	if (c == '*' || c == '/') 
+	{
+		char topElement;
+		Stack_Top(stack, &topElement);
 
+		if (topElement == '*' || topElement == '/') 
+		{
+			postfixExpression[(*postfixExpressionLength)++] = topElement;
+			Stack_Pop(stack);
+			Stack_Push(stack, c);
+		} else 
+		{
+			Stack_Push(stack, c);
+		}
+	} else if (c == '+' || c == '-') 
+	{
+		char topElement;
+		Stack_Top(stack, &topElement);
+
+		if (topElement == '*' || topElement == '/') 
+		{
+			postfixExpression[(*postfixExpressionLength)++] = topElement;
+			Stack_Pop(stack);
+			Stack_Push(stack, c);
+		} else 
+		{
+			Stack_Push(stack, c);
+		}
+	} else if (c == '=') 
+	{
+		int i = 1;
+		while (!Stack_IsEmpty(stack))
+		{
+			char topElement;
+			Stack_Top(stack, &topElement);
+			postfixExpression[(*postfixExpressionLength) + i] = topElement;
+			Stack_Pop(stack);
+			i++;
+		}
+		postfixExpression[(*postfixExpressionLength) + i] = '=';
+	}
 }
 
 /**
@@ -142,15 +182,53 @@ void doOperation( Stack *stack, char c, char *postfixExpression, unsigned *postf
  * @returns znakový řetězec obsahující výsledný postfixový výraz
  */
 char *infix2postfix( const char *infixExpression ) {
-	//solved = false; /* V případě řešení, smažte tento řádek! */
-	/* for (size_t i = 0; i < count; i++)
-	{
-		code
-	} */
-	
-	//if(infixExpression[])
+    Stack stack;
+    Stack_Init(&stack);
 
-	return NULL;
+	unsigned int indexInfixu = 0;
+	unsigned int indexPostfixu = 0;
+
+	while (infixExpression[indexInfixu] != '\0') 
+	{
+		indexInfixu++;
+	}
+
+    char *postfixExpression = (char *)malloc(sizeof(char) * (indexInfixu + 1));
+
+    if (postfixExpression == NULL) 
+	{
+        return NULL; 
+    }
+
+	indexInfixu = 0;
+	char znak = infixExpression[0];
+	while (znak != '\0')
+	{
+		znak = infixExpression[indexInfixu];
+
+        if ((znak >= '0' && znak <= '9') || (znak >= 'a' && znak <= 'z') || (znak >= 'A' && znak <= 'Z')) 
+		{
+            postfixExpression[indexPostfixu] = znak;
+			//indexPostfixu++;
+        } else if (znak == '(') 
+		{
+            Stack_Push(&stack, znak);
+        } else if (znak == ')') 
+		{
+            untilLeftPar(&stack, postfixExpression, &indexPostfixu);
+        } else 
+		{
+            doOperation(&stack, znak, postfixExpression, &indexPostfixu);
+        }
+
+	    while (postfixExpression[indexPostfixu] != '\0') 
+		{
+        	indexPostfixu++;
+    	}
+		indexInfixu++;
+	}
+
+	return postfixExpression;
 }
 
 
