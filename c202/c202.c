@@ -72,17 +72,16 @@ void Stack_Error( int error_code ) {
  * @param stack Ukazatel na strukturu zásobníku
  */
 void Stack_Init( Stack *stack ) {
-	//solved = false; /* V případě řešení, smažte tento řádek! */
-    if (stack == NULL) 
+    if (stack == NULL) 											// kontrola či je stack inicializovaný
 	{
         Stack_Error(SERR_INIT);
         return;
     }
 
-    stack->topIndex = -1; 
+    stack->topIndex = -1; 										// nastaví vrchol zásobníku na -1
+    stack->array = (char *)malloc(sizeof(char) * MAX_STACK);	// alokácia pamäte pre zásobník
 
-    stack->array = (char *)malloc(sizeof(char) * MAX_STACK);
-    if (stack->array == NULL) 
+    if (stack->array == NULL) 									// kontrola správnej alokácie pamäte
 	{
     	Stack_Error(SERR_INIT);
 		return;
@@ -99,8 +98,7 @@ void Stack_Init( Stack *stack ) {
  * @returns true v případě, že je zásobník prázdný, jinak false
  */
 bool Stack_IsEmpty( const Stack *stack ) {
-	//solved = false; /* V případě řešení, smažte tento řádek! */
-	return stack->topIndex == -1;
+	return stack->topIndex == -1;	// vráti true ak je zásobník prázdny, inak false
 }
 
 /**
@@ -116,8 +114,7 @@ bool Stack_IsEmpty( const Stack *stack ) {
  * @returns true v případě, že je zásobník plný, jinak false
  */
 bool Stack_IsFull( const Stack *stack ) {
-	//solved = false; /* V případě řešení, smažte tento řádek! */
-	return stack->topIndex == STACK_SIZE - 1;
+	return stack->topIndex == STACK_SIZE - 1;	// vráti true ak je zásobník plný, inak false
 }
 
 /**
@@ -133,13 +130,12 @@ bool Stack_IsFull( const Stack *stack ) {
  * @param dataPtr Ukazatel na cílovou proměnnou
  */
 void Stack_Top( const Stack *stack, char *dataPtr ) {
-	//solved = false; /* V případě řešení, smažte tento řádek! */
-    if (Stack_IsEmpty(stack)) 
+    if (Stack_IsEmpty(stack))						// kontrola, či je zásobník prázdny
 	{
         Stack_Error(SERR_TOP);
     } else 
 	{
-        *dataPtr = stack->array[stack->topIndex];
+        *dataPtr = stack->array[stack->topIndex];	// vráti znak z vrcholu zásobníku
     }
 }
 
@@ -157,13 +153,12 @@ void Stack_Top( const Stack *stack, char *dataPtr ) {
  * @param stack Ukazatel na inicializovanou strukturu zásobníku
  */
 void Stack_Pop( Stack *stack ) {
-	//solved = false; /* V případě řešení, smažte tento řádek! */
-    if (Stack_IsEmpty(stack)) 
+    if (Stack_IsEmpty(stack))	// kontrola, či je zásobník prázdny
 	{
-        return;
+        return;					// ak je prázdny, tak sa vráti
     }
     
-    stack->topIndex--;
+    stack->topIndex--;			// odstráni prvok z vrcholu zásobníku
 }
 
 
@@ -178,14 +173,13 @@ void Stack_Pop( Stack *stack ) {
  * @param data Znak k vložení
  */
 void Stack_Push( Stack *stack, char data ) {
-	//solved = false; /* V případě řešení, smažte tento řádek! */
-    if (Stack_IsFull(stack)) 
+    if (Stack_IsFull(stack))					// kontrola, či je zásobník plný
 	{
         Stack_Error(SERR_PUSH);
     } else 
 	{
-    	stack->topIndex++;
-        stack->array[stack->topIndex] = data;
+    	stack->topIndex++;						// zvýši index vrcholu zásobníku
+        stack->array[stack->topIndex] = data;	// vloží znak na vrchol zásobníku
     }
 }
 
@@ -197,13 +191,13 @@ void Stack_Push( Stack *stack, char data ) {
  * @param stack Ukazatel na inicializovanou strukturu zásobníku
  */
 void Stack_Dispose( Stack *stack ) {
-	//solved = false; /* V případě řešení, smažte tento řádek! */
-    if (stack->array != NULL) 
+    if (stack->array != NULL) 	// kontrola, či je zásobník inicializovaný
 	{
-        free(stack->array);
+        free(stack->array);		// uvoľní pamäť pre zásobník
     }
-    stack->topIndex = -1;
-    stack->array = NULL;
+
+    stack->topIndex = -1;		// nastaví vrchol zásobníku na -1
+    stack->array = NULL;		// nastaví ukazateľ na NULL
 }
 
 /* Konec c202.c */
