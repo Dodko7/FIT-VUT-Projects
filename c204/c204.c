@@ -54,20 +54,20 @@ bool solved;
  * @param postfixExpressionLength Ukazatel na aktuální délku výsledného postfixového výrazu
  */
 void untilLeftPar(Stack *stack, char *postfixExpression, unsigned *postfixExpressionLength) {
-    while (!Stack_IsEmpty(stack)) 
+    while (!Stack_IsEmpty(stack))       // cyklus na vyprazdnenie zasobnika
 	{
-        char topElement;
-        Stack_Top(stack, &topElement);
+        char topElement;                // pomocna premenna
+        Stack_Top(stack, &topElement);  // nacitanie vrcholu zasobnika
         
-        if (topElement == '(') 
+        if (topElement == '(')          // podmienka lavej zatvorky
 		{
-            Stack_Pop(stack);
+            Stack_Pop(stack);           // odstranenie lavej zatvorky
             return;
         } else 
 		{
-            postfixExpression[(*postfixExpressionLength)] = topElement;
-            (*postfixExpressionLength)++;
-            Stack_Pop(stack);
+            postfixExpression[(*postfixExpressionLength)] = topElement; // pridanie znaku do vystupneho pola
+            (*postfixExpressionLength)++;                               // inkrementacia dlzky vystupneho pola
+            Stack_Pop(stack);                                           // odstranenie znaku zo zasobnika
         }
     }
 }
@@ -89,50 +89,50 @@ void untilLeftPar(Stack *stack, char *postfixExpression, unsigned *postfixExpres
  * @param postfixExpressionLength Ukazatel na aktuální délku výsledného postfixového výrazu
  */
 void doOperation( Stack *stack, char c, char *postfixExpression, unsigned *postfixExpressionLength ) {
-    if (c == '*' || c == '/') {
+    if (c == '*' || c == '/') {                                                 // podmienka pre nasobenie a delenie
         char topElement;
-        while (!Stack_IsEmpty(stack)) 
+        while (!Stack_IsEmpty(stack))                                           // cyklus na vyprazdnenie zasobnika
 		{
-            Stack_Top(stack, &topElement);
-            if (topElement == '+' || topElement == '-') 
+            Stack_Top(stack, &topElement);                                      // nacitanie vrcholu zasobnika
+            if (topElement == '+' || topElement == '-')                         // podmienka pre scitanie a odcitanie
 			{
                 break;
             } else 
 			{
-                postfixExpression[(*postfixExpressionLength)] = topElement;
-                (*postfixExpressionLength)++;
-                Stack_Pop(stack);
+                postfixExpression[(*postfixExpressionLength)] = topElement;     // pridanie znaku do vystupneho pola
+                (*postfixExpressionLength)++;                                   // inkrementacia dlzky vystupneho pola
+                Stack_Pop(stack);                                               // odstranenie znaku zo zasobnika
             }
         }
-        Stack_Push(stack, c);
-    } else if (c == '+' || c == '-') 
+        Stack_Push(stack, c);                                                   // pridanie znaku do zasobnika
+    } else if (c == '+' || c == '-')                                            // podmienka pre scitanie a odcitanie
 	{
-        char topElement;
-        while (!Stack_IsEmpty(stack)) 
+        char topElement;                                                        // pomocna premenna
+        while (!Stack_IsEmpty(stack))                                           // cyklus na vyprazdnenie zasobnika
 		{
-            Stack_Top(stack, &topElement);
-            if (topElement == '(') 
+            Stack_Top(stack, &topElement);                                      // nacitanie vrcholu zasobnika
+            if (topElement == '(')                                              // podmienka pre lavu zatvorku
 			{
                 break;
             } else 
 			{
-                postfixExpression[(*postfixExpressionLength)] = topElement;
-                (*postfixExpressionLength)++;
-                Stack_Pop(stack);
+                postfixExpression[(*postfixExpressionLength)] = topElement;     // pridanie znaku do vystupneho pola
+                (*postfixExpressionLength)++;                                   // inkrementacia dlzky vystupneho pola
+                Stack_Pop(stack);                                               // odstranenie znaku zo zasobnika
             }
         }
-        Stack_Push(stack, c);
-    } else if (c == '=') {
-        while (!Stack_IsEmpty(stack)) 
+        Stack_Push(stack, c);                                                   // pridanie znaku do zasobnika
+    } else if (c == '=') {                                                      // podmienka pre rovnitko
+        while (!Stack_IsEmpty(stack))                                           // cyklus na vyprazdnenie zasobnika
 		{
-            char topElement;
-            Stack_Top(stack, &topElement);
-            postfixExpression[(*postfixExpressionLength)] = topElement;
-            (*postfixExpressionLength)++;
-            Stack_Pop(stack);
+            char topElement;                                                    // pomocna premenna
+            Stack_Top(stack, &topElement);                                      // nacitanie vrcholu zasobnika
+            postfixExpression[(*postfixExpressionLength)] = topElement;         // pridanie znaku do vystupneho pola
+            (*postfixExpressionLength)++;                                       // inkrementacia dlzky vystupneho pola
+            Stack_Pop(stack);                                                   // odstranenie znaku zo zasobnika
         }
-        postfixExpression[(*postfixExpressionLength)] = '=';
-        (*postfixExpressionLength)++;
+        postfixExpression[(*postfixExpressionLength)] = '=';                    // pridanie znaku do vystupneho pola
+        (*postfixExpressionLength)++;                                           // inkrementacia dlzky vystupneho pola
     }
 }
 
@@ -185,49 +185,49 @@ void doOperation( Stack *stack, char c, char *postfixExpression, unsigned *postf
  * @returns znakový řetězec obsahující výsledný postfixový výraz
  */
 char *infix2postfix( const char *infixExpression ) {
-    Stack stack;
-    Stack_Init(&stack);
+    Stack stack;                                                        // inicializacia zasobnika
+    Stack_Init(&stack);                                                 // inicializacia zasobnika
 
-    unsigned int indexInfixu = 0;
-    unsigned int indexPostfixu = 0;
+    unsigned int indexInfixu = 0;                                       // pomocna premenna
+    unsigned int indexPostfixu = 0;                                     // pomocna premenna
 
-    while (infixExpression[indexInfixu] != '\0') 
+    while (infixExpression[indexInfixu] != '\0')                        // cyklus na zistenie dlzky vstupneho pola
 	{
-        indexInfixu++;
+        indexInfixu++;  
     }
 
-    char *postfixExpression = (char *) malloc(sizeof(char) * (indexInfixu + 1));
-    if (postfixExpression == NULL) 
+    char *postfixExpression = (char *) malloc(sizeof(char) * MAX_LEN);  // alokacia pamate pre vystupne pole
+    if (postfixExpression == NULL)                                      // kontrola uspesnosti alokacie
 	{
         return NULL;
     }
 
-    indexInfixu = 0;
-    char znak = infixExpression[0];
-    while (znak != '\0') 
+    indexInfixu = 0;                                                    // inicializacia pomocnych premennych
+    char znak = infixExpression[0];                                     // inicializacia pomocnych premennych
+    while (znak != '\0')                                                // cyklus na prechadzanie vstupneho pola
 	{
-        znak = infixExpression[indexInfixu];
+        znak = infixExpression[indexInfixu];                            // nacitanie znaku z vstupneho pola
 
-        if ((znak >= '0' && znak <= '9') || (znak >= 'a' && znak <= 'z') || (znak >= 'A' && znak <= 'Z')) 
+        if ((znak >= '0' && znak <= '9') || (znak >= 'a' && znak <= 'z') || (znak >= 'A' && znak <= 'Z'))   // podmienka pre cisla a pismena
 		{
-            postfixExpression[indexPostfixu] = znak;
-            indexPostfixu++;
-        } else if (znak == '(') 
+            postfixExpression[indexPostfixu] = znak;                    // pridanie znaku do vystupneho pola
+            indexPostfixu++;                                            // inkrementacia dlzky vystupneho pola
+        } else if (znak == '(')                                         // podmienka pre lavu zatvorku
 		{
-            Stack_Push(&stack, znak);
-        } else if (znak == ')') 
+            Stack_Push(&stack, znak);                                   // pridanie znaku do zasobnika
+        } else if (znak == ')')                                         // podmienka pre pravu zatvorku
 		{
-            untilLeftPar(&stack, postfixExpression, &indexPostfixu);
+            untilLeftPar(&stack, postfixExpression, &indexPostfixu);    // volanie funkcie untilLeftPar
         } else 
 		{
-            doOperation(&stack, znak, postfixExpression, &indexPostfixu);
+            doOperation(&stack, znak, postfixExpression, &indexPostfixu);   // volanie funkcie doOperation
         }
-        indexInfixu++;
+        indexInfixu++;                                                  // inkrementacia indexu vstupneho pola
     }
 
-    Stack_Dispose(&stack);
-    postfixExpression[indexPostfixu] = '\0'; 
-    return postfixExpression;
+    Stack_Dispose(&stack);                                              // uvolnenie pamate zasobnika
+    postfixExpression[indexPostfixu] = '\0';                            // pridanie ukoncovacieho znaku na koniec vystupneho pola
+    return postfixExpression;                                           // vracanie vystupneho pola
 }
 
 
@@ -243,16 +243,16 @@ char *infix2postfix( const char *infixExpression ) {
  * @param value hodnota k vložení na zásobník
  */
 void expr_value_push( Stack *stack, int value ) {
-	char arrayOfDigits[5];
-	sprintf(arrayOfDigits, "%04d", value);
+	char digitsArray[5];                    // pomocne pole
+	sprintf(digitsArray, "%04d", value);    // prevod cisla na pole znakov
 
-	for (int i = 0; i < 4; i++) 
+	for (int i = 0; i < 4; i++)             // cyklus na vlozenie znakov do zasobnika
 	{
-		if (arrayOfDigits[i] == ' ')
+		if (digitsArray[i] == ' ')          // podmienka pre medzeru
 		{
-			arrayOfDigits[i] = '0';
+			digitsArray[i] = '0';           // nahradenie medzery nulou
 		}
-		Stack_Push(stack, arrayOfDigits[i]);
+		Stack_Push(stack, digitsArray[i]);  // vlozenie znaku do zasobnika
 	}
 }
 
@@ -269,18 +269,18 @@ void expr_value_push( Stack *stack, int value ) {
  *   výsledné celočíselné hodnoty z vrcholu zásobníku
  */
 void expr_value_pop( Stack *stack, int *value ) {
-	if (Stack_IsEmpty(stack))
+	if (Stack_IsEmpty(stack))               // podmienka pre prazdny zasobnik
 	{
         return;
     }
 
-    char arrayOfDiggets[5] = {0};
-    for (int i = 3; i >= 0; i--) 
+    char digitsArray[5] = {0};              // pomocne pole
+    for (int i = 3; i >= 0; i--)            // cyklus na nacitanie znakov zo zasobnika
 	{
-        Stack_Top(stack, &arrayOfDiggets[i]);
-        Stack_Pop(stack);
+        Stack_Top(stack, &digitsArray[i]);  // nacitanie znaku zo zasobnika
+        Stack_Pop(stack);                   // odstranenie znaku zo zasobnika
     }
-    *value = atoi(arrayOfDiggets);
+    *value = atoi(digitsArray);             // prevod pola znakov na cislo
 }
 
 
@@ -307,67 +307,67 @@ void expr_value_pop( Stack *stack, int *value ) {
  * @return výsledek vyhodnocení daného výrazu na základě poskytnutých hodnot proměnných
  */
 bool eval( const char *infixExpression, VariableValue variableValues[], int variableValueCount, int *value ) {
-	Stack *stack = (Stack *) malloc(sizeof(Stack));
-	Stack_Init(stack);
+	Stack *stack = (Stack *) malloc(sizeof(Stack));                         // alokacia pamate pre zasobnik
+	Stack_Init(stack);                                                      // inicializacia zasobnika
 
-	char * postfixExpression;
-	postfixExpression = infix2postfix(infixExpression);
+	char * postfixExpression;                                               // pomocna premenna
+	postfixExpression = infix2postfix(infixExpression);                     // prevod infixoveho vyrazu na postfixovy
 
-	int i = 0;
-	while (postfixExpression[i] != '=')
+	int i = 0;                                                              // pomocna premenna
+	while (postfixExpression[i] != '=')                                     // cyklus na prechadzanie vystupneho pola
 	{
-		char znak = postfixExpression[i];
+		char znak = postfixExpression[i];                                   // nacitanie znaku z vystupneho pola
 
+        // podmienka pre cisla a pismena
 		if ((znak >= '0' && znak <= '9') || (znak >= 'a' && znak <= 'z') || (znak >= 'A' && znak <= 'Z'))
 		{
-			for (int j = 0; j < variableValueCount; j++)
+			for (int j = 0; j < variableValueCount; j++)                    // cyklus na prechadzanie pola hodnot
 			{
-				if (variableValues[j].name == znak)
+				if (variableValues[j].name == znak)                         // podmienka pre zhodu znaku
 				{
-					expr_value_push(stack, variableValues[j].value);
+					expr_value_push(stack, variableValues[j].value);        // volanie funkcie expr_value_push
 				}
 			}
-		} else if (znak == '+' || znak == '-' || znak == '*' || znak == '/')
+		} else if (znak == '+' || znak == '-' || znak == '*' || znak == '/')    // podmienka pre operatory
 		{
-			int firstValue;
-			int secondValue;
-			expr_value_pop(stack, &secondValue);
-			expr_value_pop(stack, &firstValue);
+			int firstValue;                                                 // pomocna premenna
+			int secondValue;                                                // pomocna premenna
+			expr_value_pop(stack, &secondValue);                            // volanie funkcie expr_value_pop
+			expr_value_pop(stack, &firstValue);                             // volanie funkcie expr_value_pop
 
-			switch (znak)
+			switch (znak)                                                   // podmienka pre operatory
 			{
 				case '+':
-					expr_value_push(stack, firstValue + secondValue);
+					expr_value_push(stack, firstValue + secondValue);       // volanie funkcie expr_value_push
 					break;
 				case '-':
-					expr_value_push(stack, firstValue - secondValue);
+					expr_value_push(stack, firstValue - secondValue);       // volanie funkcie expr_value_push
 					break;
 				case '*':
-					expr_value_push(stack, firstValue * secondValue);
+					expr_value_push(stack, firstValue * secondValue);       // volanie funkcie expr_value_push
 					break;
 				case '/':
-					if (secondValue != 0)
+					if (secondValue != 0)                                   // podmienka pre delenie nulou
 					{
-						expr_value_push(stack, firstValue / secondValue);
+						expr_value_push(stack, firstValue / secondValue);   // volanie funkcie expr_value_push
 					} else
 					{
-						Stack_Dispose(stack);
-						free(stack);
-						free(postfixExpression);
-						return false;
+						Stack_Dispose(stack);                               // uvolnenie pamate zasobnika
+						free(stack);                                        // uvolnenie pamate zasobnika
+						free(postfixExpression);                            // uvolnenie pamate vystupneho pola
+						return false;                                       // vracanie hodnoty false
 					}
-				break;
+				break;                                                      // volanie funkcie expr_value_push
 			}
 		}
-		i++;
+		i++;                                                                // inkrementacia indexu vystupneho pola
 	}
-	expr_value_pop(stack, value);
+	expr_value_pop(stack, value);                                           // volanie funkcie expr_value_pop
+	Stack_Dispose(stack);                                                   // uvolnenie pamate zasobnika
+	free(stack);                                                            // uvolnenie pamate zasobnika
+	free(postfixExpression);                                                // uvolnenie pamate vystupneho pola
 	
-	Stack_Dispose(stack);
-	free(stack);
-	free(postfixExpression);
-	
-    return true;
+    return true;                                                            // vracanie hodnoty true
 }
 
 /* Konec c204.c */
