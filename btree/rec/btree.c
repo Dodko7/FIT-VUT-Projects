@@ -18,6 +18,7 @@
  * možné toto detekovat ve funkci. 
  */
 void bst_init(bst_node_t **tree) {
+  *tree = NULL;
 }
 
 /*
@@ -30,7 +31,26 @@ void bst_init(bst_node_t **tree) {
  * Funkci implementujte rekurzivně bez použité vlastních pomocných funkcí.
  */
 bool bst_search(bst_node_t *tree, char key, int *value) {
-  return false;
+    // test prazdneho stromu
+    if (tree == NULL) 
+    {
+        return false;
+    }
+    // test najdenia kluca
+    if (key == tree->key) 
+    {
+        // kluc najdeny
+        *value = tree->value;
+        return true;
+    // hladame v lavom podstrome
+    } else if (key < tree->key) 
+    {
+        return bst_search(tree->left, key, value);
+    // hladame v pravom podstrome
+    } else 
+    {
+        return bst_search(tree->right, key, value);
+    }
 }
 
 /*
@@ -45,6 +65,31 @@ bool bst_search(bst_node_t *tree, char key, int *value) {
  * Funkci implementujte rekurzivně bez použití vlastních pomocných funkcí.
  */
 void bst_insert(bst_node_t **tree, char key, int value) {
+  // test prazdneho stromu a vytvorenie noveho uzla
+  if (*tree == NULL) 
+  {
+    *tree = malloc(sizeof(bst_node_t));
+    // chyba pri alokacii
+    if (*tree == NULL)    
+    {
+      exit(EXIT_FAILURE); 
+    } else 
+    {
+      (*tree)->key = key;
+      (*tree)->value = value;
+      (*tree)->left = NULL;
+      (*tree)->right = NULL;
+    }
+  } else if (key < (*tree)->key) 
+  { // vkladame do lavého podstromu
+    bst_insert(&(*tree)->left, key, value);
+  } else if (key > (*tree)->key) 
+  { // vkladame do pravého podstromu
+    bst_insert(&(*tree)->right, key, value);
+  } else if (key == (*tree)->key) 
+  { // nahradime hodnotu uzlu
+    (*tree)->value = value;
+  }
 }
 
 /*
@@ -61,6 +106,20 @@ void bst_insert(bst_node_t **tree, char key, int value) {
  * Funkci implementujte rekurzivně bez použití vlastních pomocných funkcí.
  */
 void bst_replace_by_rightmost(bst_node_t *target, bst_node_t **tree) {
+  // test najdenia najpravejsieho uzla
+  if ((*tree)->right == NULL) 
+  {
+    // nahradime hodnoty uzlov
+    target->key = (*tree)->key;
+    target->value = (*tree)->value;
+    // uvolnime pamat
+    free(*tree);
+    *tree = NULL;
+  } else 
+  {
+    // REKURZIVNE hladame najpravejsi uzol
+    bst_replace_by_rightmost(target, &(*tree)->right);
+  }
 }
 
 /*
@@ -77,6 +136,50 @@ void bst_replace_by_rightmost(bst_node_t *target, bst_node_t **tree) {
  * použití vlastních pomocných funkcí.
  */
 void bst_delete(bst_node_t **tree, char key) {
+  // test konca vetvy
+  if (*tree == NULL) 
+  {
+    return;
+  }
+  // hladame v lavom podstrome
+  if (key < (*tree)->key) 
+  {
+    bst_delete(&(*tree)->left, key);
+  // hladame v pravom podstrome
+  } else if (key > (*tree)->key) 
+  {
+    bst_delete(&(*tree)->right, key);
+  // kluc najdeny
+  } else 
+  {
+    // test na list
+    if ((*tree)->left == NULL && (*tree)->right == NULL) 
+    {
+      // uvolnime pamat
+      free(*tree);
+      *tree = NULL;
+    // test na jeden podstrom
+    } else if ((*tree)->left == NULL || (*tree)->right == NULL) 
+    {
+      // vytvorime pomocny uzol
+      bst_node_t *tmp = *tree;
+      // nahradime hodnoty uzlov
+      if ((*tree)->left != NULL) 
+      {
+        *tree = (*tree)->left;
+      } else 
+      {
+        *tree = (*tree)->right;
+      }
+      // uvolnime pamat
+      free(tmp);
+    // test na dva podstromy
+    } else 
+    {
+      // nahradime uzol najpravejsim uzlom lavého podstromu
+      bst_replace_by_rightmost(*tree, &(*tree)->left);
+    }
+  }
 }
 
 /*
@@ -89,6 +192,18 @@ void bst_delete(bst_node_t **tree, char key) {
  * Funkci implementujte rekurzivně bez použití vlastních pomocných funkcí.
  */
 void bst_dispose(bst_node_t **tree) {
+  // test prazdneho stromu || konca vetvy
+  if (*tree == NULL) 
+  {
+    return;
+  }
+  // rekurzivne rusime uzly
+  bst_dispose(&(*tree)->left);
+  bst_dispose(&(*tree)->right);
+
+  // uvolnenie pamate uzla
+  free(*tree);
+  *tree = NULL;
 }
 
 /*
@@ -99,6 +214,20 @@ void bst_dispose(bst_node_t **tree) {
  * Funkci implementujte rekurzivně bez použití vlastních pomocných funkcí.
  */
 void bst_preorder(bst_node_t *tree, bst_items_t *items) {
+  // test prazdneho stromu
+  if (tree == NULL) 
+  {
+    return;  
+  }
+
+  // spracovanie aktualneho uzla
+  bst_add_node_to_items(tree, items);
+
+  // rekurzivne prechadzanie laveho podstromu
+  bst_preorder(tree->left, items);
+
+  // rekurzivne prechadzanie praveho podstromu
+  bst_preorder(tree->right, items);
 }
 
 /*
@@ -109,6 +238,20 @@ void bst_preorder(bst_node_t *tree, bst_items_t *items) {
  * Funkci implementujte rekurzivně bez použití vlastních pomocných funkcí.
  */
 void bst_inorder(bst_node_t *tree, bst_items_t *items) {
+  // test prazdneho stromu
+  if (tree == NULL) 
+  {
+    return;  
+  }
+
+  // rekurzivne prechadzanie laveho podstromu
+  bst_inorder(tree->left, items);
+
+  // spracovanie aktualneho uzla.
+  bst_add_node_to_items(tree, items);
+
+  // rekurzivne prechadzanie praveho podstromu
+  bst_inorder(tree->right, items);
 }
 
 /*
@@ -119,4 +262,18 @@ void bst_inorder(bst_node_t *tree, bst_items_t *items) {
  * Funkci implementujte rekurzivně bez použití vlastních pomocných funkcí.
  */
 void bst_postorder(bst_node_t *tree, bst_items_t *items) {
+  // test prazdneho stromu
+  if (tree == NULL) 
+  {
+    return;  
+  }
+
+  // rekurzivne prechadzanie laveho podstromu
+  bst_postorder(tree->left, items);
+  
+  // rekurzivne prechadzanie praveho podstromu
+  bst_postorder(tree->right, items);
+
+  // spracovanie aktualneho uzla
+  bst_add_node_to_items(tree, items);
 }
