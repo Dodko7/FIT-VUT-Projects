@@ -117,7 +117,7 @@ void bst_replace_by_rightmost(bst_node_t *target, bst_node_t **tree) {
     *tree = NULL;
   } else 
   {
-    // REKURZIVNE hladame najpravejsi uzol
+    // rekurzivne hladame najpravejsi uzol
     bst_replace_by_rightmost(target, &(*tree)->right);
   }
 }
