@@ -1,0 +1,38 @@
+# Build artifacts
+build/
+bin/
+*.o
+*.out
+*.exe
+*.log
+
+# Qt specific files
+*.pro.user
+*.pro.user.*
+*.qmake.stash
+*.qmake.cache
+
+# CMake generated files
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+
+# Qt Creator specific files
+*.creator.*
+*.autosave
+
+# Miscellaneous
+*.swp
+*.bak
+*.tmp
+*.d
+*.obj
+*.pch
+*.pdb
+*.ilk
+*.ipch
+*.tlog
+*.log
+*.suo
+*.vcxproj*
+.DS_Store
