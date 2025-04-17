@@ -1,1 +1,3 @@
-Na ikonky a dalsi media GUI
+# Assets Placeholder
+
+This folder will contain assets such as icons, images, and other resources for the GUI.
