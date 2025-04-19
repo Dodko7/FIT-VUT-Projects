@@ -36,3 +36,10 @@ cmake_install.cmake
 *.suo
 *.vcxproj*
 .DS_Store
+
+# Vscode specific files
+.vscode/
+.vscode-test/
+
+# Gitignore
+.gitignore
