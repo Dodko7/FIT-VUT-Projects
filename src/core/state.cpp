@@ -4,7 +4,6 @@
 #include <algorithm> // For std::find
 #include <stdexcept> // For std::invalid_argument
 #include <iostream> // For std::cerr
-
 #include <string>
 #include <vector>
 #include <memory>
@@ -17,6 +16,7 @@ private:
     std::string output;
     std::vector<std::shared_ptr<State>> nextStates;
     std::shared_ptr<State> previousState;
+    std::shared_ptr<State> thisState;
     bool isFinal;
 
 public:
@@ -24,6 +24,7 @@ public:
     State(const std::string& name, bool isFinal = false);
 
     // Destructor removed as smart pointers handle memory management
+   ~State() = default;
 
     // Getters and setters
 
@@ -56,6 +57,25 @@ public:
         dependencies.push_back(std::move(dependency));
     }
 
+    std::unique_ptr<inputDeps> getDependency(char input, std::shared_ptr<State> fromState) {
+        for (const auto& dependency : dependencies) {
+            if (dependency->getExpectedInput() == input && dependency->getFromState() == fromState) {
+                return std::make_unique<inputDeps>(*dependency);
+            }
+        }
+        std::cerr << "Dependency not found." << std::endl;
+        return nullptr;
+    }
+
+    void removeDependency(std::unique_ptr<inputDeps> dependency) {
+        auto it = std::find(dependencies.begin(), dependencies.end(), dependency);
+        if (it == dependencies.end()) {
+            std::cerr << "Dependency not present for this state." << std::endl;
+            return;
+        }
+        dependencies.erase(it);
+    }
+
     void addNextState(std::shared_ptr<State> nextState) {
         if (nextState == nullptr) {
             throw std::invalid_argument("Next state cannot be null");
@@ -78,6 +98,7 @@ public:
             std::cerr << "State not found present." << std::endl;
             return;
         }
+
         nextStates.erase(it);
     }
 
@@ -92,7 +113,7 @@ public:
             return;
         }
 
-        // Remove moves all instances not matching nextState
+        // Remove moves all instances matching nextState
         // to the end of the vector, then erase removes them
         // from the vector
 
@@ -130,5 +151,21 @@ public:
         }
 
         return previousState;
+    }
+
+    void changePreviousState(std::shared_ptr<State> previousState) {
+        if (previousState == nullptr) {
+            throw std::invalid_argument("Previous state is null");
+        }
+
+        if (previousState == this->previousState) {
+            return;
+        }
+
+        this->previousState = previousState;
+    }
+
+    machineState getTransitionTo() const {
+        return transToMachineState;
     }
 };

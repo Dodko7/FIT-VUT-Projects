@@ -12,7 +12,9 @@ class State {
         std::string name; // Name of the state
         std::vector<std::shared_ptr<State>> nextStates; // Use shared_ptr for better memory management
         bool isFinal; // Whether this state is a final state
+
         std::function<void()> action; // TBD - action taken upon entering this state - is this needed?
+        
         machineState currentMachineState; // Current machine state associated with this state
         std::vector<std::unique_ptr<inputDeps>> dependencies; // Use unique_ptr for automatic cleanup
         std::string output; // Output associated with this state

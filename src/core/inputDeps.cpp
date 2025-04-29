@@ -31,6 +31,7 @@ public:
         if (input == '\0') {
             throw std::invalid_argument("Input character cannot be null");
         }
+        
         expectedInput = input;
     }
 

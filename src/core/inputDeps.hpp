@@ -5,27 +5,28 @@
 #include <memory> // For smart pointers
 
 class inputDeps {
-    private:
-        char expectedInput;
-        std::weak_ptr<State> fromState; // Use weak_ptr to avoid ownership issues
+private:
+    char expectedInput; // The input symbol required for the transition
+    std::weak_ptr<State> fromState; // The originating state for the transition
 
-    public:
-        inputDeps(char input, std::shared_ptr<State> state);
-        ~inputDeps() = default; // Smart pointers handle memory management
+public:
+    // Constructor
+    inputDeps(char input, std::shared_ptr<State> state);
 
-        char getExpectedInput() const {
-            return expectedInput;
-        }
-        void setExpectedInput(char input) {
-            expectedInput = input;
-        }
+    // Destructor
+    ~inputDeps() = default; // Smart pointers handle memory management
 
-        std::shared_ptr<State> getFromState() const{
-            return fromState.lock(); // Convert weak_ptr to shared_ptr
-        }
-        void setFromState(std::shared_ptr<State> state) {
-            fromState = state; // Set the weak_ptr to the new state
-        }
+    // Get the expected input symbol for the transition
+    char getExpectedInput() const;
+
+    // Set the expected input symbol for the transition
+    void setExpectedInput(char input);
+
+    // Get the originating state for the transition
+    std::shared_ptr<State> getFromState() const;
+
+    // Set the originating state for the transition
+    void setFromState(std::shared_ptr<State> state);
 };
 
 #endif // INPUTDEPS_HPP

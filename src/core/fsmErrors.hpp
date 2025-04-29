@@ -7,7 +7,7 @@
 // Base class for FSM-related exceptions
 class FSMException : public std::exception {
 protected:
-    std::string message;
+    std::string message; // Protected to allow derived classes to set the message
 
 public:
     explicit FSMException(const std::string& msg) : message(msg) {}

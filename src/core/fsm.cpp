@@ -4,32 +4,35 @@
 #include <string>
 #include <vector>
 #include <fstream>
+#include <chrono>
+#include "fsm.hpp"
+#include <stdexcept>
+
 // Is it possible to use a library for JSON serialization/deserialization?
 // #include <nlohmann/json.hpp>
 
 class FSM {
     private:
-        std::vector<std::shared_ptr<State>> states; // Consider using std::shared_ptr<State> for better memory management
+        std::unordered_map<std::string, std::shared_ptr<State>> states; // Using unordered_map for better memory management
         std::string name;
         std::string description;
-        float stepDelay; // Ensure this is appropriate for timing; consider std::chrono for precise delays
-        std::string input; // Could be replaced with a more structured input type if needed
+        std::chrono::milliseconds stepDelay; // Using std::chrono for precise and efficient time management
+        std::deque<char> input; // Using deque for efficient input processing
         std::string output; // Same as above, consider structured output
         std::shared_ptr<State> startState; // Consider std::shared_ptr<State> for ownership clarity
         std::shared_ptr<State> currentState; // Same as above
-        std::vector<std::shared_ptr<State>> finalStates; // std::unordered_map for faster lookups?
-        std::string possibleInputs; // std::set?
+        std::unordered_map<std::string, std::shared_ptr<State>> finalStates; // Use unordered_map for faster lookups
+        std::unordered_map<std::string, char> allowedInputs; // Map of allowed inputs for each state
         machineState currentMachineState; // Added machineState for consistent state tracking
 
     public:
         FSM();
 
-        void addState(const std::string& name, bool isFinal);
+        void addState(const std::string& name, const std::string& description, bool isFinal);
         void removeState(const std::string& name);
-        void setStartState(std::shared_ptr<State> state);
-        void autoConnectStates();
-        void loadFromFile(const std::string& filename);
-        void saveToFile(const std::string& filename);
+        void setStartState(const std::string& name);
+        void addTransition(const std::string& fromState, const std::string& toState, char input);
+        void removeTransition(const std::string& fromState, const std::string& toState);
         void run(const std::string& inputSequence);
         void debug();
 
@@ -39,37 +42,52 @@ class FSM {
         void loadFromJson(const std::string& filename);
 
         std::shared_ptr<State> getCurrentState() const;
-        const std::vector<std::shared_ptr<State>>& getStates() const;
+        const std::unordered_map<std::string, std::shared_ptr<State>>& getStates() const;
         std::shared_ptr<State> getStartState() const;
-        const std::vector<std::shared_ptr<State>>& getFinalStates() const;
+        const std::unordered_map<std::string, std::shared_ptr<State>>& getFinalStates() const;
+
+        void validateFSM();
 };
 
-#include "fsm.hpp"
+FSM::FSM() : startState(nullptr), currentState(nullptr), currentMachineState(machineState::IDLE), stepDelay(0) {}
+// TO BE IMPLEMENTED AND REVISED WITH HEADER FILE
+// void FSM::addState(const std::string& name, const std::string& description, bool isFinal, ) {
+//     if (states.find(name) != states.end()) {
+//         throw std::invalid_argument("State with the given name already exists.");
+//     }
 
-FSM::FSM() : startState(nullptr), currentState(nullptr), currentMachineState(machineState::IDLE) {}
+//     auto state = std::make_shared<State>(name, description, isFinal);
+//     states[name] = state;
 
-// Destructor removed as smart pointers handle memory management
-
-void FSM::addState(const std::string& name, bool isFinal) {
-    auto state = std::make_shared<State>(name, isFinal);
-    states.push_back(state);
-    if (isFinal) {
-        finalStates.push_back(state);
-    }
-}
+//     if (isFinal) {
+//         finalStates[name] = state;
+//     }
+// }
 
 void FSM::removeState(const std::string& name) {
-    states.erase(std::remove_if(states.begin(), states.end(),
-        [&name](const std::shared_ptr<State>& state) { return state->getName() == name; }), states.end());
-    finalStates.erase(std::remove_if(finalStates.begin(), finalStates.end(),
-        [&name](const std::shared_ptr<State>& state) { return state->getName() == name; }), finalStates.end());
+}
+
+void FSM::setStartState(const std::string& name) {
+}
+
+void FSM::addTransition(const std::string& fromState, const std::string& toState, char input) {
+}
+
+void FSM::removeTransition(const std::string& fromState, const std::string& toState) {
+}
+
+void FSM::run(const std::string& inputSequence) {
+}
+
+void FSM::debug() {
+    // Debugging logic to be implemented
 }
 
 std::shared_ptr<State> FSM::getCurrentState() const {
     return currentState;
 }
 
-const std::vector<std::shared_ptr<State>>& FSM::getStates() const {
+const std::unordered_map<std::string, std::shared_ptr<State>>& FSM::getStates() const {
     return states;
 }
 
@@ -77,7 +95,7 @@ std::shared_ptr<State> FSM::getStartState() const {
     return startState;
 }
 
-const std::vector<std::shared_ptr<State>>& FSM::getFinalStates() const {
+const std::unordered_map<std::string, std::shared_ptr<State>>& FSM::getFinalStates() const {
     return finalStates;
 }
 
@@ -89,24 +107,6 @@ void FSM::setCurrentMachineState(machineState state) {
     currentMachineState = state;
 }
 
-void FSM::run(const std::string& inputSequence) {
-    if (currentMachineState == machineState::IDLE) {
-        setCurrentMachineState(machineState::RUNNING);
-        // Logic for processing the input sequence
-        // ...existing code...
-    }
-}
-
-void FSM::debug() {
-    if (currentMachineState == machineState::RUNNING) {
-        // Debugging logic while FSM is running
-        // ...existing code...
-    } else if (currentMachineState == machineState::STOPPED) {
-        // Handle debugging when FSM is stopped
-        // ...existing code...
-    }
-}
-
 // Placeholder for saving FSM to JSON
 void FSM::saveToJson(const std::string& filename) {
     // TODO: Serialize FSM properties, states, and transitions into JSON format
@@ -115,4 +115,8 @@ void FSM::saveToJson(const std::string& filename) {
 // Placeholder for loading FSM from JSON
 void FSM::loadFromJson(const std::string& filename) {
     // TODO: Deserialize FSM properties, states, and transitions from JSON format
+}
+
+void FSM::validateFSM() {
+    // Validation logic for determinism and reachability to be implemented
 }
