@@ -28,6 +28,8 @@ class FSM {
     public:
         FSM();
 
+        void setName(const std::string& name);
+        void setDescription(const std::string& description);
         void addState(const std::string& name, const std::string& description, bool isFinal);
         void removeState(const std::string& name);
         void setStartState(const std::string& name);
@@ -45,6 +47,8 @@ class FSM {
         const std::unordered_map<std::string, std::shared_ptr<State>>& getStates() const;
         std::shared_ptr<State> getStartState() const;
         const std::unordered_map<std::string, std::shared_ptr<State>>& getFinalStates() const;
+        std::shared_ptr<State> getStatePtrByName(std::string& name);
+        std::vector<std::string> getAllStateNames() const;
 
         void validateFSM();
 };
@@ -63,6 +67,26 @@ FSM::FSM() : startState(nullptr), currentState(nullptr), currentMachineState(mac
 //         finalStates[name] = state;
 //     }
 // }
+
+void FSM::setName(const std::string& name) {
+    if (name.empty()) {
+        throw std::invalid_argument("FSM name cannot be empty");
+    }
+    if (name.length() > 20) {
+        throw std::invalid_argument("FSM name too long");
+    }
+
+    this->name = name;
+}
+void FSM::setDescription(const std::string& description) {
+    if (description.empty()) {
+        throw std::invalid_argument("FSM description cannot be empty");
+    }
+    if (description.length() > 100) {
+        throw std::invalid_argument("FSM description too long");
+    }
+    this->description = description;
+}
 
 void FSM::removeState(const std::string& name) {
 }
@@ -119,4 +143,20 @@ void FSM::loadFromJson(const std::string& filename) {
 
 void FSM::validateFSM() {
     // Validation logic for determinism and reachability to be implemented
+}
+
+std::shared_ptr<State> FSM::getStatePtrByName(std::string& name) {
+    auto it = states.find(name);
+    if (it != states.end()) {
+        return it->second;
+    }
+    return nullptr; // Return nullptr if state not found
+}
+
+std::vector<std::string> FSM::getAllStateNames() const {
+    std::vector<std::string> stateNames;
+    for (const auto& pair : states) {
+        stateNames.push_back(pair.first);
+    }
+    return stateNames;
 }

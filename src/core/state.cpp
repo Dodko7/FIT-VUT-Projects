@@ -16,12 +16,25 @@ private:
     std::string output;
     std::vector<std::shared_ptr<State>> nextStates;
     std::shared_ptr<State> previousState;
-    std::shared_ptr<State> thisState;
+    std::unique_ptr<State> thisState;
+    std::chrono::milliseconds delay;
     bool isFinal;
 
 public:
     // Constructor
-    State(const std::string& name, bool isFinal = false);
+    // Pointer to the current instance if State has to be passed upon creation
+    State(const std::string& name, machineState transToMachineState, std::vector<std::unique_ptr<inputDeps>> dependencies, std::string& output, std::vector<std::shared_ptr<State>> nextStates,std::shared_ptr<State> previousState, std::unique_ptr<State> thisState, bool isFinal, std::chrono::milliseconds delay)
+        : name(name), transToMachineState(transToMachineState), dependencies(std::move(dependencies)), output(output), nextStates(nextStates), previousState(previousState), thisState(std::move(thisState)), isFinal(isFinal), delay(delay) {
+        if (name.empty()) {
+            throw std::invalid_argument("State name empty");
+        }
+        if (name.length() > 20) {
+            throw std::invalid_argument("State name too long");
+        }
+        if (output.empty()) {
+            throw std::invalid_argument("Output string empty");
+        }
+    }
 
     // Destructor removed as smart pointers handle memory management
    ~State() = default;
@@ -35,6 +48,9 @@ public:
     void setName(const std::string& name) {
         if (name.empty()) {
             throw std::invalid_argument("State name empty");
+        }
+        if (name.length() > 20) {
+            throw std::invalid_argument("State name too long");
         }
 
         this->name = name;
@@ -104,7 +120,7 @@ public:
 
     void removeNextStateOccurances(std::shared_ptr<State> nextState) {
         if (nextState == nullptr) {
-            throw std::invalid_argument("Next state cannot be null");
+            throw std::invalid_argument("Next state cannot be null"); 
         }
 
 

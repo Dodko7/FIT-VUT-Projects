@@ -1,6 +1,8 @@
 #include "state.hpp"
+#include "fsmErrors.hpp" // Handles FSM and other object errors.
 #include <memory>
 #include <stdexcept> // For std::invalid_argument
+
 
 class inputDeps {
 private:
