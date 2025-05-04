@@ -92,6 +92,10 @@ public:
         dependencies.erase(it);
     }
 
+    const std::vector<std::unique_ptr<inputDeps>>& getDependencies() const {
+        return dependencies;
+    }
+
     void addNextState(std::shared_ptr<State> nextState) {
         if (nextState == nullptr) {
             throw std::invalid_argument("Next state cannot be null");

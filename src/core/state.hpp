@@ -61,6 +61,9 @@ class State {
 
         // Set the output associated with this state
         void setOutput(const std::string& output);
+
+        // Get the dependencies (transitions) for this state
+        const std::vector<std::unique_ptr<inputDeps>>& getDependencies() const;
 };
 
 #endif // STATE_HPP

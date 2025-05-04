@@ -7,6 +7,8 @@
 #include <chrono>
 #include "fsm.hpp"
 #include <stdexcept>
+#include <unordered_set>
+#include <unordered_map>
 
 // Is it possible to use a library for JSON serialization/deserialization?
 // #include <nlohmann/json.hpp>
@@ -142,7 +144,42 @@ void FSM::loadFromJson(const std::string& filename) {
 }
 
 void FSM::validateFSM() {
-    // Validation logic for determinism and reachability to be implemented
+    // 1. Check reachability
+    if (!startState) {
+        std::cerr << "Start state is not set" << std::endl;
+    }
+    std::unordered_set<std::string> visited;
+    std::function<void(const std::shared_ptr<State>&)> dfs;
+    dfs = [&](const std::shared_ptr<State>& state) {
+        if (!state) return;
+        const std::string& name = state->getName();
+        if (visited.count(name)) return;
+        visited.insert(name);
+        for (const auto& next : state->getNextStates()) {
+            dfs(next);
+        }
+    };
+    dfs(startState);
+    for (const auto& pair : states) {
+        if (!visited.count(pair.first)) {
+            std::cerr << "State '" << pair.first << "' is unreachable from the start state" << std::endl;
+            // Handle the unreachable state and disable running.
+        }
+    }
+
+    // 2. Check determinism (no duplicate input symbols for transitions from the same state)
+    for (const auto& pair : states) {
+        const auto& state = pair.second;
+        std::unordered_set<char> seenInputs;
+        for (const auto& dep : state->getDependencies()) {
+            char input = dep->getExpectedInput();
+            if (seenInputs.count(input)) {
+                std::cerr << "State '" << state->getName() << "' has multiple transitions for input '" << input << "'" << std::endl;
+                // Handle the determinism violation and disable running.
+            }
+            seenInputs.insert(input);
+        }
+    }
 }
 
 std::shared_ptr<State> FSM::getStatePtrByName(std::string& name) {
