@@ -26,6 +26,7 @@ class FSM {
         std::unordered_map<std::string, std::shared_ptr<State>> finalStates; // Use unordered_map for faster lookups
         std::unordered_map<std::string, char> allowedInputs; // Map of allowed inputs for each state
         machineState currentMachineState; // Added machineState for consistent state tracking
+        std::chrono::milliseconds fsmRunTime; // Added fsmRunTime for tracking FSM execution time
 
     public:
         FSM();

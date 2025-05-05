@@ -26,6 +26,7 @@ private:
     std::shared_ptr<State> startState;
     std::shared_ptr<State> currentState;
     machineState currentMachineState;
+    std::chrono::milliseconds fsmRunTime; // Track execution time
 
 public:
     FSM();
