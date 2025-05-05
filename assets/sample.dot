@@ -1,0 +1,13 @@
+digraph FSM {
+    rankdir=LR;
+    node [shape = doublecircle]; S2;
+    node [shape = circle];
+
+    S0 [label="S0 / 0"];
+    S1 [label="S1 / 1"];
+    S2 [label="S2 / 0"];
+
+    S0 -> S1 [label="a"];
+    S1 -> S2 [label="b"];
+    S2 -> S0 [label="c"];
+}

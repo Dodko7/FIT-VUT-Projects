@@ -15,7 +15,6 @@ class State {
 
         std::function<void()> action; // TBD - action taken upon entering this state - is this needed?
         
-        machineState currentMachineState; // Current machine state associated with this state
         std::vector<std::unique_ptr<inputDeps>> dependencies; // Use unique_ptr for automatic cleanup
         std::string output; // Output associated with this state
         std::weak_ptr<State> previousState; // Use weak_ptr to avoid ownership issues
@@ -48,7 +47,7 @@ class State {
         void executeAction() const;
 
         // Get the list of next states (for GUI integration)
-        const std::vector<std::shared_ptr<State>>& getNextStates() const;
+        std::vector<std::shared_ptr<State>>& getNextStates();
 
         // Get the machine state of this state
         machineState getMachineState() const;
@@ -63,7 +62,7 @@ class State {
         void setOutput(const std::string& output);
 
         // Get the dependencies (transitions) for this state
-        const std::vector<std::unique_ptr<inputDeps>>& getDependencies() const;
+        std::vector<std::unique_ptr<inputDeps>>& getDependencies();
 };
 
 #endif // STATE_HPP

@@ -92,7 +92,7 @@ public:
         dependencies.erase(it);
     }
 
-    const std::vector<std::unique_ptr<inputDeps>>& getDependencies() const {
+    std::vector<std::unique_ptr<inputDeps>>& getDependencies() {
         return dependencies;
     }
 
@@ -155,12 +155,11 @@ public:
         this->output = output;
     }
 
-    const std::vector<std::shared_ptr<State>>& getNextStates() const {
+    std::vector<std::shared_ptr<State>>& getNextStates() {
         if (nextStates.empty()) {
             std::cerr << "No next states available." << std::endl;
             return nextStates;
         }
-
         return nextStates;
     }
 

@@ -45,6 +45,8 @@ public:
     const std::unordered_map<std::string, std::shared_ptr<State>>& getFinalStates() const;
 
     void validateFSM(); // Validate determinism and reachability
+    void removeReferencesToState(const std::string& stateName);
+    void deleteStateRecursive(const std::string& name);
 };
 
 #endif // FSM_HPP

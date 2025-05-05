@@ -11,7 +11,7 @@
 #include <unordered_map>
 
 // Is it possible to use a library for JSON serialization/deserialization?
-// #include <nlohmann/json.hpp>
+#include <nlohmann/json.hpp>
 
 class FSM {
     private:
@@ -36,7 +36,7 @@ class FSM {
         void addState(const std::string& name, const std::string& description, bool isFinal);
         void removeState(const std::string& name);
         void setStartState(const std::string& name);
-        void addTransition(const std::string& fromState, const std::string& toState, char input);
+        void addTransition(std::string& fromState, std::string& toState, char input);
         void removeTransition(const std::string& fromState, const std::string& toState);
         void run(const std::string& inputSequence);
         void debug();
@@ -52,11 +52,18 @@ class FSM {
         const std::unordered_map<std::string, std::shared_ptr<State>>& getFinalStates() const;
         std::shared_ptr<State> getStatePtrByName(std::string& name);
         std::vector<std::string> getAllStateNames() const;
+        bool checkDeterminismFromState (const std::string& stateName);
 
         void validateFSM();
+        void pruneUnreachable();
+        void removeReferencesToState(const std::string& stateName);
+        void deleteStateRecursive(const std::string& name);
+        bool isStateReferencedElsewhere(const std::string& stateName, const std::string& parentName);
+        void pruneUnreachableStates(const std::shared_ptr<State>& state, std::unordered_set<std::string>& visited, const std::string& parentName);
+
 };
 
-FSM::FSM() : startState(nullptr), currentState(nullptr), currentMachineState(machineState::IDLE), stepDelay(0) {}
+FSM::FSM() : startState(nullptr), currentState(nullptr), currentMachineState(machineState::IDLE), stepDelay(0) {};
 // TO BE IMPLEMENTED AND REVISED WITH HEADER FILE
 // void FSM::addState(const std::string& name, const std::string& description, bool isFinal, ) {
 //     if (states.find(name) != states.end()) {
@@ -91,13 +98,21 @@ void FSM::setDescription(const std::string& description) {
     this->description = description;
 }
 
+// Public: Remove a state and recursively prune unreachable children
 void FSM::removeState(const std::string& name) {
+    deleteStateRecursive(name);
 }
 
 void FSM::setStartState(const std::string& name) {
 }
 
-void FSM::addTransition(const std::string& fromState, const std::string& toState, char input) {
+void FSM::addTransition(std::string& fromState, std::string& toState, char input) {
+    auto fromIt = getStatePtrByName(fromState);
+    auto toIt = getStatePtrByName(toState);
+
+    // Check if states exist, create a new instance of input deps,
+    // add it to toStates dependencies and add the toState to the fromState
+    // + std::cerr << err handling, pripadne dalsi std throws
 }
 
 void FSM::removeTransition(const std::string& fromState, const std::string& toState) {
@@ -106,8 +121,54 @@ void FSM::removeTransition(const std::string& fromState, const std::string& toSt
 void FSM::run(const std::string& inputSequence) {
 }
 
+// TO BE DEBUGGED/TESTED
 void FSM::debug() {
-    // Debugging logic to be implemented
+    // Visualize the FSM using Graphviz
+    std::ofstream dotFile("fsm_debug.dot");
+    if (!dotFile.is_open()) {
+        std::cerr << "Failed to open file for Graphviz output" << std::endl;
+        return;
+    }
+
+    dotFile << "digraph FSM {" << std::endl;
+    dotFile << "    rankdir=LR;" << std::endl; // Left-to-right layout
+    dotFile << "    node [shape=circle];" << std::endl;
+
+    // Add states
+    for (const auto& pair : states) {
+        const auto& state = pair.second;
+        if (state == startState) {
+            dotFile << "    \"" << state->getName() << "\" [shape=doublecircle, color=green];" << std::endl;
+        } else if (finalStates.count(state->getName())) {
+            dotFile << "    \"" << state->getName() << "\" [shape=doublecircle, color=red];" << std::endl;
+        } else {
+            dotFile << "    \"" << state->getName() << "\";" << std::endl;
+        }
+    }
+
+    // Add transitions
+    for (const auto& pair : states) {
+        const auto& state = pair.second;
+        for (const auto& dep : state->getDependencies()) {
+            for (const auto& nextState : state->getNextStates()) {
+                if (nextState) {
+                    dotFile << "    \"" << state->getName() << "\" -> \"" 
+                            << nextState->getName() << "\" [label=\"" 
+                            << dep->getExpectedInput() << "\"];" << std::endl;
+                }
+            }
+        }
+    }
+
+    dotFile << "}" << std::endl;
+    dotFile.close();
+
+    // Use system command to render the graph in real time
+    std::string command = "dot -Tpng fsm_debug.dot -o fsm_debug.png && open fsm_debug.png";
+    int result = system(command.c_str());
+    if (result != 0) {
+        std::cerr << "Failed to render FSM visualization" << std::endl;
+    }
 }
 
 std::shared_ptr<State> FSM::getCurrentState() const {
@@ -197,4 +258,115 @@ std::vector<std::string> FSM::getAllStateNames() const {
         stateNames.push_back(pair.first);
     }
     return stateNames;
+}
+
+// Helper: Check if a state is referenced in any nextStates except from the current parent
+bool FSM::isStateReferencedElsewhere(const std::string& stateName, const std::string& parentName) {
+    for (const auto& pair : states) {
+        if (pair.first == parentName) continue;
+        const auto& nextStates = pair.second->getNextStates();
+        for (const auto& next : nextStates) {
+            if (next && next->getName() == stateName) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+// Helper: Recursively prune unreachable states
+void FSM::pruneUnreachableStates(const std::shared_ptr<State>& state, std::unordered_set<std::string>& visited, const std::string& parentName) {
+    if (!state) return;
+    const std::string& name = state->getName();
+    if (visited.count(name)) return;
+    visited.insert(name);
+
+    // For each child, check if it is referenced elsewhere
+    std::vector<std::shared_ptr<State>> children = state->getNextStates();
+    for (const auto& child : children) {
+        if (!child) continue;
+        const std::string& childName = child->getName();
+        if (!isStateReferencedElsewhere(childName, name)) {
+            // Recursively prune this child
+            pruneUnreachableStates(child, visited, name);
+            // Remove from all relevant lists
+            // Remove from parent's nextStates
+            auto& parentNextStates = state->getNextStates();
+            auto it = std::remove_if(parentNextStates.begin(), parentNextStates.end(), [&](const std::shared_ptr<State>& s) {
+                return s && s->getName() == childName;
+            });
+            parentNextStates.erase(it, parentNextStates.end());
+            // Remove from FSM's states map
+            states.erase(childName);
+            // Remove from finalStates if present
+            finalStates.erase(childName);
+            // Remove inputDeps referencing this state
+            // (Assume inputDeps are only in the state being deleted)
+            // Destructor will be called when shared_ptr refcount drops to zero
+        }
+    }
+}
+
+// Public method to prune unreachable states
+void FSM::pruneUnreachable() {
+    std::unordered_set<std::string> visited;
+    pruneUnreachableStates(startState, visited, "");
+}
+
+// Helper: Remove all references to a state from other states' nextStates and dependencies
+void FSM::removeReferencesToState(const std::string& stateName) {
+    for (auto& pair : states) {
+        auto& state = pair.second;
+        // Remove from nextStates
+        auto& nextStates = state->getNextStates();
+        nextStates.erase(
+            std::remove_if(nextStates.begin(), nextStates.end(), [&](const std::shared_ptr<State>& s) {
+                return s && s->getName() == stateName;
+            }),
+            nextStates.end()
+        );
+        // Remove inputDeps referencing this state
+        auto& deps = state->getDependencies();
+        deps.erase(
+            std::remove_if(deps.begin(), deps.end(), [&](const std::unique_ptr<inputDeps>& dep) {
+                auto from = dep->getFromState();
+                return from && from->getName() == stateName;
+            }),
+            deps.end()
+        );
+    }
+}
+
+// Helper: Recursively delete a state and its unreachable children
+void FSM::deleteStateRecursive(const std::string& name) {
+    auto it = states.find(name);
+    if (it == states.end()) return;
+    auto state = it->second;
+    // For each child, check if it is referenced elsewhere
+    std::vector<std::shared_ptr<State>> children = state->getNextStates();
+    for (const auto& child : children) {
+        if (!child) continue;
+        const std::string& childName = child->getName();
+        // Check if child is referenced from any other state (excluding this one)
+        bool referenced = false;
+        for (const auto& pair : states) {
+            if (pair.first == name) continue;
+            const auto& otherNext = pair.second->getNextStates();
+            for (const auto& s : otherNext) {
+                if (s && s->getName() == childName) {
+                    referenced = true;
+                    break;
+                }
+            }
+            if (referenced) break;
+        }
+        if (!referenced) {
+            deleteStateRecursive(childName);
+        }
+    }
+    // Remove from all relevant lists
+    removeReferencesToState(name);
+    states.erase(name);
+    finalStates.erase(name);
+    // Smart pointers ensure destructors are called
 }
