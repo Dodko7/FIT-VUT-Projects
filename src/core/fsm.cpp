@@ -124,7 +124,7 @@ void FSM::run(const std::string& inputSequence) {
 // TO BE DEBUGGED/TESTED
 void FSM::debug() {
     // Visualize the FSM using Graphviz
-    std::ofstream dotFile("fsm_debug.dot");
+    std::ofstream dotFile("../../assets/fsm_debug.dot");
     if (!dotFile.is_open()) {
         std::cerr << "Failed to open file for Graphviz output" << std::endl;
         return;
