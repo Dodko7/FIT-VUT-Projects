@@ -1,17 +1,18 @@
-#include "state.hpp"
-#include "inputDeps.hpp"
-#include <iostream>
-#include <string>
-#include <vector>
-#include <fstream>
-#include <chrono>
-#include "fsm.hpp"
-#include <stdexcept>
-#include <unordered_set>
-#include <unordered_map>
+#include "state.hpp" // Include State class
+#include "inputDeps.hpp" // Include InputDeps for managing transitions
+#include "fsmErrors.hpp" // Include FSM-specific exceptions
+#include <iostream> // For standard input/output
+#include <string> // For string operations
+#include <vector> // For vector container
+#include <fstream> // For file operations
+#include <chrono> // For time management
+#include "fsm.hpp" // Include FSM header
+#include <stdexcept> // For exception handling
+#include <unordered_set> // For unordered_set container
+#include <unordered_map> // For unordered_map container
 
 // Is it possible to use a library for JSON serialization/deserialization?
-#include <nlohmann/json.hpp>
+#include <nlohmann/json.hpp> // Include JSON library for serialization/deserialization
 
 class FSM {
     private:
@@ -79,79 +80,87 @@ FSM::FSM() : startState(nullptr), currentState(nullptr), currentMachineState(mac
 // }
 
 void FSM::setName(const std::string& name) {
-    if (name.empty()) {
+    if (name.empty()) { // Validate that the name is not empty
         throw std::invalid_argument("FSM name cannot be empty");
     }
-    if (name.length() > 20) {
+    if (name.length() > 20) { // Validate that the name is not too long
         throw std::invalid_argument("FSM name too long");
     }
-
-    this->name = name;
+    this->name = name; // Set the FSM name
 }
+
+// Set the description of the FSM
 void FSM::setDescription(const std::string& description) {
-    if (description.empty()) {
+    if (description.empty()) { // Validate that the description is not empty
         throw std::invalid_argument("FSM description cannot be empty");
     }
-    if (description.length() > 100) {
+    if (description.length() > 100) { // Validate that the description is not too long
         throw std::invalid_argument("FSM description too long");
     }
-    this->description = description;
+    this->description = description; // Set the FSM description
 }
 
 // Public: Remove a state and recursively prune unreachable children
 void FSM::removeState(const std::string& name) {
-    deleteStateRecursive(name);
+    deleteStateRecursive(name); // Call helper function to delete state recursively
 }
 
+// Set the start state of the FSM
 void FSM::setStartState(const std::string& name) {
+    // TODO: Implement logic to set the start state
 }
 
+// Add a transition between two states
 void FSM::addTransition(std::string& fromState, std::string& toState, char input) {
-    auto fromIt = getStatePtrByName(fromState);
-    auto toIt = getStatePtrByName(toState);
+    auto fromIt = getStatePtrByName(fromState); // Get pointer to the source state
+    auto toIt = getStatePtrByName(toState); // Get pointer to the destination state
 
     // Check if states exist, create a new instance of input deps,
     // add it to toStates dependencies and add the toState to the fromState
     // + std::cerr << err handling, pripadne dalsi std throws
 }
 
+// Remove a transition between two states
 void FSM::removeTransition(const std::string& fromState, const std::string& toState) {
+    // TODO: Implement logic to remove a transition
 }
 
+// Run the FSM with a given input sequence
 void FSM::run(const std::string& inputSequence) {
+    // TODO: Implement FSM execution logic
 }
 
 // TO BE DEBUGGED/TESTED
 void FSM::debug() {
     // Visualize the FSM using Graphviz
-    std::ofstream dotFile("fsm_debug.dot");
-    if (!dotFile.is_open()) {
+    std::ofstream dotFile("fsm_debug.dot"); // Open a DOT file for Graphviz output
+    if (!dotFile.is_open()) { // Check if the file was opened successfully
         std::cerr << "Failed to open file for Graphviz output" << std::endl;
         return;
     }
 
-    dotFile << "digraph FSM {" << std::endl;
+    dotFile << "digraph FSM {" << std::endl; // Start the DOT graph
     dotFile << "    rankdir=LR;" << std::endl; // Left-to-right layout
-    dotFile << "    node [shape=circle];" << std::endl;
+    dotFile << "    node [shape=circle];" << std::endl; // Default node shape
 
-    // Add states
+    // Add states to the DOT graph
     for (const auto& pair : states) {
         const auto& state = pair.second;
-        if (state == startState) {
+        if (state == startState) { // Highlight the start state
             dotFile << "    \"" << state->getName() << "\" [shape=doublecircle, color=green];" << std::endl;
-        } else if (finalStates.count(state->getName())) {
+        } else if (finalStates.count(state->getName())) { // Highlight final states
             dotFile << "    \"" << state->getName() << "\" [shape=doublecircle, color=red];" << std::endl;
-        } else {
+        } else { // Regular states
             dotFile << "    \"" << state->getName() << "\";" << std::endl;
         }
     }
 
-    // Add transitions
+    // Add transitions to the DOT graph
     for (const auto& pair : states) {
         const auto& state = pair.second;
         for (const auto& dep : state->getDependencies()) {
             for (const auto& nextState : state->getNextStates()) {
-                if (nextState) {
+                if (nextState) { // Add an edge for each transition
                     dotFile << "    \"" << state->getName() << "\" -> \"" 
                             << nextState->getName() << "\" [label=\"" 
                             << dep->getExpectedInput() << "\"];" << std::endl;
@@ -160,37 +169,43 @@ void FSM::debug() {
         }
     }
 
-    dotFile << "}" << std::endl;
-    dotFile.close();
+    dotFile << "}" << std::endl; // End the DOT graph
+    dotFile.close(); // Close the DOT file
 
     // Use system command to render the graph in real time
     std::string command = "dot -Tpng fsm_debug.dot -o fsm_debug.png && open fsm_debug.png";
-    int result = system(command.c_str());
-    if (result != 0) {
+    int result = system(command.c_str()); // Execute the command
+    if (result != 0) { // Check if the command was successful
         std::cerr << "Failed to render FSM visualization" << std::endl;
     }
 }
 
+// Get the current state of the FSM
 std::shared_ptr<State> FSM::getCurrentState() const {
     return currentState;
 }
 
+// Get all states in the FSM
 const std::unordered_map<std::string, std::shared_ptr<State>>& FSM::getStates() const {
     return states;
 }
 
+// Get the start state of the FSM
 std::shared_ptr<State> FSM::getStartState() const {
     return startState;
 }
 
+// Get all final states in the FSM
 const std::unordered_map<std::string, std::shared_ptr<State>>& FSM::getFinalStates() const {
     return finalStates;
 }
 
+// Get the current machine state
 machineState FSM::getCurrentMachineState() const {
     return currentMachineState;
 }
 
+// Set the current machine state
 void FSM::setCurrentMachineState(machineState state) {
     currentMachineState = state;
 }
