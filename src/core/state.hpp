@@ -1,6 +1,7 @@
 #ifndef STATE_HPP
 #define STATE_HPP
 
+#include "fsm.hpp" // Ensure machineState is known
 #include <string>
 #include <vector>
 #include <functional>
@@ -17,10 +18,12 @@ class State {
         
         std::vector<std::unique_ptr<inputDeps>> dependencies; // Use unique_ptr for automatic cleanup
         std::string output; // Output associated with this state
-        std::weak_ptr<State> previousState; // Use weak_ptr to avoid ownership issues
+        std::shared_ptr<State> previousState; // Use weak_ptr to avoid ownership issues
+        machineState transToMachineState; // Transition to machine state
 
     public:
-        State(const std::string& name, bool isFinal = false); // Constructor
+        State(const std::string& name, machineState transToMachineState, std::vector<std::unique_ptr<inputDeps>> dependencies, const std::string& output, std::vector<std::shared_ptr<State>> nextStates, std::shared_ptr<State> previousState, bool isFinal); // Constructor
+        ~State() = default; // Default destructor
 
         // Get the name of the state
         const std::string& getName() const;
@@ -35,10 +38,13 @@ class State {
         void setIsFinal(bool isFinal);
 
         // Add a transition to another state
-        void addNextState(State* nextState);
+        void addNextState(std::shared_ptr<State> nextState);
 
-        // Remove a transition to another state
-        void removeNextState(State* nextState);
+        // Remove a transition to another state (FO)
+        void removeNextStateFO(std::shared_ptr<State> nextState);
+
+        // Remove all occurrences of a transition to another state
+        void removeNextStateOccurances(std::shared_ptr<State> nextState);
 
         // Set the action to execute when entering this state
         void setAction(const std::function<void()>& action);
@@ -48,6 +54,7 @@ class State {
 
         // Get the list of next states (for GUI integration)
         std::vector<std::shared_ptr<State>>& getNextStates();
+        const std::vector<std::shared_ptr<State>>& getNextStates() const;
 
         // Get the machine state of this state
         machineState getMachineState() const;
@@ -63,6 +70,25 @@ class State {
 
         // Get the dependencies (transitions) for this state
         std::vector<std::unique_ptr<inputDeps>>& getDependencies();
+        const std::vector<std::unique_ptr<inputDeps>>& getDependencies() const;
+
+        // Get the previous state
+        std::shared_ptr<State> getPreviousState() const;
+
+        // Change the previous state
+        void changePreviousState(std::shared_ptr<State> previousState);
+
+        // Add a dependency
+        void addDependency(std::unique_ptr<inputDeps> dependency);
+
+        // Get a dependency
+        std::unique_ptr<inputDeps> getDependency(char input, std::shared_ptr<State> fromState);
+
+        // Remove a dependency
+        void removeDependency(std::unique_ptr<inputDeps> dependency);
+
+        // Get the transition to state
+        machineState getTransitionTo() const;
 };
 
 #endif // STATE_HPP
