@@ -1,8 +1,10 @@
 #ifndef INPUTDEPS_HPP
 #define INPUTDEPS_HPP
 
-#include "state.hpp"
 #include <memory> // For smart pointers
+
+// Forward declaration of the State class to avoid circular dependency
+class State;
 
 /**
  * @class inputDeps
