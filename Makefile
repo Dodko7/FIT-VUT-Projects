@@ -8,7 +8,7 @@ SRCS = $(wildcard $(SRC_DIR)/*.cpp)
 OBJS = $(patsubst $(SRC_DIR)/%.cpp,$(OBJ_DIR)/%.o,$(SRCS))
 TARGET = core_backend
 
-.PHONY: all clean directories
+.PHONY: all clean directories build-test
 
 all: directories $(TARGET)
 
@@ -23,3 +23,6 @@ directories:
 
 clean:
     rm -rf $(OBJ_DIR) $(TARGET)
+
+build-test:
+	$(CXX) $(CXXFLAGS) -Wno-unused-variable -Wno-unused-parameter -Wno-unused-function -Wno-unused-but-set-variable -o $(TARGET)-test $(SRCS)
