@@ -8,192 +8,168 @@
 #include <vector>
 #include <memory>
 
-/**
- * @class State
- * @brief Represents a state in the finite state machine (FSM).
- */
-class State {
-private:
-    std::string name; // Name of the state
-    machineState transToMachineState; // Machine state to transition to
-    std::vector<std::unique_ptr<inputDeps>> dependencies; // Input dependencies for transitions
-    std::string output; // Output associated with this state
-    std::vector<std::shared_ptr<State>> nextStates; // States reachable from this state
-    std::shared_ptr<State> previousState; // Previous state in the FSM
-    std::unique_ptr<State> thisState; // Pointer to the current state instance
-    std::chrono::milliseconds delay; // Delay before transitioning to the next state
-    bool isFinal; // Indicates if this is a final state
+// No class definition here, only method implementations for State
 
-public:
-    // Constructor to initialize the state
-    State(const std::string& name, machineState transToMachineState, std::vector<std::unique_ptr<inputDeps>> dependencies, 
-          std::string& output, std::vector<std::shared_ptr<State>> nextStates, std::shared_ptr<State> previousState, 
-          std::unique_ptr<State> thisState, bool isFinal, std::chrono::milliseconds delay)
-        : name(name), transToMachineState(transToMachineState), dependencies(std::move(dependencies)), 
-          output(output), nextStates(nextStates), previousState(previousState), thisState(std::move(thisState)), 
-          isFinal(isFinal), delay(delay) {
-        if (name.empty()) { // Validate that the state name is not empty
-            throw std::invalid_argument("State name empty");
-        }
-        if (name.length() > 20) { // Validate that the state name is not too long
-            throw std::invalid_argument("State name too long");
-        }
-        if (output.empty()) { // Validate that the output string is not empty
-            throw std::invalid_argument("Output string empty");
-        }
+// Constructor
+State::State(const std::string& name, machineState transToMachineState, std::vector<std::unique_ptr<inputDeps>> dependencies, const std::string& output, std::vector<std::shared_ptr<State>> nextStates, std::shared_ptr<State> previousState, bool isFinal)
+    : name(name), transToMachineState(transToMachineState), dependencies(std::move(dependencies)), output(output), nextStates(std::move(nextStates)), previousState(previousState), isFinal(isFinal) {
+    if (name.empty()) {
+        throw std::invalid_argument("State name empty");
+    }
+    if (name.length() > 20) {
+        throw std::invalid_argument("State name too long");
+    }
+    if (output.empty()) {
+        throw std::invalid_argument("Output string empty");
+    }
+}
+
+// Destructor removed as smart pointers handle memory management
+State::~State() = default;
+
+// Getters and setters
+
+const std::string& State::getName() const {
+    return name;
+}
+
+void State::setName(const std::string& name) {
+    if (name.empty()) {
+        throw std::invalid_argument("State name empty");
+    }
+    if (name.length() > 20) {
+        throw std::invalid_argument("State name too long");
     }
 
-    ~State() = default; // Default destructor as smart pointers handle memory
+    this->name = name;
+}
 
-    // Get the name of the state
-    const std::string& getName() const {
-        return name;
+bool State::getIsFinal() const {
+    return isFinal;
+}
+
+void State::setIsFinal(bool isFinal) {
+    this->isFinal = isFinal;
+}
+
+void State::addDependency(std::unique_ptr<inputDeps> dependency) {
+    if (std::find(dependencies.begin(), dependencies.end(), dependency) != dependencies.end()) {
+        std::cerr << "Dependency already exists! Determinism violation" << std::endl;
+        return;
     }
+    dependencies.push_back(std::move(dependency));
+}
 
-    // Set the name of the state
-    void setName(const std::string& name) {
-        if (name.empty()) { // Validate that the name is not empty
-            throw std::invalid_argument("State name empty");
+std::unique_ptr<inputDeps> State::getDependency(char input, std::shared_ptr<State> fromState) {
+    for (const auto& dependency : dependencies) {
+        if (dependency->getExpectedInput() == input && dependency->getFromState() == fromState) {
+            return std::make_unique<inputDeps>(*dependency);
         }
-        if (name.length() > 20) { // Validate that the name is not too long
-            throw std::invalid_argument("State name too long");
-        }
-        this->name = name;
+    }
+    std::cerr << "Dependency not found." << std::endl;
+    return nullptr;
+}
+
+void State::removeDependency(std::unique_ptr<inputDeps> dependency) {
+    auto it = std::find(dependencies.begin(), dependencies.end(), dependency);
+    if (it == dependencies.end()) {
+        std::cerr << "Dependency not present for this state." << std::endl;
+        return;
+    }
+    dependencies.erase(it);
+}
+
+std::vector<std::unique_ptr<inputDeps>>& State::getDependencies() {
+    return dependencies;
+}
+
+void State::addNextState(std::shared_ptr<State> nextState) {
+    if (nextState == nullptr) {
+        throw std::invalid_argument("Next state cannot be null");
+    }
+    if (std::find(nextStates.begin(), nextStates.end(), nextState) != nextStates.end()) {
+        std::cerr << "Next state already exists! Determinism violation" << std::endl;
+        return;
+    }
+    nextStates.push_back(std::shared_ptr<State>(nextState));
+}
+
+void State::removeNextStateFO(std::shared_ptr<State> nextState) {
+    if (nextState == nullptr) {
+        throw std::invalid_argument("Next state cannot be null");
     }
 
-    // Check if the state is a final state
-    bool getIsFinal() const {
-        return isFinal;
+    auto it = std::find(nextStates.begin(), nextStates.end(), nextState);
+
+    if (it == nextStates.end()) {
+        std::cerr << "State not found present." << std::endl;
+        return;
     }
 
-    // Set whether the state is a final state
-    void setIsFinal(bool isFinal) {
-        this->isFinal = isFinal;
+    nextStates.erase(it);
+}
+
+void State::removeNextStateOccurances(std::shared_ptr<State> nextState) {
+    if (nextState == nullptr) {
+        throw std::invalid_argument("Next state cannot be null"); 
     }
 
-    // Add a new input dependency to the state
-    void addDependency(std::unique_ptr<inputDeps> dependency) {
-        if (std::find(dependencies.begin(), dependencies.end(), dependency) != dependencies.end()) {
-            std::cerr << "Dependency already exists! Determinism violation" << std::endl;
-            return;
-        }
-        dependencies.push_back(std::move(dependency));
+    if (std::find(nextStates.begin(), nextStates.end(), nextState) == nextStates.end()) {
+        std::cerr << "State not found. Cannot remove." << std::endl;
+        return;
     }
 
-    // Get a specific input dependency based on input and originating state
-    std::unique_ptr<inputDeps> getDependency(char input, std::shared_ptr<State> fromState) {
-        for (const auto& dependency : dependencies) {
-            if (dependency->getExpectedInput() == input && dependency->getFromState() == fromState) {
-                return std::make_unique<inputDeps>(*dependency);
-            }
-        }
-        std::cerr << "Dependency not found." << std::endl;
+    // Remove moves all instances matching nextState
+    // to the end of the vector, then erase removes them
+    // from the vector
+
+    nextStates.erase(
+        std::remove(nextStates.begin(), nextStates.end(), nextState),
+        nextStates.end()
+    );
+}
+
+const std::string& State::getOutput() const {
+    return output;
+}
+
+void State::setOutput(const std::string& output) {
+    if (output.empty()) {
+        throw std::invalid_argument("Output string empty");
+    }
+
+    this->output = output;
+}
+
+std::vector<std::shared_ptr<State>>& State::getNextStates() {
+    if (nextStates.empty()) {
+        std::cerr << "No next states available." << std::endl;
+        return nextStates;
+    }
+    return nextStates;
+}
+
+std::shared_ptr<State> State::getPreviousState() const {
+    if (previousState == nullptr) {
+        std::cerr << "No previous state available." << std::endl;
         return nullptr;
     }
 
-    // Remove a specific input dependency
-    void removeDependency(std::unique_ptr<inputDeps> dependency) {
-        auto it = std::find(dependencies.begin(), dependencies.end(), dependency);
-        if (it == dependencies.end()) {
-            std::cerr << "Dependency not present for this state." << std::endl;
-            return;
-        }
-        dependencies.erase(it);
+    return previousState;
+}
+
+void State::changePreviousState(std::shared_ptr<State> previousState) {
+    if (previousState == nullptr) {
+        throw std::invalid_argument("Previous state is null");
     }
 
-    // Get all input dependencies of the state
-    std::vector<std::unique_ptr<inputDeps>>& getDependencies() {
-        return dependencies;
+    if (previousState == this->previousState) {
+        return;
     }
 
-    // Add a new next state to the state
-    void addNextState(std::shared_ptr<State> nextState) {
-        if (nextState == nullptr) { // Validate that the next state is not null
-            throw std::invalid_argument("Next state cannot be null");
-        }
-        if (std::find(nextStates.begin(), nextStates.end(), nextState) != nextStates.end()) {
-            std::cerr << "Next state already exists! Determinism violation" << std::endl;
-            return;
-        }
-        nextStates.push_back(std::shared_ptr<State>(nextState));
-    }
+    this->previousState = previousState;
+}
 
-    // Remove the first occurrence of a next state
-    void removeNextStateFO(std::shared_ptr<State> nextState) {
-        if (nextState == nullptr) { // Validate that the next state is not null
-            throw std::invalid_argument("Next state cannot be null");
-        }
-        auto it = std::find(nextStates.begin(), nextStates.end(), nextState);
-        if (it == nextStates.end()) {
-            std::cerr << "State not found present." << std::endl;
-            return;
-        }
-        nextStates.erase(it);
-    }
-
-    // Remove all occurrences of a next state
-    void removeNextStateOccurances(std::shared_ptr<State> nextState) {
-        if (nextState == nullptr) { // Validate that the next state is not null
-            throw std::invalid_argument("Next state cannot be null");
-        }
-        if (std::find(nextStates.begin(), nextStates.end(), nextState) == nextStates.end()) {
-            std::cerr << "State not found. Cannot remove." << std::endl;
-            return;
-        }
-
-        // Remove moves all instances matching nextState
-        // to the end of the vector, then erase removes them
-        // from the vector
-
-        nextStates.erase(
-            std::remove(nextStates.begin(), nextStates.end(), nextState),
-            nextStates.end()
-        );
-    }
-
-    // Get the output associated with the state
-    const std::string& getOutput() const {
-        return output;
-    }
-
-    // Set the output associated with the state
-    void setOutput(const std::string& output) {
-        if (output.empty()) { // Validate that the output is not empty
-            throw std::invalid_argument("Output string empty");
-        }
-        this->output = output;
-    }
-
-    // Get all next states reachable from this state
-    std::vector<std::shared_ptr<State>>& getNextStates() {
-        if (nextStates.empty()) {
-            std::cerr << "No next states available." << std::endl;
-        }
-        return nextStates;
-    }
-
-    // Get the previous state of this state
-    std::shared_ptr<State> getPreviousState() const {
-        if (previousState == nullptr) {
-            std::cerr << "No previous state available." << std::endl;
-            return nullptr;
-        }
-        return previousState;
-    }
-
-    // Change the previous state of this state
-    void changePreviousState(std::shared_ptr<State> previousState) {
-        if (previousState == nullptr) { // Validate that the previous state is not null
-            throw std::invalid_argument("Previous state is null");
-        }
-        if (previousState == this->previousState) {
-            return;
-        }
-        this->previousState = previousState;
-    }
-
-    // Get the machine state to transition to
-    machineState getTransitionTo() const {
-        return transToMachineState;
-    }
-};
+machineState State::getTransitionTo() const {
+    return transToMachineState;
+}

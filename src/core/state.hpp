@@ -1,118 +1,94 @@
 #ifndef STATE_HPP
 #define STATE_HPP
 
+#include "fsm.hpp" // Ensure machineState is known
 #include <string>
 #include <vector>
 #include <functional>
 #include <memory>
 #include "inputDeps.hpp" // Include InputDeps to allow State to interact with it
 
-/**
- * @class State
- * @brief Represents a state in the finite state machine (FSM).
- */
 class State {
     private:
-        std::string name; ///< Name of the state.
-        std::vector<std::shared_ptr<State>> nextStates; ///< List of states reachable from this state.
-        bool isFinal; ///< Indicates if this state is a final state.
+        std::string name; // Name of the state
+        std::vector<std::shared_ptr<State>> nextStates; // Use shared_ptr for better memory management
+        bool isFinal; // Whether this state is a final state
 
-        std::function<void()> action; ///< Action to execute when entering this state.
+        std::function<void()> action; // TBD - action taken upon entering this state - is this needed?
         
-        std::vector<std::unique_ptr<inputDeps>> dependencies; ///< Transitions (input dependencies) for this state.
-        std::string output; ///< Output associated with this state.
-        std::weak_ptr<State> previousState; ///< Pointer to the previous state (weak to avoid ownership issues).
+        std::vector<std::unique_ptr<inputDeps>> dependencies; // Use unique_ptr for automatic cleanup
+        std::string output; // Output associated with this state
+        std::shared_ptr<State> previousState; // Use weak_ptr to avoid ownership issues
+        machineState transToMachineState; // Transition to machine state
 
     public:
-        /**
-         * @brief Constructor for the State class.
-         * @param name The name of the state.
-         * @param isFinal Whether this state is a final state (default is false).
-         */
-        State(const std::string& name, bool isFinal = false);
+        State(const std::string& name, machineState transToMachineState, std::vector<std::unique_ptr<inputDeps>> dependencies, const std::string& output, std::vector<std::shared_ptr<State>> nextStates, std::shared_ptr<State> previousState, bool isFinal); // Constructor
+        ~State() = default; // Default destructor
 
-        /**
-         * @brief Gets the name of the state.
-         * @return The name of the state.
-         */
+        // Get the name of the state
         const std::string& getName() const;
 
-        /**
-         * @brief Sets the name of the state.
-         * @param name The new name of the state.
-         */
+        // Set the name of the state
         void setName(const std::string& name);
 
-        /**
-         * @brief Checks if the state is a final state.
-         * @return True if the state is final, false otherwise.
-         */
+        // Check if the state is a final state
         bool getIsFinal() const;
 
-        /**
-         * @brief Sets whether the state is a final state.
-         * @param isFinal True if the state is final, false otherwise.
-         */
+        // Set whether the state is a final state
         void setIsFinal(bool isFinal);
 
-        /**
-         * @brief Adds a transition to another state.
-         * @param nextState Pointer to the next state.
-         */
-        void addNextState(State* nextState);
+        // Add a transition to another state
+        void addNextState(std::shared_ptr<State> nextState);
 
-        /**
-         * @brief Removes a transition to another state.
-         * @param nextState Pointer to the state to remove.
-         */
-        void removeNextState(State* nextState);
+        // Remove a transition to another state (FO)
+        void removeNextStateFO(std::shared_ptr<State> nextState);
 
-        /**
-         * @brief Sets the action to execute when entering this state.
-         * @param action The action to set.
-         */
+        // Remove all occurrences of a transition to another state
+        void removeNextStateOccurances(std::shared_ptr<State> nextState);
+
+        // Set the action to execute when entering this state
         void setAction(const std::function<void()>& action);
 
-        /**
-         * @brief Executes the action associated with this state.
-         */
+        // Execute the action associated with this state
         void executeAction() const;
 
-        /**
-         * @brief Gets the list of next states.
-         * @return A reference to the vector of next states.
-         */
+        // Get the list of next states (for GUI integration)
         std::vector<std::shared_ptr<State>>& getNextStates();
+        const std::vector<std::shared_ptr<State>>& getNextStates() const;
 
-        /**
-         * @brief Gets the machine state of this state.
-         * @return The machine state.
-         */
+        // Get the machine state of this state
         machineState getMachineState() const;
 
-        /**
-         * @brief Sets the machine state of this state.
-         * @param state The new machine state.
-         */
+        // Set the machine state of this state
         void setMachineState(machineState state);
 
-        /**
-         * @brief Gets the output associated with this state.
-         * @return The output string.
-         */
+        // Get the output associated with this state
         const std::string& getOutput() const;
 
-        /**
-         * @brief Sets the output associated with this state.
-         * @param output The new output string.
-         */
+        // Set the output associated with this state
         void setOutput(const std::string& output);
 
-        /**
-         * @brief Gets the dependencies (transitions) for this state.
-         * @return A reference to the vector of input dependencies.
-         */
+        // Get the dependencies (transitions) for this state
         std::vector<std::unique_ptr<inputDeps>>& getDependencies();
+        const std::vector<std::unique_ptr<inputDeps>>& getDependencies() const;
+
+        // Get the previous state
+        std::shared_ptr<State> getPreviousState() const;
+
+        // Change the previous state
+        void changePreviousState(std::shared_ptr<State> previousState);
+
+        // Add a dependency
+        void addDependency(std::unique_ptr<inputDeps> dependency);
+
+        // Get a dependency
+        std::unique_ptr<inputDeps> getDependency(char input, std::shared_ptr<State> fromState);
+
+        // Remove a dependency
+        void removeDependency(std::unique_ptr<inputDeps> dependency);
+
+        // Get the transition to state
+        machineState getTransitionTo() const;
 };
 
 #endif // STATE_HPP
