@@ -12,8 +12,6 @@ inputDeps::inputDeps(char input, std::shared_ptr<State> state)
     }
 }
 
-inputDeps::~inputDeps() = default;
-
 char inputDeps::getExpectedInput() const {
     return expectedInput;
 }

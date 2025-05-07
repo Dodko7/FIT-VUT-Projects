@@ -1,12 +1,14 @@
 #ifndef STATE_HPP
 #define STATE_HPP
 
-#include "fsm.hpp" // Ensure machineState is known
 #include <string>
 #include <vector>
 #include <functional>
 #include <memory>
 #include "inputDeps.hpp" // Include InputDeps to allow State to interact with it
+
+// Forward declaration of machineState enum
+enum class machineState;
 
 class State {
     private:

@@ -168,6 +168,18 @@ public:
      */
     void setCurrentMachineState(machineState state);
 
+    /**
+     * @brief Sets the name of the FSM.
+     * @param name The name to set.
+     */
+    void setName(const std::string& name);
+
+    /**
+     * @brief Sets the description of the FSM.
+     * @param description The description to set.
+     */
+    void setDescription(const std::string& description);
+
 private:
     /**
      * @brief Checks if a state is referenced elsewhere.
@@ -189,18 +201,6 @@ private:
      * @brief Public method to prune unreachable states.
      */
     void pruneUnreachable();
-
-    /**
-     * @brief Sets the name of the FSM.
-     * @param name The name to set.
-     */
-    void setName(const std::string& name);
-
-    /**
-     * @brief Sets the description of the FSM.
-     * @param description The description to set.
-     */
-    void setDescription(const std::string& description);
 };
 
 #endif // FSM_HPP

@@ -1,4 +1,5 @@
 #include "fsm.hpp"
+#include "fsmErrors.hpp"
 #include <iostream>
 
 /**

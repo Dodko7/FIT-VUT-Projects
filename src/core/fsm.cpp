@@ -23,7 +23,18 @@ void FSM::addState(const std::string& name, const std::string& description, bool
     if (name.empty() || name.length() > 20) {
         throw std::invalid_argument("Invalid state name");
     }
-    auto state = std::make_shared<State>(name, description, isFinal);
+
+    // Create a new state with all required arguments
+    auto state = std::make_shared<State>(
+        name,                               // State name
+        machineState::IDLE,                 // Default machine state
+        std::vector<std::unique_ptr<inputDeps>>(), // Empty dependencies
+        description,                        // Output (description)
+        std::vector<std::shared_ptr<State>>(), // Empty next states
+        nullptr,                            // No previous state
+        isFinal                             // Is final state
+    );
+
     states[name] = state;
     if (isFinal) {
         finalStates[name] = state;
