@@ -1,157 +1,200 @@
-#include "state.hpp"
-#include "inputDeps.hpp"
-#include <iostream>
-#include <string>
-#include <vector>
-#include <fstream>
-#include <chrono>
-#include "fsm.hpp"
-#include <stdexcept>
-#include <unordered_set>
-#include <unordered_map>
+#include "fsm.hpp" // Include FSM header
+#include "state.hpp" // Include State class
+#include "inputDeps.hpp" // Include InputDeps for managing transitions
+#include "fsmErrors.hpp" // Include FSM-specific exceptions
+#include <iostream> // For standard input/output
+#include <string> // For string operations
+#include <vector> // For vector container
+#include <fstream> // For file operations
+#include <chrono> // For time management
+#include <stdexcept> // For exception handling
+#include <unordered_set> // For unordered_set container
+#include <unordered_map> // For unordered_map container
 
 // Is it possible to use a library for JSON serialization/deserialization?
 #include <nlohmann/json.hpp>
 
-class FSM {
-    private:
-        std::unordered_map<std::string, std::shared_ptr<State>> states; // Using unordered_map for better memory management
-        std::string name;
-        std::string description;
-        std::chrono::milliseconds stepDelay; // Using std::chrono for precise and efficient time management
-        std::deque<char> input; // Using deque for efficient input processing
-        std::string output; // Same as above, consider structured output
-        std::shared_ptr<State> startState; // Consider std::shared_ptr<State> for ownership clarity
-        std::shared_ptr<State> currentState; // Same as above
-        std::unordered_map<std::string, std::shared_ptr<State>> finalStates; // Use unordered_map for faster lookups
-        std::unordered_map<std::string, char> allowedInputs; // Map of allowed inputs for each state
-        machineState currentMachineState; // Added machineState for consistent state tracking
-        std::chrono::milliseconds fsmRunTime; // Added fsmRunTime for tracking FSM execution time
+FSM::FSM() : startState(nullptr), currentState(nullptr), stepDelay(0), currentMachineState(machineState::IDLE) {}
 
-    public:
-        FSM();
+void FSM::addState(const std::string& name, const std::string& description, bool isFinal) {
+    if (states.find(name) != states.end()) {
+        throw InvalidStateException("State already exists: " + name);
+    }
+    if (name.empty() || name.length() > 20) {
+        throw std::invalid_argument("Invalid state name");
+    }
 
-        void setName(const std::string& name);
-        void setDescription(const std::string& description);
-        void addState(const std::string& name, const std::string& description, bool isFinal);
-        void removeState(const std::string& name);
-        void setStartState(const std::string& name);
-        void addTransition(std::string& fromState, std::string& toState, char input);
-        void removeTransition(const std::string& fromState, const std::string& toState);
-        void run(const std::string& inputSequence);
-        void debug();
+    // Create a new state with all required arguments
+    auto state = std::make_shared<State>(
+        name,                               // State name
+        machineState::IDLE,                 // Default machine state
+        std::vector<std::unique_ptr<inputDeps>>(), // Empty dependencies
+        description,                        // Output (description)
+        std::vector<std::shared_ptr<State>>(), // Empty next states
+        nullptr,                            // No previous state
+        isFinal                             // Is final state
+    );
 
-        machineState getCurrentMachineState() const;
-        void setCurrentMachineState(machineState state);
-        void saveToJson(const std::string& filename);
-        void loadFromJson(const std::string& filename);
-
-        std::shared_ptr<State> getCurrentState() const;
-        const std::unordered_map<std::string, std::shared_ptr<State>>& getStates() const;
-        std::shared_ptr<State> getStartState() const;
-        const std::unordered_map<std::string, std::shared_ptr<State>>& getFinalStates() const;
-        std::shared_ptr<State> getStatePtrByName(std::string& name);
-        std::vector<std::string> getAllStateNames() const;
-        bool checkDeterminismFromState (const std::string& stateName);
-
-        void validateFSM();
-        void pruneUnreachable();
-        void removeReferencesToState(const std::string& stateName);
-        void deleteStateRecursive(const std::string& name);
-        bool isStateReferencedElsewhere(const std::string& stateName, const std::string& parentName);
-        void pruneUnreachableStates(const std::shared_ptr<State>& state, std::unordered_set<std::string>& visited, const std::string& parentName);
-
-};
-
-FSM::FSM() : startState(nullptr), currentState(nullptr), currentMachineState(machineState::IDLE), stepDelay(0) {};
-// TO BE IMPLEMENTED AND REVISED WITH HEADER FILE
-// void FSM::addState(const std::string& name, const std::string& description, bool isFinal, ) {
-//     if (states.find(name) != states.end()) {
-//         throw std::invalid_argument("State with the given name already exists.");
-//     }
-
-//     auto state = std::make_shared<State>(name, description, isFinal);
-//     states[name] = state;
-
-//     if (isFinal) {
-//         finalStates[name] = state;
-//     }
-// }
+    states[name] = state;
+    if (isFinal) {
+        finalStates[name] = state;
+    }
+}
 
 void FSM::setName(const std::string& name) {
-    if (name.empty()) {
+    if (name.empty()) { // Validate that the name is not empty
         throw std::invalid_argument("FSM name cannot be empty");
     }
-    if (name.length() > 20) {
+    if (name.length() > 20) { // Validate that the name is not too long
         throw std::invalid_argument("FSM name too long");
     }
-
-    this->name = name;
+    this->name = name; // Set the FSM name
 }
+
+// Set the description of the FSM
 void FSM::setDescription(const std::string& description) {
-    if (description.empty()) {
+    if (description.empty()) { // Validate that the description is not empty
         throw std::invalid_argument("FSM description cannot be empty");
     }
-    if (description.length() > 100) {
+    if (description.length() > 100) { // Validate that the description is not too long
         throw std::invalid_argument("FSM description too long");
     }
-    this->description = description;
+    this->description = description; // Set the FSM description
 }
 
 // Public: Remove a state and recursively prune unreachable children
 void FSM::removeState(const std::string& name) {
-    deleteStateRecursive(name);
+    deleteStateRecursive(name); // Call helper function to delete state recursively
 }
 
+// Set the start state of the FSM
 void FSM::setStartState(const std::string& name) {
+    auto it = states.find(name);
+    if (it == states.end()) {
+        throw InvalidStateException("State does not exist: " + name);
+    }
+    startState = it->second;
 }
 
+// Add a transition between two states
 void FSM::addTransition(std::string& fromState, std::string& toState, char input) {
-    auto fromIt = getStatePtrByName(fromState);
-    auto toIt = getStatePtrByName(toState);
-
-    // Check if states exist, create a new instance of input deps,
-    // add it to toStates dependencies and add the toState to the fromState
-    // + std::cerr << err handling, pripadne dalsi std throws
+    auto from = getStatePtrByName(fromState);
+    auto to = getStatePtrByName(toState);
+    if (!from || !to) {
+        throw InvalidStateException("Invalid state name");
+    }
+    if (input == '\0') {
+        throw InvalidInputException("Input cannot be null");
+    }
+    // Check for determinism
+    for (const auto& dep : from->getDependencies()) {
+        if (dep->getExpectedInput() == input) {
+            throw DeterminismViolationException("Duplicate input for state: " + fromState);
+        }
+    }
+    auto dep = std::make_unique<inputDeps>(input, from);
+    from->addDependency(std::move(dep));
+    from->addNextState(to);
 }
 
-void FSM::removeTransition(const std::string& fromState, const std::string& toState) {
+// Remove a transition between two states
+void FSM::removeTransition(std::string& fromState, std::string& toState, char input) {
+    if (fromState.empty() || toState.empty()) {
+        throw InvalidArgumentException("State names cannot be empty");
+    }
+
+    if (!findStateExists(fromState)) {
+        throw InvalidStateException("State does not exist: " + fromState);
+    }
+
+    if (!findStateExists(toState)) {
+        throw InvalidStateException("State does not exist: " + toState);
+    }
+
+    auto from = getStatePtrByName(const_cast<std::string&>(fromState));
+    auto to = getStatePtrByName(const_cast<std::string&>(toState));
+
+    if (!from || !to) {
+        throw InvalidStateException("Invalid state pointers for transition removal");
+    }
+
+    // Remove the transition from the 'from' state
+    from->removeNextStateOccurances(to);
+
+    // Remove the dependency from the 'to' state
+    to->removeDependency(to->getDependency(input, from));
 }
 
+bool FSM::findStateExists(const std::string& name) const {
+    if (name.empty()) {
+        throw InvalidArgumentException("State name cannot be empty");
+    }
+    return states.find(name) != states.end();
+}
+
+// Run the FSM with a given input sequence
 void FSM::run(const std::string& inputSequence) {
+    if (!startState) {
+        throw MooreMachineValidationException("No start state defined");
+    }
+    currentState = startState;
+    currentMachineState = machineState::RUNNING;
+    std::cout << "Starting FSM at state: " << currentState->getName() << "\n";
+
+    for (char input : inputSequence) {
+        bool transitioned = false;
+        for (const auto& dep : currentState->getDependencies()) {
+            if (dep->getExpectedInput() == input) {
+                for (const auto& next : currentState->getNextStates()) {
+                    if (next && dep->getFromState() == currentState) {
+                        currentState = next;
+                        transitioned = true;
+                        std::cout << "Transition on input '" << input << "' to state: " << currentState->getName() << "\n";
+                        break;
+                    }
+                }
+                break;
+            }
+        }
+        if (!transitioned) {
+            std::cout << "No transition for input '" << input << "' in state: " << currentState->getName() << "\n";
+        }
+    }
+    currentMachineState = machineState::STOPPED;
+    std::cout << "FSM stopped at state: " << currentState->getName() << "\n";
 }
 
 // TO BE DEBUGGED/TESTED
 void FSM::debug() {
     // Visualize the FSM using Graphviz
-    std::ofstream dotFile("../../assets/fsm_debug.dot");
-    if (!dotFile.is_open()) {
+    std::ofstream dotFile("../../assets/fsm_debug.dot"); // Open a DOT file for Graphviz output
+    if (!dotFile.is_open()) { // Check if the file was opened successfully
         std::cerr << "Failed to open file for Graphviz output" << std::endl;
         return;
     }
 
-    dotFile << "digraph FSM {" << std::endl;
+    dotFile << "digraph FSM {" << std::endl; // Start the DOT graph
     dotFile << "    rankdir=LR;" << std::endl; // Left-to-right layout
-    dotFile << "    node [shape=circle];" << std::endl;
+    dotFile << "    node [shape=circle];" << std::endl; // Default node shape
 
-    // Add states
+    // Add states to the DOT graph
     for (const auto& pair : states) {
         const auto& state = pair.second;
-        if (state == startState) {
+        if (state == startState) { // Highlight the start state
             dotFile << "    \"" << state->getName() << "\" [shape=doublecircle, color=green];" << std::endl;
-        } else if (finalStates.count(state->getName())) {
+        } else if (finalStates.count(state->getName())) { // Highlight final states
             dotFile << "    \"" << state->getName() << "\" [shape=doublecircle, color=red];" << std::endl;
-        } else {
+        } else { // Regular states
             dotFile << "    \"" << state->getName() << "\";" << std::endl;
         }
     }
 
-    // Add transitions
+    // Add transitions to the DOT graph
     for (const auto& pair : states) {
         const auto& state = pair.second;
         for (const auto& dep : state->getDependencies()) {
             for (const auto& nextState : state->getNextStates()) {
-                if (nextState) {
+                if (nextState) { // Add an edge for each transition
                     dotFile << "    \"" << state->getName() << "\" -> \"" 
                             << nextState->getName() << "\" [label=\"" 
                             << dep->getExpectedInput() << "\"];" << std::endl;
@@ -160,38 +203,47 @@ void FSM::debug() {
         }
     }
 
-    dotFile << "}" << std::endl;
-    dotFile.close();
+    dotFile << "}" << std::endl; // End the DOT graph
+    dotFile.close(); // Close the DOT file
 
     // Use system command to render the graph in real time
     std::string command = "dot -Tpng fsm_debug.dot -o fsm_debug.png && open fsm_debug.png";
-    int result = system(command.c_str());
-    if (result != 0) {
+    int result = system(command.c_str()); // Execute the command
+    if (result != 0) { // Check if the command was successful
         std::cerr << "Failed to render FSM visualization" << std::endl;
     }
 }
 
+// Get the current state of the FSM
 std::shared_ptr<State> FSM::getCurrentState() const {
     return currentState;
 }
 
+// Get all states in the FSM
 const std::unordered_map<std::string, std::shared_ptr<State>>& FSM::getStates() const {
     return states;
 }
 
+// Get the start state of the FSM
 std::shared_ptr<State> FSM::getStartState() const {
     return startState;
 }
 
+// Get all final states in the FSM
 const std::unordered_map<std::string, std::shared_ptr<State>>& FSM::getFinalStates() const {
     return finalStates;
 }
 
+// Get the current machine state
 machineState FSM::getCurrentMachineState() const {
     return currentMachineState;
 }
 
+// Set the current machine state
 void FSM::setCurrentMachineState(machineState state) {
+    if (state != machineState::IDLE && state != machineState::RUNNING && state != machineState::STOPPED) {
+        throw InvalidArgumentException("Invalid machine state");
+    }
     currentMachineState = state;
 }
 

@@ -51,4 +51,10 @@ public:
         : FSMException("Invalid Input: " + input) {}
 };
 
+class InvalidArgumentException : public FSMException {
+    public:
+        explicit InvalidArgumentException(const std::string& input)
+            : FSMException("Invalid Argument: " + input) {}
+};
+
 #endif // FSM_ERRORS_HPP
