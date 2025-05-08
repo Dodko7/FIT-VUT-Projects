@@ -10,9 +10,10 @@
 #include <stdexcept> // For exception handling
 #include <unordered_set> // For unordered_set container
 #include <unordered_map> // For unordered_map container
+#include <algorithm> // For algorithms like std::find_if
 
 // Is it possible to use a library for JSON serialization/deserialization?
-#include </Users/dodko/Desktop/UNI/2025/ICP/Projekt-ICP-25/lib/nlohmann/single_include/nlohmann/json.hpp> // Include JSON library for serialization/deserialization
+#include "nlohmann/json.hpp" // Include JSON library for serialization/deserialization
 
 FSM::FSM() : startState(nullptr), currentState(nullptr), stepDelay(0), currentMachineState(machineState::IDLE) {}
 
@@ -98,8 +99,83 @@ void FSM::addTransition(std::string& fromState, std::string& toState, char input
 }
 
 // Remove a transition between two states
-void FSM::removeTransition(const std::string& fromState, const std::string& toState) {
-    // TODO: Implement logic to remove a transition
+void FSM::removeTransition(const std::string& fromState, const std::string& toState, char input) {
+    /**
+     * @brief Removes a transition between two states for a specific input.
+     * @param fromState The source state name.
+     * @param toState The destination state name.
+     * @param input The input symbol of the transition.
+     * @throws InvalidStateException If any state does not exist.
+     */
+    auto from = getStatePtrByName(const_cast<std::string&>(fromState));
+    auto to = getStatePtrByName(const_cast<std::string&>(toState));
+    if (!from || !to) {
+        throw InvalidStateException("Invalid state name: " + (!from ? fromState : toState));
+    }
+
+    // Find and remove the dependency
+    auto& deps = from->getDependencies();
+    auto depIt = std::find_if(deps.begin(), deps.end(), [&](const std::unique_ptr<inputDeps>& dep) {
+        return dep->getExpectedInput() == input && dep->getFromState() == from;
+    });
+    if (depIt != deps.end()) {
+        deps.erase(depIt);
+    }
+
+    // Remove the next state
+    auto& nextStates = from->getNextStates();
+    auto stateIt = std::find_if(nextStates.begin(), nextStates.end(), [&](const std::shared_ptr<State>& s) {
+        return s && s->getName() == toState;
+    });
+    if (stateIt != nextStates.end()) {
+        nextStates.erase(stateIt);
+    }
+}
+
+void FSM::addInput(const std::string& name, const std::string& value) {
+    /**
+     * @brief Adds an input to the FSM.
+     * @param name The name of the input.
+     * @param value The initial value of the input.
+     * @throws std::invalid_argument If the name is empty, too long, or already exists.
+     */
+    if (name.empty()) {
+        throw std::invalid_argument("Input name cannot be empty");
+    }
+    if (name.length() > 20) {
+        throw std::invalid_argument("Input name too long");
+    }
+    if (inputs.find(name) != inputs.end()) {
+        throw std::invalid_argument("Input already exists: " + name);
+    }
+    inputs[name] = value;
+}
+
+void FSM::removeInput(const std::string& name) {
+    inputs.erase(name); // Ignore if input doesn't exist
+}
+
+void FSM::addOutput(const std::string& name, const std::string& value) {
+    /**
+     * @brief Adds an output to the FSM.
+     * @param name The name of the output.
+     * @param value The initial value of the output.
+     * @throws std::invalid_argument If the name is empty, too long, or already exists.
+     */
+    if (name.empty()) {
+        throw std::invalid_argument("Output name cannot be empty");
+    }
+    if (name.length() > 20) {
+        throw std::invalid_argument("Output name too long");
+    }
+    if (outputs.find(name) != outputs.end()) {
+        throw std::invalid_argument("Output already exists: " + name);
+    }
+    outputs[name] = value;
+}
+
+void FSM::removeOutput(const std::string& name) {
+    outputs.erase(name); // Ignore if output doesn't exist
 }
 
 // Run the FSM with a given input sequence
@@ -137,7 +213,7 @@ void FSM::run(const std::string& inputSequence) {
 // TO BE DEBUGGED/TESTED
 void FSM::debug() {
     // Visualize the FSM using Graphviz
-    std::ofstream dotFile("../../assets/fsm_debug.dot"); // Open a DOT file for Graphviz output
+    std::ofstream dotFile("assets/fsm_debug.dot"); // Open a DOT file for Graphviz output
     if (!dotFile.is_open()) { // Check if the file was opened successfully
         std::cerr << "Failed to open file for Graphviz output" << std::endl;
         return;
@@ -177,7 +253,7 @@ void FSM::debug() {
     dotFile.close(); // Close the DOT file
 
     // Use system command to render the graph in real time
-    std::string command = "dot -Tpng fsm_debug.dot -o fsm_debug.png && open fsm_debug.png";
+    std::string command = "dot -Tpng assets/fsm_debug.dot -o assets/fsm_debug.png";
     int result = system(command.c_str()); // Execute the command
     if (result != 0) { // Check if the command was successful
         std::cerr << "Failed to render FSM visualization" << std::endl;
@@ -192,6 +268,16 @@ std::shared_ptr<State> FSM::getCurrentState() const {
 // Get all states in the FSM
 const std::unordered_map<std::string, std::shared_ptr<State>>& FSM::getStates() const {
     return states;
+}
+
+// Get all inputs in the FSM
+const std::unordered_map<std::string, std::string>& FSM::getInputs() const {
+    return inputs;
+}
+
+// Get all outputs in the FSM
+const std::unordered_map<std::string, std::string>& FSM::getOutputs() const {
+    return outputs;
 }
 
 // Get the start state of the FSM

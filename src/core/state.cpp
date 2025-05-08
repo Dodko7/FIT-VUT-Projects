@@ -139,10 +139,6 @@ void State::setOutput(const std::string& output) {
 }
 
 std::vector<std::shared_ptr<State>>& State::getNextStates() {
-    if (nextStates.empty()) {
-        std::cerr << "No next states available." << std::endl;
-        return nextStates;
-    }
     return nextStates;
 }
 
