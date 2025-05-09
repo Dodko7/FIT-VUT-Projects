@@ -18,7 +18,7 @@ using json = nlohmann::json;
 
 FSM::FSM() : startState(nullptr), currentState(nullptr), stepDelay(0), currentMachineState(machineState::IDLE) {}
 
-void FSM::addState(const std::string& name, const std::string& action, bool isFinal) {
+void FSM::addState(const std::string& name, const std::string& action, bool isFinal, std::chrono::milliseconds stepDelay) {
     if (states.find(name) != states.end()) {
         throw InvalidStateException("State already exists: " + name);
     }
@@ -31,6 +31,7 @@ void FSM::addState(const std::string& name, const std::string& action, bool isFi
         machineState::IDLE,                 // Default machine state
         std::vector<std::unique_ptr<inputDeps>>(), // Empty dependencies
         action,                             // Action
+        stepDelay,                          // Step delay
         std::vector<std::shared_ptr<State>>(), // Empty next states
         nullptr,                            // No previous state
         isFinal                             // Is final state
@@ -357,6 +358,7 @@ void FSM::saveToJson(const std::string& filename) {
         state["name"] = pair.second->getName();
         state["action"] = pair.second->getAction();
         state["isFinal"] = pair.second->getIsFinal();
+        state["stepDelay"] = pair.second->getStepDelay(); // Save step delay in milliseconds
         j["states"].push_back(state);
     }
 

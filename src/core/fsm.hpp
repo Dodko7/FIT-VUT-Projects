@@ -50,10 +50,11 @@ public:
      * @param name The name of the state (non-empty, max 20 characters).
      * @param action The action associated with the state.
      * @param isFinal Indicates whether the state is final.
+     * @param stepDelay The delay on-entry to this state (default is 0).
      * @throws InvalidStateException If state already exists.
      * @throws std::invalid_argument If name is empty or too long.
      */
-    void addState(const std::string& name, const std::string& action, bool isFinal);
+    void addState(const std::string& name, const std::string& action, bool isFinal, std::chrono::milliseconds stepDelay = std::chrono::milliseconds(0));
 
     /**
      * @brief Removes a state from the FSM and its references.

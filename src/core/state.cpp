@@ -63,6 +63,10 @@ std::unique_ptr<inputDeps> State::getDependency(char input, std::shared_ptr<Stat
     return nullptr;
 }
 
+int State::getStepDelay() const {
+    return stepDelay.count();
+}
+
 void State::removeDependency(std::unique_ptr<inputDeps> dependency) {
     auto it = std::find(dependencies.begin(), dependencies.end(), dependency);
     if (it == dependencies.end()) {

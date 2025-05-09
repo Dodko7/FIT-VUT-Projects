@@ -16,6 +16,7 @@ private:
     std::vector<std::shared_ptr<State>> nextStates;
     bool isFinal;
     std::vector<std::unique_ptr<inputDeps>> dependencies;
+    std::chrono::milliseconds stepDelay; // The delay on-entry to this state
     std::string action; // JavaScript code for state action
     std::shared_ptr<State> previousState;
     machineState transToMachineState;
@@ -48,6 +49,7 @@ public:
     std::shared_ptr<State> getPreviousState() const;
     void changePreviousState(std::shared_ptr<State> previousState);
     machineState getTransitionTo() const;
+    int getStepDelay() const;
     
     // Additional methods if needed
     machineState getMachineState() const;
