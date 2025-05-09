@@ -10,14 +10,11 @@
 
 // No class definition here, only method implementations for State
 
-// Constructor
-State::State(const std::string& name, machineState transToMachineState, std::vector<std::unique_ptr<inputDeps>> dependencies, const std::string& output, std::vector<std::shared_ptr<State>> nextStates, std::shared_ptr<State> previousState, bool isFinal)
-    : name(name), transToMachineState(transToMachineState), dependencies(std::move(dependencies)), output(output), nextStates(std::move(nextStates)), previousState(previousState), isFinal(isFinal) {
-    if (name.empty()) {
-        throw std::invalid_argument("State name empty");
-    }
-    if (name.length() > 20) {
-        throw std::invalid_argument("State name too long");
+// Constructor with new action parameter
+State::State(const std::string& name, machineState transToMachineState, std::vector<std::unique_ptr<inputDeps>> dependencies, const std::string& output, const std::string& action, std::vector<std::shared_ptr<State>> nextStates, std::shared_ptr<State> previousState, bool isFinal)
+    : name(name), transToMachineState(transToMachineState), dependencies(std::move(dependencies)), output(output), action(action), nextStates(std::move(nextStates)), previousState(previousState), isFinal(isFinal) {
+    if (name.empty() || name.length() > 20) {
+        throw std::invalid_argument("Invalid state name");
     }
     if (output.empty()) {
         throw std::invalid_argument("Output string empty");
@@ -58,8 +55,10 @@ void State::addDependency(std::unique_ptr<inputDeps> dependency) {
 }
 
 std::unique_ptr<inputDeps> State::getDependency(char input, std::shared_ptr<State> fromState) {
+    // Convert char input to string for comparison
+    std::string inputStr(1, input);
     for (const auto& dependency : dependencies) {
-        if (dependency->getExpectedInput() == input && dependency->getFromState() == fromState) {
+        if (dependency->getEvent() == inputStr && dependency->getFromState() == fromState) {
             return std::make_unique<inputDeps>(*dependency);
         }
     }
@@ -165,4 +164,13 @@ void State::changePreviousState(std::shared_ptr<State> previousState) {
 
 machineState State::getTransitionTo() const {
     return transToMachineState;
+}
+
+// New methods for JavaScript action support
+const std::string& State::getAction() const {
+    return action;
+}
+
+void State::setAction(const std::string& action) {
+    this->action = action;
 }

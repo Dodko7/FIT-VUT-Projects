@@ -1,7 +1,8 @@
 #ifndef INPUTDEPS_HPP
 #define INPUTDEPS_HPP
 
-#include <memory> // For smart pointers
+#include <memory>
+#include <string>
 
 // Forward declaration of the State class to avoid circular dependency
 class State;
@@ -12,16 +13,21 @@ class State;
  */
 class inputDeps {
 private:
-    char expectedInput; ///< The input symbol required for the transition.
+    std::string event; ///< Name of the input event.
+    std::string condition; ///< JavaScript condition.
+    std::string timeout; ///< Name of timeout variable.
     std::weak_ptr<State> fromState; ///< The originating state for the transition.
 
 public:
     /**
      * @brief Constructor for inputDeps.
-     * @param input The input symbol required for the transition.
+     * @param event The name of the input event.
+     * @param condition The JavaScript condition.
+     * @param timeout The name of the timeout variable.
      * @param state The originating state for the transition.
      */
-    inputDeps(char input, std::shared_ptr<State> state);
+    inputDeps(const std::string& event, const std::string& condition, 
+              const std::string& timeout, std::shared_ptr<State> state);
 
     /**
      * @brief Default destructor.
@@ -31,16 +37,40 @@ public:
     ~inputDeps() = default;
 
     /**
-     * @brief Gets the expected input symbol for the transition.
-     * @return The input symbol.
+     * @brief Gets the name of the input event.
+     * @return The name of the input event.
      */
-    char getExpectedInput() const;
+    std::string getEvent() const;
 
     /**
-     * @brief Sets the expected input symbol for the transition.
-     * @param input The new input symbol.
+     * @brief Sets the name of the input event.
+     * @param event The new name of the input event.
      */
-    void setExpectedInput(char input);
+    void setEvent(const std::string& event);
+
+    /**
+     * @brief Gets the JavaScript condition.
+     * @return The JavaScript condition.
+     */
+    std::string getCondition() const;
+
+    /**
+     * @brief Sets the JavaScript condition.
+     * @param condition The new JavaScript condition.
+     */
+    void setCondition(const std::string& condition);
+
+    /**
+     * @brief Gets the name of the timeout variable.
+     * @return The name of the timeout variable.
+     */
+    std::string getTimeout() const;
+
+    /**
+     * @brief Sets the name of the timeout variable.
+     * @param timeout The new name of the timeout variable.
+     */
+    void setTimeout(const std::string& timeout);
 
     /**
      * @brief Gets the originating state for the transition.
