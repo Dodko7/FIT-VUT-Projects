@@ -24,9 +24,6 @@ State::State(const std::string& name, machineState transToMachineState, std::vec
     }
 }
 
-// Destructor removed as smart pointers handle memory management
-State::~State() = default;
-
 // Getters and setters
 
 const std::string& State::getName() const {

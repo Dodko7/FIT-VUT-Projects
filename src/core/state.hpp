@@ -8,6 +8,9 @@
 #include <memory>
 #include "inputDeps.hpp" // Include InputDeps to allow State to interact with it
 
+// Forward declaration of machineState enum
+enum class machineState;
+
 class State {
     private:
         std::string name; // Name of the state

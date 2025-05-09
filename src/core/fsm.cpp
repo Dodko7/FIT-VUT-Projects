@@ -77,6 +77,7 @@ void FSM::setStartState(const std::string& name) {
 }
 
 // Add a transition between two states
+// Add a transition between two states
 void FSM::addTransition(std::string& fromState, std::string& toState, char input) {
     auto from = getStatePtrByName(fromState);
     auto to = getStatePtrByName(toState);
