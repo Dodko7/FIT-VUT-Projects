@@ -18,7 +18,6 @@ private:
     std::vector<std::unique_ptr<inputDeps>> dependencies;
     std::chrono::milliseconds stepDelay; // The delay on-entry to this state
     std::string action; // JavaScript code for state action
-    std::shared_ptr<State> previousState;
     machineState transToMachineState;
 
 public:
@@ -26,7 +25,7 @@ public:
           std::vector<std::unique_ptr<inputDeps>> dependencies, 
           const std::string& action, 
           std::vector<std::shared_ptr<State>> nextStates, 
-          std::shared_ptr<State> previousState, bool isFinal);
+          bool isFinal);
     ~State() = default;
 
     const std::string& getName() const;

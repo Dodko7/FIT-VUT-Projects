@@ -11,8 +11,8 @@
 // No class definition here, only method implementations for State
 
 // Constructor with new action parameter
-State::State(const std::string& name, machineState transToMachineState, std::vector<std::unique_ptr<inputDeps>> dependencies, const std::string& action, std::vector<std::shared_ptr<State>> nextStates, std::shared_ptr<State> previousState, bool isFinal)
-    : name(name), transToMachineState(transToMachineState), dependencies(std::move(dependencies)), action(action), nextStates(std::move(nextStates)), previousState(previousState), isFinal(isFinal) {
+State::State(const std::string& name, machineState transToMachineState, std::vector<std::unique_ptr<inputDeps>> dependencies, const std::string& action, std::vector<std::shared_ptr<State>> nextStates, bool isFinal)
+    : name(name), transToMachineState(transToMachineState), dependencies(std::move(dependencies)), action(action), nextStates(std::move(nextStates)), isFinal(isFinal) {
     if (name.empty() || name.length() > 20) {
         throw std::invalid_argument("Invalid state name");
     }
@@ -128,27 +128,6 @@ void State::removeNextStateOccurances(std::shared_ptr<State> nextState) {
 
 std::vector<std::shared_ptr<State>>& State::getNextStates() {
     return nextStates;
-}
-
-std::shared_ptr<State> State::getPreviousState() const {
-    if (previousState == nullptr) {
-        std::cerr << "No previous state available." << std::endl;
-        return nullptr;
-    }
-
-    return previousState;
-}
-
-void State::changePreviousState(std::shared_ptr<State> previousState) {
-    if (previousState == nullptr) {
-        throw std::invalid_argument("Previous state is null");
-    }
-
-    if (previousState == this->previousState) {
-        return;
-    }
-
-    this->previousState = previousState;
 }
 
 machineState State::getTransitionTo() const {

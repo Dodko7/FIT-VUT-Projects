@@ -33,7 +33,6 @@ void FSM::addState(const std::string& name, const std::string& action, bool isFi
         action,                             // Action
         stepDelay,                          // Step delay
         std::vector<std::shared_ptr<State>>(), // Empty next states
-        nullptr,                            // No previous state
         isFinal                             // Is final state
     );
 
