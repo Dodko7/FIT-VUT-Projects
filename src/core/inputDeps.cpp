@@ -52,3 +52,11 @@ void inputDeps::setFromState(std::shared_ptr<State> state) {
     }
     fromState = state;
 }
+
+void inputDeps::setInput(char input) {
+    this->input = input;
+}
+
+char inputDeps::getInput() const {
+    return input;
+}

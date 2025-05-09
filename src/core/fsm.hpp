@@ -147,12 +147,20 @@ public:
      */
     void removeVariable(const std::string& name);
 
+    void transitionToState();
+
     /**
-     * @brief Runs the FSM with a given input sequence.
-     * @param inputSequence The sequence of inputs to process.
+     * @brief Runs the FSM using the stored input string.
      * @throws MooreMachineValidationException If no start state is defined.
+     * @throws std::invalid_argument If input string is empty.
      */
-    void run(const std::string& inputSequence);
+    void run();
+
+    /**
+     * @brief Debug step function - processes the next transition or stops if no more input.
+     * @return True if the step was successful, false otherwise.
+     */
+    bool debugStep();
 
     /**
      * @brief Generates a Graphviz DOT file for debugging.

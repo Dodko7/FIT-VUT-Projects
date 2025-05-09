@@ -48,7 +48,7 @@ public:
     std::shared_ptr<State> getPreviousState() const;
     void changePreviousState(std::shared_ptr<State> previousState);
     machineState getTransitionTo() const;
-    int getStepDelay() const;
+    std::chrono::milliseconds getStepDelay() const;
     
     // Additional methods if needed
     machineState getMachineState() const;

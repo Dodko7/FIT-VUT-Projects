@@ -12,6 +12,7 @@
 #include <unordered_map> // For unordered_map container
 #include <algorithm> // For algorithms like std::find_if
 #include <cstdlib> // Include standard library for system commands
+#include <thread> // For sleep functionality
 #include "nlohmann/json.hpp" // Include JSON library for serialization/deserialization
 
 using json = nlohmann::json;
@@ -187,41 +188,143 @@ const std::unordered_map<std::string, std::string>& FSM::getVariables() const {
     return variables;
 }
 
-// Run the FSM with a given input sequence
-void FSM::run(const std::string& inputSequence) {
+// Make the current transition to the next state
+void FSM::transitionToState() {
+    if (!currentState) {
+        throw InvalidStateException("Current state is null");
+    }
+    if (input.empty()) {
+        this->setCurrentMachineState(machineState::STOPPED); // Stop the FSM if input is empty
+        throw std::invalid_argument("Input string is empty");
+    }
+    if (currentState) {
+        std::string currentInput(1, this->input[0]); // Convert the first character of the input to a string
+        for (auto& next : currentState->getNextStates()) {
+            for (auto& dep : next->getDependencies()) {
+                if (dep->getEvent() == currentInput && currentState == dep->getFromState()) { // Check if the input matches
+                    currentState = next; // Transition to the next state
+                    std::cout << "Transitioning from state " << currentState->getName() << " to state " << currentState->getName() << " by input " << currentInput << "\n";
+                    this->output += this->getOutput(); // Set the output
+                    this->input.erase(0, 1); // Remove the first character from the input string
+                    return;
+                }
+            }
+        }
+    }
+}
+
+
+// Run the FSM 
+void FSM::run() {
+    // Check initial conditions
     if (!startState) {
         throw MooreMachineValidationException("No start state defined");
     }
+    
+    if (input.empty()) {
+        throw std::invalid_argument("No input sequence provided");
+    }
+    
+    // Validate the FSM before running
+    try
+    {
+        validateFSM(); // Validate the FSM
+    }
+    catch(const std::exception& e)
+    {
+        // Handle validation errors
+        std::cerr << "Running the FSM simulation failed: " << e.what() << '\n';
+        return;
+    }
+    
+
+    // Clear output
+    output.clear();
+    
+    // Initialize state
     currentState = startState;
     currentMachineState = machineState::RUNNING;
+    
     std::cout << "Starting FSM at state: " << currentState->getName() << "\n";
+    
+    // Main execution loop - continue until we're out of input or stopped
+    while (currentMachineState == machineState::RUNNING && !input.empty()) {
+        try {
+            // Use the existing transitionToState function to process transitions
+            transitionToState();
 
-    for (char input : inputSequence) {
-        bool transitioned = false;
-        for (const auto& dep : currentState->getDependencies()) {
-            // Convert the input char to string for comparison
-            std::string inputStr(1, input);
-            if (dep->getEvent() == inputStr) {  // Changed from getExpectedInput()
-                for (const auto& next : currentState->getNextStates()) {
-                    if (next && dep->getFromState() == currentState) {
-                        currentState = next;
-                        transitioned = true;
-                        std::cout << "Transition on input '" << input << "' to state: " << currentState->getName() << "\n";
-                        break;
-                    }
-                }
+            // Check if the current state has its own delay
+            std::chrono::milliseconds stateDelay = currentState->getStepDelay();
+            if (stateDelay.count() > 0) {
+                std::this_thread::sleep_for(stateDelay);
+            }
+            
+            // Apply step delay if set
+            if (stepDelay.count() > 0) {
+                std::this_thread::sleep_for(stepDelay);
+            }
+            
+            // Check if we've reached a final state
+            if (currentState->getIsFinal()) {
+                std::cout << "Reached final state: " << currentState->getName() << "\n";
                 break;
             }
-        }
-        if (!transitioned) {
-            std::cout << "No transition for input '" << input << "' in state: " << currentState->getName() << "\n";
+        } catch (const std::exception& e) {
+            std::cerr << "Error during FSM execution: " << e.what() << "\n";
+            currentMachineState = machineState::ERROR;
+            break;
         }
     }
-    currentMachineState = machineState::STOPPED;
+    
+    // Update machine state when done
+    if (currentMachineState == machineState::RUNNING) {
+        currentMachineState = machineState::STOPPED;
+    }
+    
     std::cout << "FSM stopped at state: " << currentState->getName() << "\n";
+    std::cout << "Final output: " << output << "\n";
 }
 
-// TO BE DEBUGGED/TESTED
+// Debug step function - process next transition or stop if no more input
+bool FSM::debugStep() {
+    if (input.empty()) {
+        this->currentMachineState = machineState::STOPPED;
+        std::cout << "Debug: No more input to process.\n";
+        return false;
+    }
+    
+    try {
+        // Set machine state to running if not already
+        if (currentMachineState != machineState::RUNNING) {
+            currentMachineState = machineState::RUNNING;
+        }
+        
+        // Use existing transitionToState to process one transition
+        transitionToState();
+        
+        // Check if we've reached a final state
+        if (currentState->getIsFinal()) {
+            std::cout << "Debug: Reached final state: " << currentState->getName() << "\n";
+            currentMachineState = machineState::STOPPED;
+        }
+        
+        // Check if we're out of input
+        if (input.empty()) {
+            currentMachineState = machineState::STOPPED;
+        }
+        
+        return true;
+    } catch (const std::invalid_argument& e) {
+        // This is expected when input is empty
+        currentMachineState = machineState::STOPPED;
+        return false;
+    } catch (const std::exception& e) {
+        std::cerr << "Error during debug step: " << e.what() << "\n";
+        currentMachineState = machineState::ERROR;
+        return false;
+    }
+}
+
 void FSM::debug() {
     std::ofstream dotFile("assets/fsm_debug.dot");
     if (!dotFile.is_open()) {
@@ -311,9 +414,6 @@ machineState FSM::getCurrentMachineState() const {
 
 // Set the current machine state
 void FSM::setCurrentMachineState(machineState state) {
-    if (state != machineState::IDLE && state != machineState::RUNNING && state != machineState::STOPPED) {
-        throw InvalidArgumentException("Invalid machine state");
-    }
     currentMachineState = state;
 }
 
@@ -359,7 +459,7 @@ void FSM::saveToJson(const std::string& filename) {
         state["name"] = pair.second->getName();
         state["action"] = pair.second->getAction();
         state["isFinal"] = pair.second->getIsFinal();
-        state["stepDelay"] = pair.second->getStepDelay(); // Save step delay in milliseconds
+        state["stepDelay"] = pair.second->getStepDelay().count(); // Save step delay in milliseconds
         j["states"].push_back(state);
     }
 

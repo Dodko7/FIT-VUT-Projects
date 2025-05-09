@@ -18,6 +18,7 @@ private:
     std::string timeout; ///< Name of timeout variable.
     std::string output; ///< Output for this transition.
     std::weak_ptr<State> fromState; ///< The originating state for the transition.
+    char input; ///< The expected input for the transition.
 
 public:
     /**
@@ -97,6 +98,10 @@ public:
      * @param state A shared pointer to the new originating state.
      */
     void setFromState(std::shared_ptr<State> state);
+
+    char getInput() const;
+
+    void setInput(char input);
 };
 
 #endif // INPUTDEPS_HPP
