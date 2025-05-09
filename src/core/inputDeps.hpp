@@ -13,7 +13,7 @@ class State;
  */
 class inputDeps {
 private:
-    std::string event; ///< Name of the input event.
+    std::string event; ///< Name of the event on-transition.
     std::string condition; ///< JavaScript condition.
     std::string timeout; ///< Name of timeout variable.
     std::string output; ///< Output for this transition.

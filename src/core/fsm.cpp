@@ -202,9 +202,9 @@ void FSM::transitionToState() {
         for (auto& next : currentState->getNextStates()) {
             for (auto& dep : next->getDependencies()) {
                 if (dep->getEvent() == currentInput && currentState == dep->getFromState()) { // Check if the input matches
+                    std::cout << "Transitioning from state " << currentState->getName() << " to state " << next->getName() << " by input " << currentInput << "\n";
                     currentState = next; // Transition to the next state
-                    std::cout << "Transitioning from state " << currentState->getName() << " to state " << currentState->getName() << " by input " << currentInput << "\n";
-                    this->output += this->getOutput(); // Set the output
+                    this->output += dep->getOutput(); // Set the output
                     this->input.erase(0, 1); // Remove the first character from the input string
                     return;
                 }
@@ -589,10 +589,21 @@ void FSM::loadFromJson(const std::string& filename) {
 }
 
 void FSM::validateFSM() {
-    // 1. Check reachability
+    std::vector<std::string> validationErrors;
+
+    // 1. Check that a start state is defined
     if (!startState) {
-        std::cerr << "Start state is not set" << std::endl;
+        validationErrors.push_back("No start state defined");
+        throw MooreMachineValidationException("No start state defined");
     }
+
+    // 2. Check for at least one final state
+    if (finalStates.empty()) {
+        validationErrors.push_back("No final states defined");
+        throw MooreMachineValidationException("No final states defined");
+    }
+
+    // 3. Check reachability of all states from the start state
     std::unordered_set<std::string> visited;
     std::function<void(const std::shared_ptr<State>&)> dfs;
     dfs = [&](const std::shared_ptr<State>& state) {
@@ -605,28 +616,106 @@ void FSM::validateFSM() {
         }
     };
     dfs(startState);
+
+    // Check for unreachable states
+    std::vector<std::string> unreachableStates;
     for (const auto& pair : states) {
         if (!visited.count(pair.first)) {
-            std::cerr << "State '" << pair.first << "' is unreachable from the start state" << std::endl;
-            // Handle the unreachable state and disable running.
+            unreachableStates.push_back(pair.first);
         }
     }
+    
+    if (!unreachableStates.empty()) {
+        std::string errorMsg = "The following states are unreachable from the start state: ";
+        for (size_t i = 0; i < unreachableStates.size(); ++i) {
+            if (i > 0) errorMsg += ", ";
+            errorMsg += unreachableStates[i];
+        }
+        validationErrors.push_back(errorMsg);
+        throw MooreMachineValidationException(errorMsg);
+    }
 
-    // 2. Check determinism (no duplicate input symbols for transitions from the same state)
+    // 4. Check determinism (no duplicate input symbols for transitions from the same state)
     for (const auto& pair : states) {
         const auto& state = pair.second;
-        std::unordered_set<std::string> seenInputs;  // Changed from char to string
+        std::unordered_map<std::string, std::string> inputToDestination;
+        
         for (const auto& dep : state->getDependencies()) {
-            std::string input = dep->getEvent();  // Changed from getExpectedInput()
-            if (seenInputs.count(input)) {
-                std::cerr << "State '" << state->getName() << "' has multiple transitions for input '" << input << "'" << std::endl;
-                // Handle the determinism violation and disable running.
+            std::string input = dep->getEvent();
+            
+            // Check for duplicate transitions with same input
+            if (inputToDestination.find(input) != inputToDestination.end()) {
+                std::string errorMsg = "State '" + state->getName() + 
+                                      "' has multiple transitions for input '" + input + 
+                                      "', which violates determinism";
+                validationErrors.push_back(errorMsg);
+                throw DeterminismViolationException(errorMsg);
             }
-            seenInputs.insert(input);
+            
+            // Find the destination state for this transition
+            for (const auto& nextState : state->getNextStates()) {
+                if (nextState && dep->getFromState() == state) {
+                    inputToDestination[input] = nextState->getName();
+                    break;
+                }
+            }
         }
     }
+    
+    // 5. Check if all states have transitions for all expected inputs
+    // Only relevant if expectedInputs is not empty
+    if (!expectedInputs.empty()) {
+        for (const auto& pair : states) {
+            const auto& state = pair.second;
+            
+            // Skip final states, they don't need outgoing transitions
+            if (state->getIsFinal()) continue;
+            
+            std::unordered_set<std::string> definedInputs;
+            for (const auto& dep : state->getDependencies()) {
+                definedInputs.insert(dep->getEvent());
+            }
+            
+            // Check if all expected inputs have transitions
+            std::vector<std::string> missingInputs;
+            for (const char input : expectedInputs) {
+                std::string inputStr(1, input);
+                if (definedInputs.find(inputStr) == definedInputs.end()) {
+                    missingInputs.push_back(inputStr);
+                }
+            }
+            
+            if (!missingInputs.empty()) {
+                std::string errorMsg = "State '" + state->getName() + "' is missing transitions for inputs: ";
+                for (size_t i = 0; i < missingInputs.size(); ++i) {
+                    if (i > 0) errorMsg += ", ";
+                    errorMsg += "'" + missingInputs[i] + "'";
+                }
+                validationErrors.push_back(errorMsg);
+                throw MooreMachineValidationException(errorMsg);
+            }
+        }
+    }
+    
+    // 6. Check for dead-end states (non-final states with no outgoing transitions)
+    for (const auto& pair : states) {
+        const auto& state = pair.second;
+        
+        // Skip final states, they're allowed to be dead-ends
+        if (state->getIsFinal()) continue;
+        
+        // Check if state has any outgoing transitions
+        if (state->getDependencies().empty()) {
+            std::string errorMsg = "State '" + state->getName() + 
+                                  "' is a non-final state with no outgoing transitions (dead-end)";
+            validationErrors.push_back(errorMsg);
+            throw MooreMachineValidationException(errorMsg);
+        }
+    }
+    
+    // If this comment is reached, the FSM is valid
+    std::cout << "FSM validation successful!" << std::endl;
 }
-
 std::shared_ptr<State> FSM::getStatePtrByName(const std::string& name) {
     auto it = states.find(name);
     if (it != states.end()) {
