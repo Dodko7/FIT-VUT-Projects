@@ -33,7 +33,7 @@ $(TEST_TARGET): $(TEST_OBJS) $(OBJS)
 	$(CXX) $(CXXFLAGS) -o $@ $^
 
 directories:
-	@mkdir -p $(OBJ_DIR) $(TEST_OBJ_DIR)
+	@mkdir -p $(OBJ_DIR) $(TEST_OBJ_DIR) assets examples
 
 clean:
-	rm -rf $(OBJ_DIR) $(TEST_OBJ_DIR) $(TARGET) $(TEST_TARGET)
+	rm -rf $(OBJ_DIR) $(TEST_OBJ_DIR) assets $(TARGET) $(TEST_TARGET)
