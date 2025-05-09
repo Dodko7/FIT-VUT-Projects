@@ -97,8 +97,10 @@ void FSM::addTransition(const std::string& fromState, const std::string& toState
             throw DeterminismViolationException("Duplicate transition for state: " + fromState);
         }
     }
+    // Create and add dependency
     auto dep = std::make_unique<inputDeps>(event, condition, timeout, output, from);
     from->addDependency(std::move(dep));
+    // Add next state only once
     from->addNextState(to);
 }
 
@@ -137,24 +139,22 @@ bool FSM::findStateExists(const std::string& name) const {
     return states.find(name) != states.end();
 }
 
-void FSM::addExpectedInput(const char value) {
+void FSM::addExpectedInput(const std::string& value) {
     /**
      * @brief Adds an input to the FSM.
-     * @param name The name of the input.
-     * @param value The initial value of the input.
-     * @throws std::invalid_argument If the name is empty, too long, or already exists.
+     * @param value The name of the input.
+     * @throws std::invalid_argument If the value is empty or already exists.
      */
-    if (value == '\0') {
-        throw std::invalid_argument("Input cannot be null");
+    if (value.empty()) {
+        throw std::invalid_argument("Input cannot be empty");
     }
-    if(expectedInputs.find(value) != expectedInputs.end()) {
+    if (expectedInputs.find(value) != expectedInputs.end()) {
         throw std::invalid_argument("Input already exists: " + value);
     }
-    expectedInputs.insert(value); // Add the input to the set
+    expectedInputs.insert(value);
 }
 
-
-void FSM::removeExpectedInput(const char value) {
+void FSM::removeExpectedInput(const std::string& value) {
     expectedInputs.erase(value); // Ignore if input doesn't exist
 }
 
@@ -163,11 +163,8 @@ bool FSM::checkValidInput() {
      * @brief Checks if the input is valid.
      * @return True if the input is valid, false otherwise.
      */
-
-    char input = this->input[0]; // Get the first character of the input
     return expectedInputs.find(input) != expectedInputs.end();
 }
-
 
 void FSM::addVariable(const std::string& name, const std::string& value) {
     if (name.empty()) {
@@ -221,7 +218,6 @@ void FSM::run(const std::string& inputSequence) {
     std::cout << "FSM stopped at state: " << currentState->getName() << "\n";
 }
 
-// TO BE DEBUGGED/TESTED
 void FSM::debug() {
     std::ofstream dotFile("assets/fsm_debug.dot");
     if (!dotFile.is_open()) {
@@ -251,13 +247,16 @@ void FSM::debug() {
     // Add transitions
     for (const auto& pair : states) {
         const auto& state = pair.second;
-        for (size_t i = 0; i < state->getDependencies().size(); ++i) {
-            const auto& dep = state->getDependencies()[i];
-            const auto& nextState = state->getNextStates()[i];
-            if (nextState) {
+        const auto& deps = state->getDependencies();
+        const auto& nextStates = state->getNextStates();
+        // Iterate over dependencies and ensure nextStates are valid
+        for (size_t i = 0; i < deps.size() && i < nextStates.size(); ++i) {
+            const auto& dep = deps[i];
+            const auto& nextState = nextStates[i];
+            if (nextState && dep->getFromState() == state) {
                 dotFile << "    \"" << state->getName() << "\" -> \"" 
                         << nextState->getName() << "\" [label=\"" 
-                        << dep->getEvent() << "\"];\n";  // Changed from getExpectedInput()
+                        << dep->getEvent() << "\"];\n";
             }
         }
     }
@@ -290,7 +289,7 @@ std::string FSM::getOutput() const {
     return output;
 }
 
-std::unordered_set<char> FSM::getExpectedInputs() const {
+std::unordered_set<std::string> FSM::getExpectedInputs() const {
     return expectedInputs;
 }
 
@@ -339,7 +338,7 @@ void FSM::saveToJson(const std::string& filename) {
     // Expected inputs
     j["expectedInputs"] = json::array();
     for (const auto& input : expectedInputs) {
-        j["expectedInputs"].push_back(std::string(1, input));
+        j["expectedInputs"].push_back(input);
     }
 
 

@@ -90,14 +90,16 @@ std::vector<std::unique_ptr<inputDeps>>& State::getDependencies() {
 }
 
 void State::addNextState(std::shared_ptr<State> nextState) {
+    /**
+     * @brief Adds a next state to the list of possible transitions.
+     * @param nextState Pointer to the next state.
+     * @throws std::invalid_argument If nextState is null.
+     */
     if (nextState == nullptr) {
         throw std::invalid_argument("Next state cannot be null");
     }
-    if (std::find(nextStates.begin(), nextStates.end(), nextState) != nextStates.end()) {
-        std::cerr << "Next state already exists! Determinism violation" << std::endl;
-        return;
-    }
-    nextStates.push_back(std::shared_ptr<State>(nextState));
+    // Allow duplicate next states, as determinism is checked in FSM::addTransition
+    nextStates.push_back(nextState);
 }
 
 void State::removeNextStateFO(std::shared_ptr<State> nextState) {
