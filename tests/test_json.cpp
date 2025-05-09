@@ -8,7 +8,7 @@ TEST_CASE("JSON serialization and deserialization", "[json]") {
     fsm.setName("TOF5s");
     fsm.setDescription("Timer to off, simple version");
     fsm.addInput("in", "0");
-    fsm.addOutput("out", "0");
+    // fsm.addOutput("out", "0");
     fsm.addVariable("timeout", "5000");
     fsm.addState("IDLE", "IDLE state", "output('out', 0)", false);
     fsm.addState("ACTIVE", "ACTIVE state", "output('out', 1)", false);

@@ -104,7 +104,7 @@ public:
      * @param value The input character (non-empty).
      * @throws std::invalid_argument if input is empty or already exists.
      */
-    void FSM::addExpectedInput(const char value);
+    void addExpectedInput(const char value);
 
     /**
      * @brief Removes an input from the FSM.

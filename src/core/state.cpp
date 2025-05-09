@@ -7,12 +7,21 @@
 #include <string>
 #include <vector>
 #include <memory>
+#include <chrono> // For std::chrono::milliseconds
 
 // No class definition here, only method implementations for State
 
 // Constructor with new action parameter
-State::State(const std::string& name, machineState transToMachineState, std::vector<std::unique_ptr<inputDeps>> dependencies, const std::string& action, std::vector<std::shared_ptr<State>> nextStates, bool isFinal)
-    : name(name), transToMachineState(transToMachineState), dependencies(std::move(dependencies)), action(action), nextStates(std::move(nextStates)), isFinal(isFinal) {
+State::State(const std::string& name, machineState transToMachineState, 
+             std::vector<std::unique_ptr<inputDeps>> dependencies, 
+             const std::string& action, 
+             std::chrono::milliseconds stepDelay,  // Add this parameter
+             std::vector<std::shared_ptr<State>> nextStates, 
+             bool isFinal)
+    : name(name), transToMachineState(transToMachineState), 
+      dependencies(std::move(dependencies)), action(action), 
+      stepDelay(stepDelay),  // Initialize stepDelay
+      nextStates(std::move(nextStates)), isFinal(isFinal) {
     if (name.empty() || name.length() > 20) {
         throw std::invalid_argument("Invalid state name");
     }
@@ -63,8 +72,8 @@ std::unique_ptr<inputDeps> State::getDependency(char input, std::shared_ptr<Stat
     return nullptr;
 }
 
-int State::getStepDelay() const {
-    return stepDelay.count();
+std::chrono::milliseconds State::getStepDelay() const {
+    return stepDelay;
 }
 
 void State::removeDependency(std::unique_ptr<inputDeps> dependency) {

@@ -24,6 +24,7 @@ public:
     State(const std::string& name, machineState transToMachineState, 
           std::vector<std::unique_ptr<inputDeps>> dependencies, 
           const std::string& action, 
+          std::chrono::milliseconds stepDelay,  // Add this parameter
           std::vector<std::shared_ptr<State>> nextStates, 
           bool isFinal);
     ~State() = default;
@@ -48,7 +49,7 @@ public:
     std::shared_ptr<State> getPreviousState() const;
     void changePreviousState(std::shared_ptr<State> previousState);
     machineState getTransitionTo() const;
-    int getStepDelay() const;
+    std::chrono::milliseconds getStepDelay() const; // Add getter method
     
     // Additional methods if needed
     machineState getMachineState() const;

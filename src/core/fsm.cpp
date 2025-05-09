@@ -359,7 +359,7 @@ void FSM::saveToJson(const std::string& filename) {
         state["name"] = pair.second->getName();
         state["action"] = pair.second->getAction();
         state["isFinal"] = pair.second->getIsFinal();
-        state["stepDelay"] = pair.second->getStepDelay(); // Save step delay in milliseconds
+        state["stepDelay"] = pair.second->getStepDelay().count(); // Save step delay in milliseconds
         j["states"].push_back(state);
     }
 
@@ -411,8 +411,8 @@ void FSM::loadFromJson(const std::string& filename) {
     // Clear current FSM
     states.clear();
     finalStates.clear();
-    inputs.clear();
-    outputs.clear();
+    input.clear();
+    output.clear();
     variables.clear();
     startState = nullptr;
     currentState = nullptr;
@@ -426,19 +426,17 @@ void FSM::loadFromJson(const std::string& filename) {
         setDescription(j["description"].get<std::string>());
     }
 
-    // Load inputs
-    if (j.contains("inputs")) {
-        for (const auto& item : j["inputs"].items()) {
-            addInput(item.key(), item.value().get<std::string>());
-        }
+    // Load input
+    if (j.contains("input")) {
+        setInput(j["input"].get<std::string>());
     }
 
-    // Load outputs
-    if (j.contains("outputs")) {
-        for (const auto& item : j["outputs"].items()) {
-            addOutput(item.key(), item.value().get<std::string>());
-        }
-    }
+    // // Load output
+    // if (j.contains("output")) {
+    //     for (const auto& item : j["outputs"].items()) {
+    //         addOutput(item.key(), item.value().get<std::string>());
+    //     }
+    // }
 
     // Load variables
     if (j.contains("variables")) {

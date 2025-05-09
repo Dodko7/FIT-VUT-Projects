@@ -9,13 +9,12 @@ int main() {
         FSM fsm;
         fsm.setName("TOF");
         fsm.setDescription("Timer to off, simple version");
-        fsm.addState("IDLE", "Output off", "", false);
-        fsm.addState("TIMING", "Output on", "", false);
-        fsm.addInput("in", "0");
-        fsm.addOutput("out", "0");
+        fsm.addState("IDLE", "", false, std::chrono::milliseconds(0));  // With explicit stepDelay
+        fsm.addState("TIMING", "", false);
+        // fsm.addOutput("out", "0");
         std::string idle = "IDLE", timing = "TIMING";
-        fsm.addTransition(idle, timing, "1", "", "");
-        fsm.addTransition(timing, idle, "0", "", "");
+        fsm.addTransition(idle, timing, "1", "", "", "");  
+        fsm.addTransition(timing, idle, "0", "", "", ""); 
         fsm.setStartState("IDLE");
 
         // Validácia automatu
