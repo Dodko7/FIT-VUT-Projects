@@ -51,6 +51,7 @@ public:
         : FSMException("Invalid Input: " + input) {}
 };
 
+// Exception for invalid arguments
 class InvalidArgumentException : public FSMException {
     public:
         explicit InvalidArgumentException(const std::string& input)

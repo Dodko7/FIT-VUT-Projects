@@ -205,13 +205,6 @@ void FSM::debug() {
 
     dotFile << "}" << std::endl; // End the DOT graph
     dotFile.close(); // Close the DOT file
-
-    // Use system command to render the graph in real time
-    std::string command = "dot -Tpng fsm_debug.dot -o fsm_debug.png && open fsm_debug.png";
-    int result = system(command.c_str()); // Execute the command
-    if (result != 0) { // Check if the command was successful
-        std::cerr << "Failed to render FSM visualization" << std::endl;
-    }
 }
 
 // Get the current state of the FSM
