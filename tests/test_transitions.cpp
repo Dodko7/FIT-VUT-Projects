@@ -39,18 +39,18 @@ TEST_CASE("Transition management", "[transitions]") {
 
     SECTION("Remove existing transition") {
         fsm.addTransition(s0, s1, "a", "", "");  // Updated parameters
-        REQUIRE_NOTHROW(fsm.removeTransition(s0, s1, "a"));  // Changed 'a' to "a"
+        REQUIRE_NOTHROW(fsm.removeTransition(s0, s1, 'a'));  // Changed back to character literal
         auto state = fsm.getStates().at("S0");
         REQUIRE(state->getDependencies().size() == 0);
         REQUIRE(state->getNextStates().size() == 0);
     }
 
     SECTION("Remove non-existing transition") {
-        REQUIRE_NOTHROW(fsm.removeTransition(s0, s1, "a"));  // Should not throw, changed 'a' to "a"
+        REQUIRE_NOTHROW(fsm.removeTransition(s0, s1, 'a'));  // Changed back to character literal
     }
 
     SECTION("Remove transition with invalid state") {
-        REQUIRE_THROWS_AS(fsm.removeTransition(s0, s2, "a"), InvalidStateException);  // Changed 'a' to "a"
-        REQUIRE_THROWS_AS(fsm.removeTransition(s2, s1, "a"), InvalidStateException);  // Changed 'a' to "a"
+        REQUIRE_THROWS_AS(fsm.removeTransition(s0, s2, 'a'), InvalidStateException);  // Changed back to character literal
+        REQUIRE_THROWS_AS(fsm.removeTransition(s2, s1, 'a'), InvalidStateException);  // Changed back to character literal
     }
 }
