@@ -63,8 +63,6 @@ void FSM::setDescription(const std::string& description) {
     this->description = description; // Set the FSM description
 }
 
-// Add these method implementations
-
 const std::string& FSM::getName() const {
     return name;
 }
@@ -276,6 +274,10 @@ std::shared_ptr<State> FSM::getCurrentState() const {
 // Get all states in the FSM
 const std::unordered_map<std::string, std::shared_ptr<State>>& FSM::getStates() const {
     return states;
+}
+
+void FSM::setInput(const std::string& input) {
+    this->input = input; // Set the FSM input
 }
 
 // Get the input string of FSM

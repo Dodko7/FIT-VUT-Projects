@@ -172,6 +172,12 @@ public:
     const std::unordered_map<std::string, std::shared_ptr<State>>& getStates() const;
 
     /**
+     * @brief Sets the input string of the FSM.
+     * @param input The input string to set.
+     */
+    void setInput(const std::string& input);
+
+    /**
      * @brief Gets the input string of the FSM.
      * @return The current input string.
      */
