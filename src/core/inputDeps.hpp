@@ -16,6 +16,7 @@ private:
     std::string event; ///< Name of the input event.
     std::string condition; ///< JavaScript condition.
     std::string timeout; ///< Name of timeout variable.
+    std::string output; ///< Output for this transition.
     std::weak_ptr<State> fromState; ///< The originating state for the transition.
 
 public:
@@ -24,10 +25,11 @@ public:
      * @param event The name of the input event.
      * @param condition The JavaScript condition.
      * @param timeout The name of the timeout variable.
+     * @param output The output for this transition.
      * @param state The originating state for the transition.
      */
     inputDeps(const std::string& event, const std::string& condition, 
-              const std::string& timeout, std::shared_ptr<State> state);
+              const std::string& timeout, const std::string& output, std::shared_ptr<State> state);
 
     /**
      * @brief Default destructor.
@@ -71,6 +73,18 @@ public:
      * @param timeout The new name of the timeout variable.
      */
     void setTimeout(const std::string& timeout);
+
+    /**
+     * @brief Gets the output for this transition.
+     * @return The output for this transition.
+     */
+    std::string getOutput() const;
+
+    /**
+     * @brief Sets the output for this transition.
+     * @param output The new output for this transition.
+     */
+    void setOutput(const std::string& output);
 
     /**
      * @brief Gets the originating state for the transition.

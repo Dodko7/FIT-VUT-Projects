@@ -11,13 +11,10 @@
 // No class definition here, only method implementations for State
 
 // Constructor with new action parameter
-State::State(const std::string& name, machineState transToMachineState, std::vector<std::unique_ptr<inputDeps>> dependencies, const std::string& output, const std::string& action, std::vector<std::shared_ptr<State>> nextStates, std::shared_ptr<State> previousState, bool isFinal)
-    : name(name), transToMachineState(transToMachineState), dependencies(std::move(dependencies)), output(output), action(action), nextStates(std::move(nextStates)), previousState(previousState), isFinal(isFinal) {
+State::State(const std::string& name, machineState transToMachineState, std::vector<std::unique_ptr<inputDeps>> dependencies, const std::string& action, std::vector<std::shared_ptr<State>> nextStates, std::shared_ptr<State> previousState, bool isFinal)
+    : name(name), transToMachineState(transToMachineState), dependencies(std::move(dependencies)), action(action), nextStates(std::move(nextStates)), previousState(previousState), isFinal(isFinal) {
     if (name.empty() || name.length() > 20) {
         throw std::invalid_argument("Invalid state name");
-    }
-    if (output.empty()) {
-        throw std::invalid_argument("Output string empty");
     }
 }
 
@@ -123,18 +120,6 @@ void State::removeNextStateOccurances(std::shared_ptr<State> nextState) {
         std::remove(nextStates.begin(), nextStates.end(), nextState),
         nextStates.end()
     );
-}
-
-const std::string& State::getOutput() const {
-    return output;
-}
-
-void State::setOutput(const std::string& output) {
-    if (output.empty()) {
-        throw std::invalid_argument("Output string empty");
-    }
-
-    this->output = output;
 }
 
 std::vector<std::shared_ptr<State>>& State::getNextStates() {

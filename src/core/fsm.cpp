@@ -18,22 +18,18 @@ using json = nlohmann::json;
 
 FSM::FSM() : startState(nullptr), currentState(nullptr), stepDelay(0), currentMachineState(machineState::IDLE) {}
 
-void FSM::addState(const std::string& name, const std::string& description, const std::string& action, bool isFinal) {
+void FSM::addState(const std::string& name, const std::string& action, bool isFinal) {
     if (states.find(name) != states.end()) {
         throw InvalidStateException("State already exists: " + name);
     }
     if (name.empty() || name.length() > 20) {
         throw std::invalid_argument("Invalid state name");
     }
-    if (description.empty()) {
-        throw std::invalid_argument("Description cannot be empty");
-    }
 
     auto state = std::make_shared<State>(
         name,                               // State name
         machineState::IDLE,                 // Default machine state
         std::vector<std::unique_ptr<inputDeps>>(), // Empty dependencies
-        description,                        // Output (description)
         action,                             // Action
         std::vector<std::shared_ptr<State>>(), // Empty next states
         nullptr,                            // No previous state
@@ -91,7 +87,7 @@ void FSM::setStartState(const std::string& name) {
     startState = it->second;
 }
 
-void FSM::addTransition(const std::string& fromState, const std::string& toState, const std::string& event, const std::string& condition, const std::string& timeout) {
+void FSM::addTransition(const std::string& fromState, const std::string& toState, const std::string& event, const std::string& condition, const std::string& timeout, const std::string& output) {
     auto from = getStatePtrByName(fromState);
     auto to = getStatePtrByName(toState);
     if (!from || !to) {
@@ -103,7 +99,7 @@ void FSM::addTransition(const std::string& fromState, const std::string& toState
             throw DeterminismViolationException("Duplicate transition for state: " + fromState);
         }
     }
-    auto dep = std::make_unique<inputDeps>(event, condition, timeout, from);
+    auto dep = std::make_unique<inputDeps>(event, condition, timeout, output, from);
     from->addDependency(std::move(dep));
     from->addNextState(to);
 }
@@ -326,6 +322,11 @@ void FSM::saveToJson(const std::string& filename) {
     j["name"] = name;
     j["description"] = description;
     j["startState"] = startState ? startState->getName() : "";
+    j["currentState"] = currentState ? currentState->getName() : "";
+    j["finalStates"] = json::array();
+    for (const auto& pair : finalStates) {
+        j["finalStates"].push_back(pair.second->getName());
+    }
 
     // Inputs
     j["input"] = input;
@@ -338,6 +339,7 @@ void FSM::saveToJson(const std::string& filename) {
     for (const auto& input : expectedInputs) {
         j["expectedInputs"].push_back(std::string(1, input));
     }
+
 
     // Step delay
     j["stepDelay"] = stepDelay.count(); // Save step delay in milliseconds
@@ -353,7 +355,6 @@ void FSM::saveToJson(const std::string& filename) {
     for (const auto& pair : states) {
         json state;
         state["name"] = pair.second->getName();
-        state["description"] = pair.second->getOutput();
         state["action"] = pair.second->getAction();
         state["isFinal"] = pair.second->getIsFinal();
         j["states"].push_back(state);
@@ -372,6 +373,7 @@ void FSM::saveToJson(const std::string& filename) {
                     transition["event"] = dep->getEvent();
                     transition["condition"] = dep->getCondition();
                     transition["timeout"] = dep->getTimeout();
+                    transition["output"] = dep->getOutput();
                     j["transitions"].push_back(transition);
                 }
             }
@@ -446,12 +448,10 @@ void FSM::loadFromJson(const std::string& filename) {
     if (j.contains("states")) {
         for (const auto& state : j["states"]) {
             std::string name = state["name"].get<std::string>();
-            std::string description = state.contains("description") ? 
-                                     state["description"].get<std::string>() : name;
             std::string action = state.contains("action") ? 
                                 state["action"].get<std::string>() : "";
             bool isFinal = state.contains("isFinal") && state["isFinal"].get<bool>();
-            addState(name, description, action, isFinal);
+            addState(name, action, isFinal); // Description/output removed
         }
     }
 
@@ -466,12 +466,11 @@ void FSM::loadFromJson(const std::string& filename) {
                                    transition["condition"].get<std::string>() : "";
             std::string timeout = transition.contains("timeout") ? 
                                  transition["timeout"].get<std::string>() : "";
+            std::string output = transition.contains("output") ? 
+                                 transition["output"].get<std::string>() : "";
             try {
-                addTransition(from, to, event, condition, timeout);
+                addTransition(from, to, event, condition, timeout, output);
             } catch (const DeterminismViolationException& e) {
-                // Skip duplicate transitions when loading from JSON
-                // This prevents test failures while preserving the determinism check
-                // for regular FSM construction
                 std::cerr << "Warning: " << e.what() << " (skipped during JSON loading)" << std::endl;
             }
         }

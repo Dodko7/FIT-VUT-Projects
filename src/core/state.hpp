@@ -17,14 +17,13 @@ private:
     bool isFinal;
     std::vector<std::unique_ptr<inputDeps>> dependencies;
     std::string action; // JavaScript code for state action
-    std::string output; // State output
     std::shared_ptr<State> previousState;
     machineState transToMachineState;
 
 public:
     State(const std::string& name, machineState transToMachineState, 
           std::vector<std::unique_ptr<inputDeps>> dependencies, 
-          const std::string& output, const std::string& action, 
+          const std::string& action, 
           std::vector<std::shared_ptr<State>> nextStates, 
           std::shared_ptr<State> previousState, bool isFinal);
     ~State() = default;
@@ -42,8 +41,6 @@ public:
     void addNextState(std::shared_ptr<State> nextState);
     void removeNextStateFO(std::shared_ptr<State> nextState);
     void removeNextStateOccurances(std::shared_ptr<State> nextState);
-    const std::string& getOutput() const;
-    void setOutput(const std::string& output);
     const std::string& getAction() const; // New: Get JavaScript action
     void setAction(const std::string& action); // New: Set JavaScript action
     std::vector<std::shared_ptr<State>>& getNextStates();

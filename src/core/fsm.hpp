@@ -48,13 +48,12 @@ public:
     /**
      * @brief Adds a new state to the FSM.
      * @param name The name of the state (non-empty, max 20 characters).
-     * @param description The description of the state (non-empty).
      * @param action The action associated with the state.
      * @param isFinal Indicates whether the state is final.
      * @throws InvalidStateException If state already exists.
      * @throws std::invalid_argument If name is empty or too long.
      */
-    void addState(const std::string& name, const std::string& description, const std::string& action, bool isFinal);
+    void addState(const std::string& name, const std::string& action, bool isFinal);
 
     /**
      * @brief Removes a state from the FSM and its references.
@@ -76,11 +75,12 @@ public:
      * @param event The event triggering the transition.
      * @param condition The condition for the transition.
      * @param timeout The timeout for the transition.
+     * @param output The output for the transition.
      * @throws InvalidStateException If states do not exist.
      * @throws InvalidInputException If event is null.
      * @throws DeterminismViolationException If transition violates determinism.
      */
-    void addTransition(const std::string& fromState, const std::string& toState, const std::string& event, const std::string& condition, const std::string& timeout);
+    void addTransition(const std::string& fromState, const std::string& toState, const std::string& event, const std::string& condition, const std::string& timeout, const std::string& output);
 
     /**
      * @brief Removes a transition between two states for a specific event.
