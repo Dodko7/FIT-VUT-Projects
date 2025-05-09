@@ -1,45 +1,83 @@
 #include "fsm.hpp"
+#include "fsmErrors.hpp"
 #include <iostream>
+#include <fstream>
 
-/**
- * @brief Main function to test FSM functionality.
- */
 int main() {
     try {
+        // 1. Inicializácia a konfigurácia automatu
         FSM fsm;
-        // Set FSM properties
-        fsm.setName("TestFSM");
-        fsm.setDescription("Simple test FSM");
+        fsm.setName("TOF");
+        fsm.setDescription("Timer to off, simple version");
+        fsm.addState("IDLE", "Output off", "", false);
+        fsm.addState("TIMING", "Output on", "", false);
+        fsm.addInput("in", "0");
+        fsm.addOutput("out", "0");
+        std::string idle = "IDLE", timing = "TIMING";
+        fsm.addTransition(idle, timing, "1", "", "");
+        fsm.addTransition(timing, idle, "0", "", "");
+        fsm.setStartState("IDLE");
 
-        // Add states
-        fsm.addState("S0", "Initial state", false);
-        fsm.addState("S1", "Intermediate state", false);
-        fsm.addState("S2", "Final state", true);
-
-        // Set start state
-        fsm.setStartState("S0");
-
-        // Add transitions
-        std::string s0 = "S0", s1 = "S1", s2 = "S2";
-        fsm.addTransition(s0, s1, 'a');
-        fsm.addTransition(s1, s2, 'b');
-        fsm.addTransition(s2, s0, 'c');
-
-        // Validate FSM
+        // Validácia automatu
+        std::cout << "Validating initial FSM..." << std::endl;
         fsm.validateFSM();
 
-        // Debug FSM (generate Graphviz visualization)
-        fsm.debug();
+        // 2. Uloženie automatu do JSON
+        const std::string jsonFile = "examples/test_fsm.json";
+        std::cout << "Saving FSM to " << jsonFile << "..." << std::endl;
+        fsm.saveToJson(jsonFile);
 
-        // Run FSM with a test input sequence
-        std::cout << "Running FSM with input sequence: abc\n";
-        fsm.run("abc");
+        // Overenie, či sa JSON súbor vytvoril
+        std::ifstream checkJson(jsonFile);
+        if (!checkJson.is_open()) {
+            throw std::runtime_error("Failed to create JSON file: " + jsonFile);
+        }
+        checkJson.close();
+        std::cout << "JSON file successfully created: " << jsonFile << std::endl;
+
+        // 3. Načítanie automatu z JSON
+        FSM loadedFsm;
+        std::cout << "Loading FSM from " << jsonFile << "..." << std::endl;
+        loadedFsm.loadFromJson(jsonFile);
+
+        // Validácia načítaného automatu
+        std::cout << "Validating loaded FSM..." << std::endl;
+        loadedFsm.validateFSM();
+
+        // Overenie, či načítaný automat zodpovedá pôvodnému
+        if (loadedFsm.getName() != fsm.getName() ||
+            loadedFsm.getDescription() != fsm.getDescription() ||
+            loadedFsm.getStates().size() != fsm.getStates().size() ||
+            loadedFsm.getStartState()->getName() != fsm.getStartState()->getName()) {
+            throw std::runtime_error("Loaded FSM does not match original FSM");
+        }
+        std::cout << "Loaded FSM matches original FSM" << std::endl;
+
+        // 4. Generovanie DOT súboru pre vizualizáciu
+        std::cout << "Generating DOT file for visualization..." << std::endl;
+        loadedFsm.debug();
+
+        // Overenie, či sa DOT súbor vytvoril
+        const std::string dotFile = "assets/fsm_debug.dot";
+        std::ifstream checkDot(dotFile);
+        if (!checkDot.is_open()) {
+            throw std::runtime_error("Failed to create DOT file: " + dotFile);
+        }
+        checkDot.close();
+        std::cout << "DOT file successfully created: " << dotFile << std::endl;
+
+        // 5. Spustenie načítaného automatu (voliteľné, pre demonštráciu)
+        std::cout << "Running loaded FSM with input sequence: 10" << std::endl;
+        loadedFsm.run("10");
 
     } catch (const FSMException& e) {
-        std::cerr << "Error: " << e.what() << std::endl;
+        std::cerr << "FSM Error: " << e.what() << std::endl;
         return 1;
     } catch (const std::exception& e) {
         std::cerr << "Unexpected error: " << e.what() << std::endl;
+        return 1;
+    } catch (...) {
+        std::cerr << "Unknown error occurred" << std::endl;
         return 1;
     }
     return 0;
