@@ -1,0 +1,42 @@
+{
+    "description": "Timer to off, simple version",
+    "inputs": {
+        "in": "0"
+    },
+    "name": "TOF",
+    "outputs": {
+        "out": "0"
+    },
+    "startState": "IDLE",
+    "states": [
+        {
+            "action": "",
+            "description": "Output on",
+            "isFinal": false,
+            "name": "TIMING"
+        },
+        {
+            "action": "",
+            "description": "Output off",
+            "isFinal": false,
+            "name": "IDLE"
+        }
+    ],
+    "transitions": [
+        {
+            "condition": "",
+            "event": "0",
+            "from": "TIMING",
+            "timeout": "",
+            "to": "IDLE"
+        },
+        {
+            "condition": "",
+            "event": "1",
+            "from": "IDLE",
+            "timeout": "",
+            "to": "TIMING"
+        }
+    ],
+    "variables": {}
+}
