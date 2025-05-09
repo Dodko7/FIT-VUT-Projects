@@ -28,8 +28,8 @@ class FSM {
 private:
     std::unordered_map<std::string, std::shared_ptr<State>> states; ///< Map of state names to state objects.
     std::unordered_map<std::string, std::shared_ptr<State>> finalStates; ///< Map of final states.
-    std::unordered_map<std::string, std::string> inputs; ///< Map of input names to their last values.
-    std::unordered_map<std::string, std::string> outputs; ///< Map of output names to their last values.
+    std::string input; ///< The input used for transitions.
+    std::string output; ///< The output of the FSM.
     std::unordered_map<std::string, std::string> variables; ///< Map of internal variables.
     std::string name; ///< Name of the FSM.
     std::string description; ///< Description of the FSM.
@@ -37,6 +37,7 @@ private:
     std::shared_ptr<State> startState; ///< Pointer to the start state.
     std::shared_ptr<State> currentState; ///< Pointer to the current state.
     machineState currentMachineState; ///< Current execution state.
+    std::unordered_set<char> expectedInputs; ///< Set of expected inputs.
 
 public:
     /**
@@ -98,18 +99,24 @@ public:
     bool findStateExists(const std::string& name) const;
 
     /**
-     * @brief Adds a new input to the FSM.
-     * @param name The name of the input (non-empty).
-     * @param value The initial value of the input.
-     * @throws std::invalid_argument If name is empty or input already exists.
+     * @brief Adds an input to the FSM.
+     * @param value The input character (non-empty).
+     * @throws std::invalid_argument if input is empty or already exists.
      */
-    void addInput(const std::string& name, const std::string& value);
+    void FSM::addExpectedInput(const char value);
 
     /**
      * @brief Removes an input from the FSM.
      * @param name The name of the input to remove.
      */
-    void removeInput(const std::string& name);
+    void removeExpectedInput(const char value);
+
+    /**
+     * @brief Checks if the input is valid.
+     * @param input The input to check (default is the first character of the input).
+     * @return True if the input is valid, false otherwise.
+     */
+    bool checkValidInput();
 
     /**
      * @brief Adds a new output to the FSM.
@@ -164,16 +171,22 @@ public:
     const std::unordered_map<std::string, std::shared_ptr<State>>& getStates() const;
 
     /**
-     * @brief Gets all inputs in the FSM.
-     * @return A reference to the map of inputs.
+     * @brief Gets the input string of the FSM.
+     * @return The current input string.
      */
-    const std::unordered_map<std::string, std::string>& getInputs() const;
+    std::string getInput() const;
 
     /**
-     * @brief Gets all outputs in the FSM.
-     * @return A reference to the map of outputs.
+     * @brief Gets the output of the FSM.
+     * @return The current output string.
      */
-    const std::unordered_map<std::string, std::string>& getOutputs() const;
+    std::string getOutput() const;
+
+    /**
+     * @brief Gets the expected inputs of the FSM.
+     * @return A set of expected input characters.
+     */
+    std::unordered_set<char> getExpectedInputs() const;
 
     /**
      * @brief Gets all variables in the FSM.

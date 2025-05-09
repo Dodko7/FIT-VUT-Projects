@@ -143,51 +143,37 @@ bool FSM::findStateExists(const std::string& name) const {
     return states.find(name) != states.end();
 }
 
-void FSM::addInput(const std::string& name, const std::string& value) {
+void FSM::addExpectedInput(const char value) {
     /**
      * @brief Adds an input to the FSM.
      * @param name The name of the input.
      * @param value The initial value of the input.
      * @throws std::invalid_argument If the name is empty, too long, or already exists.
      */
-    if (name.empty()) {
-        throw std::invalid_argument("Input name cannot be empty");
+    if (value == '\0') {
+        throw std::invalid_argument("Input cannot be null");
     }
-    if (name.length() > 20) {
-        throw std::invalid_argument("Input name too long");
+    if(expectedInputs.find(value) != expectedInputs.end()) {
+        throw std::invalid_argument("Input already exists: " + value);
     }
-    if (inputs.find(name) != inputs.end()) {
-        throw std::invalid_argument("Input already exists: " + name);
-    }
-    inputs[name] = value;
+    expectedInputs.insert(value); // Add the input to the set
 }
 
-void FSM::removeInput(const std::string& name) {
-    inputs.erase(name); // Ignore if input doesn't exist
+
+void FSM::removeExpectedInput(const char value) {
+    expectedInputs.erase(value); // Ignore if input doesn't exist
 }
 
-void FSM::addOutput(const std::string& name, const std::string& value) {
+bool FSM::checkValidInput() {
     /**
-     * @brief Adds an output to the FSM.
-     * @param name The name of the output.
-     * @param value The initial value of the output.
-     * @throws std::invalid_argument If the name is empty, too long, or already exists.
+     * @brief Checks if the input is valid.
+     * @return True if the input is valid, false otherwise.
      */
-    if (name.empty()) {
-        throw std::invalid_argument("Output name cannot be empty");
-    }
-    if (name.length() > 20) {
-        throw std::invalid_argument("Output name too long");
-    }
-    if (outputs.find(name) != outputs.end()) {
-        throw std::invalid_argument("Output already exists: " + name);
-    }
-    outputs[name] = value;
+
+    char input = this->input[0]; // Get the first character of the input
+    return expectedInputs.find(input) != expectedInputs.end();
 }
 
-void FSM::removeOutput(const std::string& name) {
-    outputs.erase(name); // Ignore if output doesn't exist
-}
 
 void FSM::addVariable(const std::string& name, const std::string& value) {
     if (name.empty()) {
@@ -296,14 +282,18 @@ const std::unordered_map<std::string, std::shared_ptr<State>>& FSM::getStates() 
     return states;
 }
 
-// Get all inputs in the FSM
-const std::unordered_map<std::string, std::string>& FSM::getInputs() const {
-    return inputs;
+// Get the input string of FSM
+std::string FSM::getInput() const {
+    return input;
 }
 
-// Get all outputs in the FSM
-const std::unordered_map<std::string, std::string>& FSM::getOutputs() const {
-    return outputs;
+// Get the current output of the FSM
+std::string FSM::getOutput() const {
+    return output;
+}
+
+std::unordered_set<char> FSM::getExpectedInputs() const {
+    return expectedInputs;
 }
 
 // Get the start state of the FSM
@@ -338,10 +328,22 @@ void FSM::saveToJson(const std::string& filename) {
     j["startState"] = startState ? startState->getName() : "";
 
     // Inputs
-    j["inputs"] = inputs;
+    j["input"] = input;
 
     // Outputs
-    j["outputs"] = outputs;
+    j["output"] = output;
+
+    // Expected inputs
+    j["expectedInputs"] = json::array();
+    for (const auto& input : expectedInputs) {
+        j["expectedInputs"].push_back(std::string(1, input));
+    }
+
+    // Step delay
+    j["stepDelay"] = stepDelay.count(); // Save step delay in milliseconds
+
+    // Current machine state
+    j["currentMachineState"] = static_cast<int>(currentMachineState);
 
     // Variables
     j["variables"] = variables;
