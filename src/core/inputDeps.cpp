@@ -11,14 +11,6 @@ inputDeps::inputDeps(const std::string& event, const std::string& condition,
     }
 }
 
-std::string inputDeps::getEvent() const {
-    return event;
-}
-
-void inputDeps::setEvent(const std::string& event) {
-    this->event = event;
-}
-
 std::string inputDeps::getCondition() const {
     return condition;
 }

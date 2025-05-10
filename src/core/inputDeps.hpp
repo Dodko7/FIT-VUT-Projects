@@ -38,18 +38,6 @@ public:
     ~inputDeps() = default;
 
     /**
-     * @brief Gets the name of the input event.
-     * @return The name of the input event.
-     */
-    std::string getEvent() const;
-
-    /**
-     * @brief Sets the name of the input event.
-     * @param event The new name of the input event.
-     */
-    void setEvent(const std::string& event);
-
-    /**
      * @brief Gets the JavaScript condition.
      * @return The JavaScript condition.
      */

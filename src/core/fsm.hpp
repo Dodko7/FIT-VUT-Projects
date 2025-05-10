@@ -79,7 +79,7 @@ public:
      * @param input The expected input for the transition.
      * @throws InvalidStateException If states do not exist.
      */
-    void addTransition(const std::string& fromState, const std::string& toState, const std::string& event, const std::string& condition, const char input);
+    void addTransition(const std::string& fromState, const std::string& toState, const std::string& condition, const char input);
 
     /**
      * @brief Removes a transition between two states for a specific event.
