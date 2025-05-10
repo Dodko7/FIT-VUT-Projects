@@ -13,23 +13,22 @@ class State;
  */
 class inputDeps {
 private:
-    std::string event; ///< Name of the input event.
+    std::string event; ///< Name of the event on-transition.
     std::string condition; ///< JavaScript condition.
-    std::string timeout; ///< Name of timeout variable.
-    std::string output; ///< Output for this transition.
     std::weak_ptr<State> fromState; ///< The originating state for the transition.
+    char input; ///< The expected input for the transition.
 
 public:
     /**
      * @brief Constructor for inputDeps.
      * @param event The name of the input event.
      * @param condition The JavaScript condition.
-     * @param timeout The name of the timeout variable.
-     * @param output The output for this transition.
      * @param state The originating state for the transition.
+     * @param input The expected input character for the transition.
      */
     inputDeps(const std::string& event, const std::string& condition, 
-              const std::string& timeout, const std::string& output, std::shared_ptr<State> state);
+                std::shared_ptr<State> state, 
+                const char input);
 
     /**
      * @brief Default destructor.
@@ -63,30 +62,6 @@ public:
     void setCondition(const std::string& condition);
 
     /**
-     * @brief Gets the name of the timeout variable.
-     * @return The name of the timeout variable.
-     */
-    std::string getTimeout() const;
-
-    /**
-     * @brief Sets the name of the timeout variable.
-     * @param timeout The new name of the timeout variable.
-     */
-    void setTimeout(const std::string& timeout);
-
-    /**
-     * @brief Gets the output for this transition.
-     * @return The output for this transition.
-     */
-    std::string getOutput() const;
-
-    /**
-     * @brief Sets the output for this transition.
-     * @param output The new output for this transition.
-     */
-    void setOutput(const std::string& output);
-
-    /**
      * @brief Gets the originating state for the transition.
      * @return A shared pointer to the originating state.
      */
@@ -97,6 +72,10 @@ public:
      * @param state A shared pointer to the new originating state.
      */
     void setFromState(std::shared_ptr<State> state);
+
+    char getInput() const;
+
+    void setInput(char input);
 };
 
 #endif // INPUTDEPS_HPP

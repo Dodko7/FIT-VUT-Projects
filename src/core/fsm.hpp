@@ -37,7 +37,7 @@ private:
     std::shared_ptr<State> startState; ///< Pointer to the start state.
     std::shared_ptr<State> currentState; ///< Pointer to the current state.
     machineState currentMachineState; ///< Current execution state.
-    std::unordered_set<std::string> expectedInputs; ///< Set of expected inputs as strings.
+    std::unordered_set<char> expectedInputs; ///< Set of expected inputs as strings.
 
 public:
     /**
@@ -49,12 +49,13 @@ public:
      * @brief Adds a new state to the FSM.
      * @param name The name of the state (non-empty, max 20 characters).
      * @param action The action associated with the state.
+     * @param output The output associated with the state (Moore machine) - single character.
      * @param isFinal Indicates whether the state is final.
      * @param stepDelay The delay on-entry to this state (default is 0).
      * @throws InvalidStateException If state already exists.
      * @throws std::invalid_argument If name is empty or too long.
      */
-    void addState(const std::string& name, const std::string& action, bool isFinal, std::chrono::milliseconds stepDelay = std::chrono::milliseconds(0));
+    void addState(const std::string& name, const std::string& action, char output, bool isFinal, std::chrono::milliseconds stepDelay = std::chrono::milliseconds(0));
 
     /**
      * @brief Removes a state from the FSM and its references.
@@ -70,18 +71,15 @@ public:
     void setStartState(const std::string& name);
 
     /**
-     * @brief Adds a transition between two states.
+     * @brief Adds a transition between two states for a specific event.
      * @param fromState The source state name.
      * @param toState The destination state name.
-     * @param event The event triggering the transition.
-     * @param condition The condition for the transition.
-     * @param timeout The timeout for the transition.
-     * @param output The output for the transition.
+     * @param event The name of the event.
+     * @param condition The JavaScript condition for the transition.
+     * @param input The expected input for the transition.
      * @throws InvalidStateException If states do not exist.
-     * @throws InvalidInputException If event is null.
-     * @throws DeterminismViolationException If transition violates determinism.
      */
-    void addTransition(const std::string& fromState, const std::string& toState, const std::string& event, const std::string& condition, const std::string& timeout, const std::string& output);
+    void addTransition(const std::string& fromState, const std::string& toState, const std::string& event, const std::string& condition, const char input);
 
     /**
      * @brief Removes a transition between two states for a specific event.
@@ -104,13 +102,13 @@ public:
      * @param value The input string (non-empty).
      * @throws std::invalid_argument if input is empty or already exists.
      */
-    void addExpectedInput(const std::string& value);
+    void addExpectedInput(const char value);
 
     /**
      * @brief Removes an input from the FSM.
      * @param value The input string to remove.
      */
-    void removeExpectedInput(const std::string& value);
+    void removeExpectedInput(const char value);
 
     /**
      * @brief Checks if the input is valid.
@@ -119,12 +117,11 @@ public:
     bool checkValidInput();
 
     /**
-     * @brief Adds a new output to the FSM.
-     * @param name The name of the output (non-empty).
-     * @param value The initial value of the output.
-     * @throws std::invalid_argument If name is empty or output already exists.
+     * @brief Adds an output to the FSM.
+     * @param value The output character (non-empty).
+     * @throws std::invalid_argument If the value is empty or already exists.
      */
-    void addOutput(const std::string& name, const std::string& value);
+    void addOutput(const char value);
 
     /**
      * @brief Removes an output from the FSM.
@@ -147,11 +144,22 @@ public:
     void removeVariable(const std::string& name);
 
     /**
-     * @brief Runs the FSM with a given input sequence.
-     * @param inputSequence The sequence of inputs to process.
-     * @throws MooreMachineValidationException If no start state is defined.
+     * @brief Makes a single transition to the next state based on the current input.
      */
-    void run(const std::string& inputSequence);
+    void transitionToState();
+
+    /**
+     * @brief Runs the FSM using the stored input string.
+     * @throws MooreMachineValidationException If no start state is defined.
+     * @throws std::invalid_argument If input string is empty.
+     */
+    void run();
+
+    /**
+     * @brief Debug step function - processes the next transition or stops if no more input.
+     * @return True if the step was successful, false otherwise.
+     */
+    bool debugStep();
 
     /**
      * @brief Generates a Graphviz DOT file for debugging.
@@ -192,7 +200,7 @@ public:
      * @brief Gets the expected inputs of the FSM.
      * @return A set of expected input strings.
      */
-    std::unordered_set<std::string> getExpectedInputs() const;
+    std::unordered_set<char> getExpectedInputs() const;
 
     /**
      * @brief Gets all variables in the FSM.

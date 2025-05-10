@@ -14,13 +14,13 @@
 // Constructor with new action parameter
 State::State(const std::string& name, machineState transToMachineState, 
              std::vector<std::unique_ptr<inputDeps>> dependencies, 
-             const std::string& action, 
-             std::chrono::milliseconds stepDelay,  // Add this parameter
+             const std::string& action, const char output,
+             std::chrono::milliseconds stepDelay,
              std::vector<std::shared_ptr<State>> nextStates, 
              bool isFinal)
     : name(name), transToMachineState(transToMachineState), 
       dependencies(std::move(dependencies)), action(action), 
-      stepDelay(stepDelay),  // Initialize stepDelay
+      output(output), stepDelay(stepDelay),
       nextStates(std::move(nextStates)), isFinal(isFinal) {
     if (name.empty() || name.length() > 20) {
         throw std::invalid_argument("Invalid state name");
@@ -61,10 +61,8 @@ void State::addDependency(std::unique_ptr<inputDeps> dependency) {
 }
 
 std::unique_ptr<inputDeps> State::getDependency(char input, std::shared_ptr<State> fromState) {
-    // Convert char input to string for comparison
-    std::string inputStr(1, input);
     for (const auto& dependency : dependencies) {
-        if (dependency->getEvent() == inputStr && dependency->getFromState() == fromState) {
+        if (dependency->getInput() == input && dependency->getFromState() == fromState) {
             return std::make_unique<inputDeps>(*dependency);
         }
     }
@@ -152,4 +150,13 @@ const std::string& State::getAction() const {
 
 void State::setAction(const std::string& action) {
     this->action = action;
+}
+
+// Methods for Moore machine output support
+char State::getOutput() const {
+    return output;
+}
+
+void State::setOutput(char output) {
+    this->output = output;
 }
