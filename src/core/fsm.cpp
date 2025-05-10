@@ -517,7 +517,13 @@ machineState FSM::getCurrentMachineState() const {
 
 // Set the current machine state
 void FSM::setCurrentMachineState(machineState state) {
-    if (state < machineState::IDLE || state > machineState::ERROR) {
+    static const std::unordered_set<machineState> validStates = {
+        machineState::IDLE,
+        machineState::RUNNING,
+        machineState::PAUSED,
+        machineState::ERROR
+    };
+    if (validStates.find(state) == validStates.end()) {
         throw InvalidArgumentException("Invalid machine state");
     }
     currentMachineState = state;
