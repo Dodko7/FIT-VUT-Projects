@@ -1,0 +1,54 @@
+name: C++ Tests
+
+on:
+  push:
+    branches: [ main, dev ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Install Dependencies (Ubuntu)
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y g++ make
+    
+    - name: Create Directory Structure
+      run: mkdir -p lib/catch2 lib/nlohmann/single_include
+    
+    - name: Download Dependencies
+      run: |
+        curl -L https://github.com/catchorg/Catch2/releases/download/v2.13.9/catch.hpp -o lib/catch2/catch.hpp
+        curl -L https://github.com/nlohmann/json/releases/download/v3.11.2/json.hpp -o lib/nlohmann/single_include/nlohmann/json.hpp
+    
+    - name: Build
+      run: make
+    
+    - name: Run Tests
+      id: test
+      run: make test || echo "::set-output name=failed::true"
+    
+    - name: Upload Test Results
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: test-results-${{ matrix.os }}
+        path: test-results.xml
+    
+    - name: Create Issue on Test Failure
+      uses: JasonEtco/create-an-issue@v2
+      if: steps.test.outputs.failed == 'true'
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        OS: ${{ matrix.os }}
+      with:
+        filename: .github/test-failure-template.md
