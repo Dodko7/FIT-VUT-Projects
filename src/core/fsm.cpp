@@ -26,7 +26,7 @@ void FSM::addState(const std::string& name, const std::string& action, char outp
         throw InvalidStateException("State already exists: " + name);
     }
     if (name.empty() || name.length() > 20) {
-        throw std::invalid_argument("Invalid state name");
+        throw InvalidArgumentException("Invalid state name");
     }
 
     auto state = std::make_shared<State>(
@@ -49,10 +49,10 @@ void FSM::addState(const std::string& name, const std::string& action, char outp
 
 void FSM::setName(const std::string& name) {
     if (name.empty()) { // Validate that the name is not empty
-        throw std::invalid_argument("FSM name cannot be empty");
+        throw InvalidArgumentException("FSM name cannot be empty");
     }
     if (name.length() > 20) { // Validate that the name is not too long
-        throw std::invalid_argument("FSM name too long");
+        throw InvalidArgumentException("FSM name too long");
     }
     this->name = name; // Set the FSM name
 }
@@ -60,10 +60,10 @@ void FSM::setName(const std::string& name) {
 // Set the description of the FSM
 void FSM::setDescription(const std::string& description) {
     if (description.empty()) { // Validate that the description is not empty
-        throw std::invalid_argument("FSM description cannot be empty");
+        throw InvalidArgumentException("FSM description cannot be empty");
     }
     if (description.length() > 100) { // Validate that the description is not too long
-        throw std::invalid_argument("FSM description too long");
+        throw InvalidArgumentException("FSM description too long");
     }
     this->description = description; // Set the FSM description
 }
@@ -147,13 +147,13 @@ void FSM::addExpectedInput(const char value) {
     /**
      * @brief Adds an input to the FSM.
      * @param value The name of the input.
-     * @throws std::invalid_argument If the value is empty or already exists.
+     * @throws InvalidArgumentException If the value is empty or already exists.
      */
     if (value == '\0') {
-        throw std::invalid_argument("Input cannot be null");
+        throw InvalidArgumentException("Input cannot be null");
     }
     if (expectedInputs.find(value) != expectedInputs.end()) {
-        throw std::invalid_argument("Input already exists: " + std::string(1, value));
+        throw InvalidArgumentException("Input already exists: " + std::string(1, value));
     }
     expectedInputs.insert(value);
 }
@@ -170,7 +170,7 @@ bool FSM::checkValidInput() {
 
 void FSM::addOutput(const char value) {
     if (value == '\0') {
-        throw std::invalid_argument("Output cannot be null");
+        throw InvalidArgumentException("Output cannot be null");
     }
     output += std::string(1, value); // Append the output character to the output string
 }
@@ -182,10 +182,10 @@ void FSM::clearOutput() {
 
 void FSM::addVariable(const std::string& name, const std::string& value) {
     if (name.empty()) {
-        throw std::invalid_argument("Variable name cannot be empty");
+        throw InvalidArgumentException("Variable name cannot be empty");
     }
     if (variables.find(name) != variables.end()) {
-        throw std::invalid_argument("Variable already exists: " + name);
+        throw InvalidArgumentException("Variable already exists: " + name);
     }
     variables[name] = value;
 }
@@ -205,11 +205,11 @@ void FSM::transitionToState() {
     }
     if (input.empty()) {
         this->setCurrentMachineState(machineState::STOPPED); // Stop the FSM if input is empty
-        throw std::invalid_argument("Input string is empty");
+        throw InvalidArgumentException("Input string is empty");
     }
     if (currentState) {
         if (getExpectedInputs().find(input[0]) == getExpectedInputs().end()) {
-            throw std::invalid_argument("Invalid input: " + std::string(1, input[0]));
+            throw InvalidArgumentException("Invalid input: " + std::string(1, input[0]));
         
             char& inputCharToProcess = this->input[0]; // Convert the first character of the input to a string
             for (auto& next : currentState->getNextStates()) {
@@ -228,7 +228,7 @@ void FSM::transitionToState() {
                 }
             }
         }
-        throw std::invalid_argument("Input cannot be processed because it is not defined in the input alphabet: " + std::string(1, input[0]) + "\n");
+        throw InvalidArgumentException("Input cannot be processed because it is not defined in the input alphabet: " + std::string(1, input[0]) + "\n");
     }
 }
 
@@ -241,7 +241,7 @@ void FSM::run() {
     }
     
     if (input.empty()) {
-        throw std::invalid_argument("No input sequence provided");
+        throw InvalidArgumentException("No input sequence provided");
     }
     
     // Validate the FSM before running
@@ -335,7 +335,7 @@ bool FSM::debugStep() {
         }
         
         return true;
-    } catch (const std::invalid_argument& e) {
+    } catch (const InvalidArgumentException& e) {
         // This is expected when input is empty
         setCurrentMachineState(machineState::STOPPED);
         return false;
@@ -460,15 +460,15 @@ const std::unordered_map<std::string, std::shared_ptr<State>>& FSM::getStates() 
 
 void FSM::setInput(const std::string& input) {
     if (input.empty()) {
-        throw std::invalid_argument("Input cannot be empty");
+        throw InvalidArgumentException("Input cannot be empty");
     }
     if (input.length() > 100) {
-        throw std::invalid_argument("Input too long");
+        throw InvalidArgumentException("Input too long");
     }
     // Validate that the input contains only expected characters
     for (char c : input) {
         if (expectedInputs.find(c) == expectedInputs.end()) {
-            throw std::invalid_argument("Input contains unexpected character: " + std::string(1, c));
+            throw InvalidArgumentException("Input contains unexpected character: " + std::string(1, c));
         }
     }
 
@@ -518,7 +518,7 @@ machineState FSM::getCurrentMachineState() const {
 // Set the current machine state
 void FSM::setCurrentMachineState(machineState state) {
     if (state < machineState::IDLE || state > machineState::ERROR) {
-        throw std::invalid_argument("Invalid machine state");
+        throw InvalidArgumentException("Invalid machine state");
     }
     currentMachineState = state;
 }
