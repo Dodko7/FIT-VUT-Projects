@@ -9,12 +9,12 @@
 
 TEST_CASE("Transition management", "[transitions]") {
     FSM fsm;
-    fsm.addState("S0", "Initial state", "", false);  // Added action parameter
-    fsm.addState("S1", "Next state", "", false);     // Added action parameter
+    fsm.addState("S0", "Initial state", '0', false);
+    fsm.addState("S1", "Next state", '1', false);
     std::string s0 = "S0", s1 = "S1", s2 = "S2";
 
     SECTION("Add valid transition") {
-        REQUIRE_NOTHROW(fsm.addTransition(s0, s1, "a", "", ""));  // Changed 'a' to "a" and added condition and timeout params
+        REQUIRE_NOTHROW(fsm.addTransition(s0, s1, "a", ""));  // Updated to remove output param
         auto state = fsm.getStates().at("S0");
         REQUIRE(state->getDependencies().size() == 1);
         REQUIRE(state->getNextStates().size() == 1);
@@ -23,22 +23,22 @@ TEST_CASE("Transition management", "[transitions]") {
     }
 
     SECTION("Add transition with invalid state") {
-        REQUIRE_THROWS_AS(fsm.addTransition(s0, s2, "a", "", ""), InvalidStateException);  // Updated parameters
-        REQUIRE_THROWS_AS(fsm.addTransition(s2, s1, "a", "", ""), InvalidStateException);  // Updated parameters
+        REQUIRE_THROWS_AS(fsm.addTransition(s0, s2, "a", ""), InvalidStateException);  // Updated to remove output param
+        REQUIRE_THROWS_AS(fsm.addTransition(s2, s1, "a", ""), InvalidStateException);  // Updated to remove output param
     }
 
     SECTION("Add transition with invalid input") {
         // Note: The empty string is now a valid event, so using "" instead of '\0'
-        REQUIRE_THROWS_AS(fsm.addTransition(s0, s1, "", "", ""), InvalidInputException);  // Updated parameters
+        REQUIRE_THROWS_AS(fsm.addTransition(s0, s1, "", ""), InvalidInputException);  // Updated to remove output param
     }
 
     SECTION("Add duplicate transition") {
-        fsm.addTransition(s0, s1, "a", "", "");  // Updated parameters
-        REQUIRE_THROWS_AS(fsm.addTransition(s0, s1, "a", "", ""), DeterminismViolationException);  // Updated parameters
+        fsm.addTransition(s0, s1, "a", "");  // Updated to remove output param
+        REQUIRE_THROWS_AS(fsm.addTransition(s0, s1, "a", ""), DeterminismViolationException);  // Updated to remove output param
     }
 
     SECTION("Remove existing transition") {
-        fsm.addTransition(s0, s1, "a", "", "");  // Updated parameters
+        fsm.addTransition(s0, s1, "a", "");  // Updated to remove output param
         REQUIRE_NOTHROW(fsm.removeTransition(s0, s1, 'a'));  // Changed back to character literal
         auto state = fsm.getStates().at("S0");
         REQUIRE(state->getDependencies().size() == 0);

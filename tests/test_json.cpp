@@ -10,14 +10,14 @@ TEST_CASE("JSON serialization and deserialization", "[json]") {
     fsm.addInput("in", "0");
     fsm.addOutput("out", "0");
     fsm.addVariable("timeout", "5000");
-    fsm.addState("IDLE", "IDLE state", "output('out', 0)", false);
-    fsm.addState("ACTIVE", "ACTIVE state", "output('out', 1)", false);
-    fsm.addState("TIMING", "TIMING state", "", false);
+    fsm.addState("IDLE", "IDLE action", '0', false);
+    fsm.addState("ACTIVE", "ACTIVE action", '1', false);
+    fsm.addState("TIMING", "TIMING action", '0', false);
     fsm.setStartState("IDLE");
-    fsm.addTransition("IDLE", "ACTIVE", "in", "atoi(valueof('in')) == 1", "");
-    fsm.addTransition("ACTIVE", "TIMING", "in", "atoi(valueof('in')) == 0", "");
-    fsm.addTransition("TIMING", "ACTIVE", "in", "atoi(valueof('in')) == 1", "");
-    fsm.addTransition("TIMING", "IDLE", "", "", "timeout");
+    fsm.addTransition("IDLE", "ACTIVE", "in", "atoi(valueof('in')) == 1");
+    fsm.addTransition("ACTIVE", "TIMING", "in", "atoi(valueof('in')) == 0");
+    fsm.addTransition("TIMING", "ACTIVE", "in", "atoi(valueof('in')) == 1");
+    fsm.addTransition("TIMING", "IDLE", "", "");
 
     SECTION("Save and load JSON") {
         const std::string filename = "examples/test_fsm.json";

@@ -49,12 +49,13 @@ public:
      * @brief Adds a new state to the FSM.
      * @param name The name of the state (non-empty, max 20 characters).
      * @param action The action associated with the state.
+     * @param output The output associated with the state (Moore machine) - single character.
      * @param isFinal Indicates whether the state is final.
      * @param stepDelay The delay on-entry to this state (default is 0).
      * @throws InvalidStateException If state already exists.
      * @throws std::invalid_argument If name is empty or too long.
      */
-    void addState(const std::string& name, const std::string& action, bool isFinal, std::chrono::milliseconds stepDelay = std::chrono::milliseconds(0));
+    void addState(const std::string& name, const std::string& action, char output, bool isFinal, std::chrono::milliseconds stepDelay = std::chrono::milliseconds(0));
 
     /**
      * @brief Removes a state from the FSM and its references.
@@ -70,18 +71,15 @@ public:
     void setStartState(const std::string& name);
 
     /**
-     * @brief Adds a transition between two states.
+     * @brief Adds a transition between two states for a specific event.
      * @param fromState The source state name.
      * @param toState The destination state name.
-     * @param event The event triggering the transition.
-     * @param condition The condition for the transition.
-     * @param timeout The timeout for the transition.
-     * @param output The output for the transition.
+     * @param event The name of the event.
+     * @param condition The JavaScript condition for the transition.
+     * @param input The expected input for the transition.
      * @throws InvalidStateException If states do not exist.
-     * @throws InvalidInputException If event is null.
-     * @throws DeterminismViolationException If transition violates determinism.
      */
-    void addTransition(const std::string& fromState, const std::string& toState, const std::string& event, const std::string& condition, const std::string& timeout, const std::string& output);
+    void addTransition(const std::string& fromState, const std::string& toState, const std::string& event, const std::string& condition, const char input);
 
     /**
      * @brief Removes a transition between two states for a specific event.
@@ -104,7 +102,7 @@ public:
      * @param value The input character (non-empty).
      * @throws std::invalid_argument if input is empty or already exists.
      */
-    void FSM::addExpectedInput(const char value);
+    void addExpectedInput(const char value);
 
     /**
      * @brief Removes an input from the FSM.
@@ -125,7 +123,7 @@ public:
      * @param value The initial value of the output.
      * @throws std::invalid_argument If name is empty or output already exists.
      */
-    void addOutput(const std::string& name, const std::string& value);
+    void addOutput(const char value);
 
     /**
      * @brief Removes an output from the FSM.
