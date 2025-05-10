@@ -14,7 +14,7 @@
 #include <cstdlib> // Include standard library for system commands
 #include <thread> // For sleep functionality
 #include "nlohmann/json.hpp" // Include JSON library for serialization/deserialization
-#include <set>  
+#include <set>
 #include <map>
 
 using json = nlohmann::json;
@@ -207,29 +207,32 @@ void FSM::transitionToState() {
         this->setCurrentMachineState(machineState::STOPPED); // Stop the FSM if input is empty
         throw InvalidArgumentException("Input string is empty");
     }
-    if (currentState) {
-        if (getExpectedInputs().find(input[0]) == getExpectedInputs().end()) {
-            throw InvalidArgumentException("Invalid input: " + std::string(1, input[0]));
-        
-            char& inputCharToProcess = this->input[0]; // Convert the first character of the input to a string
-            for (auto& next : currentState->getNextStates()) {
-                for (auto& dep : next->getDependencies()) {
-                    if (dep->getInput() == inputCharToProcess && currentState == dep->getFromState()) { // Check if the input matches
-                        std::cout << "Transitioning from state " << currentState->getName() << " to state " << next->getName() << " by input " << inputCharToProcess << "\n";
-                        setCurrentState(next); // Transition to the next state
-                        addOutput(currentState->getOutput()); // Add the output of the new state
-                        discardInputChar(); // Discard the processed input character
     
-                        if(currentState->getTransitionTo() != std::nullopt) { // Check if the state has a transition to another machine state
-                            setCurrentMachineState(currentState->getTransitionTo().value()); // Set the machine state if defined
-                        }
-                        return;
-                    }
+    // First check if the input is valid
+    if (getExpectedInputs().find(input[0]) == getExpectedInputs().end()) {
+        throw InvalidArgumentException("Invalid input: " + std::string(1, input[0]));
+    }
+    
+    // Then try to find a matching transition
+    char inputCharToProcess = this->input[0]; // Get the first character of the input
+    for (auto& next : currentState->getNextStates()) {
+        for (auto& dep : next->getDependencies()) {
+            if (dep->getInput() == inputCharToProcess && currentState == dep->getFromState()) { // Check if the input matches
+                std::cout << "Transitioning from state " << currentState->getName() << " to state " << next->getName() << " by input " << inputCharToProcess << "\n";
+                setCurrentState(next); // Transition to the next state
+                addOutput(currentState->getOutput()); // Add the output of the new state
+                discardInputChar(); // Discard the processed input character
+
+                if(currentState->getTransitionTo().has_value()) { // Check if the state has a transition to another machine state
+                    setCurrentMachineState(currentState->getTransitionTo().value()); // Set the machine state if defined
                 }
+                return;
             }
         }
-        throw InvalidArgumentException("Input cannot be processed because it is not defined in the input alphabet: " + std::string(1, input[0]) + "\n");
     }
+    
+    // If we get here, no matching transition was found
+    throw InvalidArgumentException("Input cannot be processed: no matching transition found for " + std::string(1, input[0]));
 }
 
 
@@ -350,6 +353,7 @@ void FSM::debug() {
     /**
      * @brief Generates a Graphviz DOT file representing the FSM.
      * Uses the internal state of the FSM to ensure consistency with the automaton's specification.
+     * This implementation is specifically for Moore machines, where outputs are associated with states.
      */
     std::ofstream dotFile("assets/fsm_debug.dot");
     if (!dotFile.is_open()) {
@@ -362,61 +366,92 @@ void FSM::debug() {
     dotFile << "    rankdir=LR;\n";
     dotFile << "    node [shape=circle];\n";
 
-    // Add states
+    // Add states with their output (Moore machine)
     for (const auto& pair : states) {
         const auto& state = pair.second;
+        
+        // Create state label with output character
+        std::string stateLabel = state->getName();
+        if (state->getOutput() != '\0') {
+            stateLabel += "\\nOutput: " + std::string(1, state->getOutput());
+        }
+        
+        // Set attributes for start and final states
         std::string attributes;
         if (state == startState) {
             attributes = "[shape=doublecircle, color=green]";
         } else if (finalStates.count(state->getName())) {
             attributes = "[shape=doublecircle, color=red]";
         }
-        dotFile << "    \"" << state->getName() << "\" " << attributes << ";\n";
+        
+        dotFile << "    \"" << stateLabel << "\" " << attributes << ";\n";
     }
 
-    // Add transitions from internal FSM state with deduplication
-    std::map<std::string, std::string> uniqueTransitions; // Key: from|event|condition|timeout, Value: to|label
+    // Map to store unique transitions by combining from and to states with input
+    std::map<std::string, std::string> uniqueTransitions; // Key: fromState|toState, Value: label
+
+    // Process all transitions
     for (const auto& pair : states) {
         const auto& state = pair.second;
         const auto& deps = state->getDependencies();
         const auto& nextStates = state->getNextStates();
 
+        // Create labels for each state that include their output (for Moore machine)
+        std::string fromStateLabel = state->getName();
+        if (state->getOutput() != '\0') {
+            fromStateLabel += "\\nOutput: " + std::string(1, state->getOutput());
+        }
+
         // Iterate over dependencies and next states
         for (size_t i = 0; i < deps.size() && i < nextStates.size(); ++i) {
             const auto& dep = deps[i];
             const auto& nextState = nextStates[i];
+            
+            // Skip invalid transitions
             if (!nextState || dep->getFromState() != state) {
                 continue;
             }
 
-            // Create unique key for deduplication
-            std::string key = state->getName() + "|" + 
-                             dep->getCondition();
-            if (uniqueTransitions.find(key) != uniqueTransitions.end()) {
-                std::cerr << "Warning: Duplicate transition detected for state: " 
-                          << state->getName()
-                          << ", condition: " << dep->getCondition();
+            // Create the destination state label with output
+            std::string toStateLabel = nextState->getName();
+            if (nextState->getOutput() != '\0') {
+                toStateLabel += "\\nOutput: " + std::string(1, nextState->getOutput());
             }
-            uniqueTransitions[key] = nextState->getName();
+
+            // Use input character as transition label
+            char inputChar = dep->getInput();
+            std::string inputLabel = std::string(1, inputChar);
+            
+            // Create a unique key for this transition
+            std::string key = fromStateLabel + "|" + toStateLabel;
+            
+            // Check if we already have a transition between these states
+            if (uniqueTransitions.find(key) != uniqueTransitions.end()) {
+                // Append the new input to the existing label
+                uniqueTransitions[key] += ", " + inputLabel;
+            } else {
+                // Create a new transition label
+                uniqueTransitions[key] = inputLabel;
+            }
         }
     }
 
-    // Write unique transitions to DOT file
-    for (const auto& [key, value] : uniqueTransitions) {
-        // Extract toState and label from value
-        auto pos = value.find('|');
+    // Write transitions to DOT file
+    for (const auto& [key, label] : uniqueTransitions) {
+        auto pos = key.find('|');
         if (pos == std::string::npos) continue;
-        std::string to = value.substr(0, pos);
-        std::string label = value.substr(pos + 1);
-        // Extract from state from key
-        pos = key.find('|');
+        
         std::string from = key.substr(0, pos);
+        std::string to = key.substr(pos + 1);
+        
         dotFile << "    \"" << from << "\" -> \"" << to 
                 << "\" [label=\"" << label << "\"];\n";
     }
 
     dotFile << "}\n";
     dotFile.close();
+    
+    std::cout << "FSM graph generated to assets/fsm_debug.dot" << std::endl;
 }
 
 // Get the current state of the FSM

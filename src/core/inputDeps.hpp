@@ -13,19 +13,16 @@ class State;
  */
 class inputDeps {
 private:
-    std::string condition; ///< JavaScript condition.
     std::weak_ptr<State> fromState; ///< The originating state for the transition.
     char input; ///< The expected input for the transition.
 
 public:
     /**
      * @brief Constructor for inputDeps.
-     * @param condition The JavaScript condition.
      * @param state The originating state for the transition.
      * @param input The expected input character for the transition.
      */
-    inputDeps(const std::string& condition, 
-                std::shared_ptr<State> state, 
+    inputDeps(std::shared_ptr<State> state, 
                 const char input);
 
     /**
