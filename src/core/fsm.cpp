@@ -31,13 +31,14 @@ void FSM::addState(const std::string& name, const std::string& action, char outp
 
     auto state = std::make_shared<State>(
         name,                               // State name
-        machineState::IDLE,                 // Default machine state
+        std::nullopt,                 // Default machine state
         std::vector<std::unique_ptr<inputDeps>>(), // Empty dependencies
         action,                             // Action
         output,                             // Output (Moore machine) - single character
         stepDelay,                          // Step delay
         std::vector<std::shared_ptr<State>>(), // Empty next states
         isFinal                             // Is final state
+
     );
 
     states[name] = state;
@@ -121,8 +122,8 @@ void FSM::removeTransition(std::string& fromState, std::string& toState, char in
         throw InvalidStateException("State does not exist: " + toState);
     }
 
-    auto from = getStatePtrByName(const_cast<std::string&>(fromState));
-    auto to = getStatePtrByName(const_cast<std::string&>(toState));
+    auto from = getStatePtrByName(fromState);
+    auto to = getStatePtrByName(toState);
 
     if (!from || !to) {
         throw InvalidStateException("Invalid state pointers for transition removal");
@@ -174,6 +175,10 @@ void FSM::addOutput(const char value) {
     output += std::string(1, value); // Append the output character to the output string
 }
 
+void FSM::clearOutput() {
+    output.clear(); // Clear the output string
+}
+
 
 void FSM::addVariable(const std::string& name, const std::string& value) {
     if (name.empty()) {
@@ -203,18 +208,27 @@ void FSM::transitionToState() {
         throw std::invalid_argument("Input string is empty");
     }
     if (currentState) {
-        char& inputCharToProcess = this->input[0]; // Convert the first character of the input to a string
-        for (auto& next : currentState->getNextStates()) {
-            for (auto& dep : next->getDependencies()) {
-                if (dep->getInput() == inputCharToProcess && currentState == dep->getFromState()) { // Check if the input matches
-                    std::cout << "Transitioning from state " << currentState->getName() << " to state " << next->getName() << " by input " << inputCharToProcess << "\n";
-                    currentState = next; // Transition to the next state
-                    this->output += currentState->getOutput(); // Get output from current state (Moore machine)
-                    this->input.erase(0, 1); // Remove the first character from the input string
-                    return;
+        if (getExpectedInputs().find(input[0]) == getExpectedInputs().end()) {
+            throw std::invalid_argument("Invalid input: " + std::string(1, input[0]));
+        
+            char& inputCharToProcess = this->input[0]; // Convert the first character of the input to a string
+            for (auto& next : currentState->getNextStates()) {
+                for (auto& dep : next->getDependencies()) {
+                    if (dep->getInput() == inputCharToProcess && currentState == dep->getFromState()) { // Check if the input matches
+                        std::cout << "Transitioning from state " << currentState->getName() << " to state " << next->getName() << " by input " << inputCharToProcess << "\n";
+                        setCurrentState(next); // Transition to the next state
+                        addOutput(currentState->getOutput()); // Add the output of the new state
+                        discardInputChar(); // Discard the processed input character
+    
+                        if(currentState->getTransitionTo() != std::nullopt) { // Check if the state has a transition to another machine state
+                            setCurrentMachineState(currentState->getTransitionTo().value()); // Set the machine state if defined
+                        }
+                        return;
+                    }
                 }
             }
         }
+        throw std::invalid_argument("Input cannot be processed because it is not defined in the input alphabet: " + std::string(1, input[0]) + "\n");
     }
 }
 
@@ -244,14 +258,14 @@ void FSM::run() {
     
 
     // Clear output
-    output.clear();
+    clearOutput();
     
     // Initialize state
-    currentState = startState;
-    currentMachineState = machineState::RUNNING;
+    setCurrentState(startState);
+    setCurrentMachineState(machineState::RUNNING);
     
     // In a Moore machine, output the initial state's output character
-    output += currentState->getOutput();
+    addOutput(currentState->getOutput());
     
     std::cout << "Starting FSM at state: " << currentState->getName() << "\n";
     
@@ -278,14 +292,14 @@ void FSM::run() {
             }
         } catch (const std::exception& e) {
             std::cerr << "Error during FSM execution: " << e.what() << "\n";
-            currentMachineState = machineState::ERROR;
+            setCurrentMachineState(machineState::ERROR);
             break;
         }
     }
     
     // Update machine state when done
     if (currentMachineState == machineState::RUNNING) {
-        currentMachineState = machineState::STOPPED;
+        setCurrentMachineState(machineState::STOPPED);
     }
     
     std::cout << "FSM stopped at state: " << currentState->getName() << "\n";
@@ -295,7 +309,7 @@ void FSM::run() {
 // Debug step function - process next transition or stop if no more input
 bool FSM::debugStep() {
     if (input.empty()) {
-        this->currentMachineState = machineState::STOPPED;
+        setCurrentMachineState(machineState::STOPPED);
         std::cout << "Debug: No more input to process.\n";
         return false;
     }
@@ -303,7 +317,7 @@ bool FSM::debugStep() {
     try {
         // Set machine state to running if not already
         if (currentMachineState != machineState::RUNNING) {
-            currentMachineState = machineState::RUNNING;
+            setCurrentMachineState(machineState::RUNNING);
         }
         
         // Use existing transitionToState to process one transition
@@ -316,17 +330,18 @@ bool FSM::debugStep() {
         
         // Check if we're out of input
         if (input.empty()) {
-            currentMachineState = machineState::STOPPED;
+            setCurrentMachineState(machineState::STOPPED);
+            std::cout << "Debug: No more input to process.\n";
         }
         
         return true;
     } catch (const std::invalid_argument& e) {
         // This is expected when input is empty
-        currentMachineState = machineState::STOPPED;
+        setCurrentMachineState(machineState::STOPPED);
         return false;
     } catch (const std::exception& e) {
         std::cerr << "Error during debug step: " << e.what() << "\n";
-        currentMachineState = machineState::ERROR;
+        setCurrentMachineState(machineState::ERROR);
         return false;
     }
 }
@@ -424,12 +439,39 @@ std::shared_ptr<State> FSM::getCurrentState() const {
     return currentState;
 }
 
+void FSM::setCurrentState(std::shared_ptr<State> state) {
+    if (!state) {
+        throw InvalidArgumentException("State cannot be null");
+    }
+
+    if (states.find(state->getName()) == states.end()) {
+        throw InvalidStateException("State does not exist: " + state->getName());
+    }
+
+    currentState = state; // Set the current state
+}
+
+
+
 // Get all states in the FSM
 const std::unordered_map<std::string, std::shared_ptr<State>>& FSM::getStates() const {
     return states;
 }
 
 void FSM::setInput(const std::string& input) {
+    if (input.empty()) {
+        throw std::invalid_argument("Input cannot be empty");
+    }
+    if (input.length() > 100) {
+        throw std::invalid_argument("Input too long");
+    }
+    // Validate that the input contains only expected characters
+    for (char c : input) {
+        if (expectedInputs.find(c) == expectedInputs.end()) {
+            throw std::invalid_argument("Input contains unexpected character: " + std::string(1, c));
+        }
+    }
+
     this->input = input; // Set the FSM input
 }
 
@@ -438,9 +480,20 @@ std::string FSM::getInput() const {
     return input;
 }
 
+// Discard the first character of the input string
+void FSM::discardInputChar() {
+    if (!input.empty()) {
+        input.erase(0, 1); // Remove the first character from the input string
+    }
+}
+
 // Get the current output of the FSM
 std::string FSM::getOutput() const {
     return output;
+}
+
+void FSM::clearOutput() {
+    output.clear(); // Clear the output string
 }
 
 std::unordered_set<char> FSM::getExpectedInputs() const {
@@ -464,6 +517,9 @@ machineState FSM::getCurrentMachineState() const {
 
 // Set the current machine state
 void FSM::setCurrentMachineState(machineState state) {
+    if (state < machineState::IDLE || state > machineState::ERROR) {
+        throw std::invalid_argument("Invalid machine state");
+    }
     currentMachineState = state;
 }
 
@@ -580,7 +636,9 @@ void FSM::loadFromJson(const std::string& filename) {
     variables.clear();
     startState = nullptr;
     currentState = nullptr;
-    currentMachineState = machineState::IDLE;
+    expectedInputs.clear();
+    setCurrentMachineState(machineState::IDLE);
+    stepDelay = std::chrono::milliseconds(0);
 
     // Load basic information - properly extract name and description
     if (j.contains("name")) {
