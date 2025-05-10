@@ -4,7 +4,7 @@ on:
   push:
     branches: [ main, dev ]
   pull_request:
-    branches: [ main ]
+    branches: [ main, dev ]
 
 jobs:
   build-and-test:
@@ -35,14 +35,21 @@ jobs:
     
     - name: Run Tests
       id: test
-      run: make test || echo "::set-output name=failed::true"
-    
-    - name: Upload Test Results
-      uses: actions/upload-artifact@v3
-      if: always()
-      with:
-        name: test-results-${{ matrix.os }}
-        path: test-results.xml
+      run: |
+        make test > test-output.txt 2>&1 || echo "::set-output name=failed::true"
+        
+    - name: Prepare Issue Content
+      if: steps.test.outputs.failed == 'true'
+      run: |
+        # Get test output
+        TEST_OUTPUT=$(cat test-output.txt)
+        echo "TEST_OUTPUT<<EOF" >> $GITHUB_ENV
+        echo "$TEST_OUTPUT" >> $GITHUB_ENV
+        echo "EOF" >> $GITHUB_ENV
+        
+        # Create a short summary
+        FAILED_COUNT=$(grep -o 'test cases failed' test-output.txt | wc -l)
+        echo "TEST_SUMMARY=Failed $FAILED_COUNT test cases" >> $GITHUB_ENV
     
     - name: Create Issue on Test Failure
       uses: JasonEtco/create-an-issue@v2
