@@ -100,7 +100,7 @@ void State::addNextState(std::shared_ptr<State> nextState) {
     nextStates.push_back(nextState);
 }
 
-void State::removeNextStateFO(std::shared_ptr<State> nextState) {
+void State::removeNextStateFirstOccurence(std::shared_ptr<State> nextState) {
     if (nextState == nullptr) {
         throw std::invalid_argument("Next state cannot be null");
     }
@@ -115,7 +115,7 @@ void State::removeNextStateFO(std::shared_ptr<State> nextState) {
     nextStates.erase(it);
 }
 
-void State::removeNextStateOccurances(std::shared_ptr<State> nextState) {
+void State::removeNextStateOccurences(std::shared_ptr<State> nextState) {
     if (nextState == nullptr) {
         throw std::invalid_argument("Next state cannot be null"); 
     }
