@@ -17,6 +17,7 @@ enum class machineState {
     IDLE,
     RUNNING,
     STOPPED,
+    PAUSED,
     ERROR
 };
 
@@ -125,9 +126,8 @@ public:
 
     /**
      * @brief Removes an output from the FSM.
-     * @param name The name of the output to remove.
      */
-    void removeOutput(const std::string& name);
+    void clearOutput();
 
     /**
      * @brief Adds a new variable to the FSM.
@@ -173,6 +173,12 @@ public:
     std::shared_ptr<State> getCurrentState() const;
 
     /**
+     * @brief Gets the current state of the FSM.
+     * @return A shared pointer to the current state.
+     */
+    void setCurrentState(std::shared_ptr<State> state);
+
+    /**
      * @brief Gets all states in the FSM.
      * @return A reference to the map of states.
      */
@@ -189,6 +195,11 @@ public:
      * @return The current input string.
      */
     std::string getInput() const;
+
+    /**
+     * @brief Discards the first character of the input string.
+     */
+    void discardInputChar();
 
     /**
      * @brief Gets the output of the FSM.

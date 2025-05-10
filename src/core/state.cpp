@@ -1,5 +1,5 @@
+#include "fsm.hpp" // Include FSM header for machineState
 #include "inputDeps.hpp" // Include InputDeps to allow State to interact with it
-#include "fsm.hpp" // Include FSM to access machineState definitions
 #include "fsmErrors.hpp" // Include FSM errors for exception handling
 #include <algorithm> // For std::find
 #include <stdexcept> // For std::invalid_argument
@@ -12,9 +12,9 @@
 // No class definition here, only method implementations for State
 
 // Constructor with new action parameter
-State::State(const std::string& name, machineState transToMachineState, 
+State::State(const std::string& name, std::optional<machineState> transToMachineState, 
              std::vector<std::unique_ptr<inputDeps>> dependencies, 
-             const std::string& action, const char output,
+             const std::string& action, char output,
              std::chrono::milliseconds stepDelay,
              std::vector<std::shared_ptr<State>> nextStates, 
              bool isFinal)
@@ -100,7 +100,7 @@ void State::addNextState(std::shared_ptr<State> nextState) {
     nextStates.push_back(nextState);
 }
 
-void State::removeNextStateFO(std::shared_ptr<State> nextState) {
+void State::removeNextStateFirstOccurrence(std::shared_ptr<State> nextState) {
     if (nextState == nullptr) {
         throw std::invalid_argument("Next state cannot be null");
     }
@@ -115,7 +115,7 @@ void State::removeNextStateFO(std::shared_ptr<State> nextState) {
     nextStates.erase(it);
 }
 
-void State::removeNextStateOccurances(std::shared_ptr<State> nextState) {
+void State::removeNextStateOccurrences(std::shared_ptr<State> nextState) {
     if (nextState == nullptr) {
         throw std::invalid_argument("Next state cannot be null"); 
     }
@@ -139,7 +139,7 @@ std::vector<std::shared_ptr<State>>& State::getNextStates() {
     return nextStates;
 }
 
-machineState State::getTransitionTo() const {
+std::optional<machineState> State::getTransitionTo() const {
     return transToMachineState;
 }
 
@@ -159,4 +159,12 @@ char State::getOutput() const {
 
 void State::setOutput(char output) {
     this->output = output;
+}
+
+void State::setTransitionTo(machineState transToMachineState) {
+    this->transToMachineState = transToMachineState;
+}
+
+void State::clearTransitionTo() {
+    transToMachineState = std::nullopt;
 }
