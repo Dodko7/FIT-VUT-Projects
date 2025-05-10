@@ -175,11 +175,6 @@ void FSM::addOutput(const char value) {
     output += std::string(1, value); // Append the output character to the output string
 }
 
-void FSM::clearOutput() {
-    output.clear(); // Clear the output string
-}
-
-
 void FSM::addVariable(const std::string& name, const std::string& value) {
     if (name.empty()) {
         throw InvalidArgumentException("Variable name cannot be empty");

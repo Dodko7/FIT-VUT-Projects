@@ -1,7 +1,8 @@
 #ifndef FSM_HPP
 #define FSM_HPP
 
-#include "state.hpp"
+// Forward declare the State class
+class State;
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
@@ -20,6 +21,9 @@ enum class machineState {
     PAUSED,
     ERROR
 };
+
+// Now include the State class
+#include "state.hpp"
 
 /**
  * @class FSM
