@@ -520,6 +520,7 @@ void FSM::setCurrentMachineState(machineState state) {
     static const std::unordered_set<machineState> validStates = {
         machineState::IDLE,
         machineState::RUNNING,
+        machineState::STOPPED,
         machineState::PAUSED,
         machineState::ERROR
     };

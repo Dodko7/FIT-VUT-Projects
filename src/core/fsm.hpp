@@ -17,6 +17,7 @@ enum class machineState {
     IDLE,
     RUNNING,
     STOPPED,
+    PAUSED,
     ERROR
 };
 
