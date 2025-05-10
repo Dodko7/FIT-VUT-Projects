@@ -9,48 +9,48 @@
 
 TEST_CASE("Transition management", "[transitions]") {
     FSM fsm;
-    fsm.addState("S0", "Initial state", "", false);  // Added action parameter
-    fsm.addState("S1", "Next state", "", false);     // Added action parameter
+    fsm.addState("S0", "Initial state", '\0', false);
+    fsm.addState("S1", "Next state", '\0', false);
     std::string s0 = "S0", s1 = "S1", s2 = "S2";
 
     SECTION("Add valid transition") {
-        REQUIRE_NOTHROW(fsm.addTransition(s0, s1, "a", "", ""));  // Changed 'a' to "a" and added condition and timeout params
+        REQUIRE_NOTHROW(fsm.addTransition(s0, s1, "a", 'a'));
         auto state = fsm.getStates().at("S0");
         REQUIRE(state->getDependencies().size() == 1);
         REQUIRE(state->getNextStates().size() == 1);
         REQUIRE(state->getNextStates()[0]->getName() == "S1");
-        REQUIRE(state->getDependencies()[0]->getEvent() == "a");  // Changed getExpectedInput() to getEvent()
+        REQUIRE(state->getDependencies()[0]->getCondition() == "a");
     }
 
     SECTION("Add transition with invalid state") {
-        REQUIRE_THROWS_AS(fsm.addTransition(s0, s2, "a", "", ""), InvalidStateException);  // Updated parameters
-        REQUIRE_THROWS_AS(fsm.addTransition(s2, s1, "a", "", ""), InvalidStateException);  // Updated parameters
+        REQUIRE_THROWS_AS(fsm.addTransition(s0, s2, "a", 'a'), InvalidStateException);
+        REQUIRE_THROWS_AS(fsm.addTransition(s2, s1, "a", 'a'), InvalidStateException);
     }
 
     SECTION("Add transition with invalid input") {
-        // Note: The empty string is now a valid event, so using "" instead of '\0'
-        REQUIRE_THROWS_AS(fsm.addTransition(s0, s1, "", "", ""), InvalidInputException);  // Updated parameters
+        // Note: Empty condition is not allowed in this implementation
+        REQUIRE_THROWS_AS(fsm.addTransition(s0, s1, "", 'a'), InvalidInputException);
     }
 
     SECTION("Add duplicate transition") {
-        fsm.addTransition(s0, s1, "a", "", "");  // Updated parameters
-        REQUIRE_THROWS_AS(fsm.addTransition(s0, s1, "a", "", ""), DeterminismViolationException);  // Updated parameters
+        fsm.addTransition(s0, s1, "a", 'a');
+        REQUIRE_THROWS_AS(fsm.addTransition(s0, s1, "a", 'a'), DeterminismViolationException);
     }
 
     SECTION("Remove existing transition") {
-        fsm.addTransition(s0, s1, "a", "", "");  // Updated parameters
-        REQUIRE_NOTHROW(fsm.removeTransition(s0, s1, 'a'));  // Changed back to character literal
+        fsm.addTransition(s0, s1, "a", 'a');
+        REQUIRE_NOTHROW(fsm.removeTransition(s0, s1, 'a'));
         auto state = fsm.getStates().at("S0");
         REQUIRE(state->getDependencies().size() == 0);
         REQUIRE(state->getNextStates().size() == 0);
     }
 
     SECTION("Remove non-existing transition") {
-        REQUIRE_NOTHROW(fsm.removeTransition(s0, s1, 'a'));  // Changed back to character literal
+        REQUIRE_NOTHROW(fsm.removeTransition(s0, s1, 'a'));
     }
 
     SECTION("Remove transition with invalid state") {
-        REQUIRE_THROWS_AS(fsm.removeTransition(s0, s2, 'a'), InvalidStateException);  // Changed back to character literal
-        REQUIRE_THROWS_AS(fsm.removeTransition(s2, s1, 'a'), InvalidStateException);  // Changed back to character literal
+        REQUIRE_THROWS_AS(fsm.removeTransition(s0, s2, 'a'), InvalidStateException);
+        REQUIRE_THROWS_AS(fsm.removeTransition(s2, s1, 'a'), InvalidStateException);
     }
 }

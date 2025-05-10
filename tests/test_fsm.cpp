@@ -14,52 +14,59 @@ TEST_CASE("FSM runtime and validation", "[fsm]") {
     FSM fsm;
     fsm.setName("TestFSM");
     fsm.setDescription("Test FSM for runtime");
-    fsm.addState("S0", "Initial state", "", false);  // Added empty action parameter
-    fsm.addState("S1", "Next state", "", false);     // Added empty action parameter
-    fsm.addState("S2", "Final state", "", true);     // Added empty action parameter
+    
+    fsm.addState("S0", "Initial state", '\0', false);
+    fsm.addState("S1", "Next state", '\0', false);
+    fsm.addState("S2", "Final state", '\0', true);
+    
     std::string s0 = "S0", s1 = "S1", s2 = "S2";
-    fsm.addTransition(s0, s1, "a", "", "");  // Changed 'a' to "a" and added empty condition and timeout
-    fsm.addTransition(s1, s2, "b", "", "");  // Changed 'b' to "b" and added empty condition and timeout
+    
+    fsm.addTransition(s0, s1, "a", 'a');
+    fsm.addTransition(s1, s2, "b", 'b');
+    
     fsm.setStartState("S0");
 
     SECTION("Run with valid input sequence") {
-        fsm.run("ab");
+        fsm.setInput("ab");
+        fsm.run();
         REQUIRE(fsm.getCurrentState()->getName() == "S2");
         REQUIRE(fsm.getCurrentMachineState() == machineState::STOPPED);
     }
 
     SECTION("Run with invalid input") {
-        fsm.run("ac");
-        REQUIRE(fsm.getCurrentState()->getName() == "S1"); // Corrected to S1
+        fsm.setInput("ac");
+        fsm.run();
+        REQUIRE(fsm.getCurrentState()->getName() == "S1");
     }
 
     SECTION("Run without start state") {
         FSM fsm2;
-        REQUIRE_THROWS_AS(fsm2.run("ab"), MooreMachineValidationException);
+        fsm2.setInput("ab");
+        REQUIRE_THROWS_AS(fsm2.run(), MooreMachineValidationException);
     }
 
     SECTION("Validate FSM with unreachable state") {
-        fsm.addState("S3", "Unreachable state", "", false);  // Added empty action parameter
-        REQUIRE_NOTHROW(fsm.validateFSM()); // Should log unreachable state
+        fsm.addState("S3", "Unreachable state", '\0', false);
+        REQUIRE_NOTHROW(fsm.validateFSM());
     }
 
     SECTION("Prune unreachable states") {
-        fsm.addState("S3", "Unreachable state", "", false);  // Added empty action parameter
-        REQUIRE(fsm.getStates().find("S3") != fsm.getStates().end()); // Ensure S3 exists
+        fsm.addState("S3", "Unreachable state", '\0', false);
+        REQUIRE(fsm.getStates().find("S3") != fsm.getStates().end());
         fsm.pruneUnreachable();
-        REQUIRE(fsm.getStates().find("S3") == fsm.getStates().end()); // S3 should be removed
+        REQUIRE(fsm.getStates().find("S3") == fsm.getStates().end());
     }
 
     SECTION("Debug generates valid DOT") {
         std::system("mkdir -p assets");
         fsm.debug();
         std::ifstream dotFile("assets/fsm_debug.dot");
-        REQUIRE(dotFile.is_open()); // Check if file was created
+        REQUIRE(dotFile.is_open());
         std::stringstream buffer;
         buffer << dotFile.rdbuf();
         std::string content = buffer.str();
         dotFile.close();
-        std::cerr << "DOT file content:\n" << content << "\n"; // Debug output
+        std::cerr << "DOT file content:\n" << content << "\n";
         REQUIRE(!content.empty());
         REQUIRE(content.find("digraph FSM") != std::string::npos);
         REQUIRE(content.find("S0 -> S1 [label=\"a\"]") != std::string::npos);

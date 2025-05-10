@@ -130,7 +130,7 @@ void FSM::removeTransition(std::string& fromState, std::string& toState, char in
     }
 
     // Remove the transition from the 'from' state
-    from->removeNextStateOccurances(to);
+    from->removeNextStateOccurrences(to);
 
     // Remove the dependency from the 'to' state
     to->removeDependency(to->getDependency(input, from));
