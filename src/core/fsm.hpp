@@ -118,10 +118,9 @@ public:
     bool checkValidInput();
 
     /**
-     * @brief Adds a new output to the FSM.
-     * @param name The name of the output (non-empty).
-     * @param value The initial value of the output.
-     * @throws std::invalid_argument If name is empty or output already exists.
+     * @brief Adds an output to the FSM.
+     * @param value The output character (non-empty).
+     * @throws std::invalid_argument If the value is empty or already exists.
      */
     void addOutput(const char value);
 
@@ -145,6 +144,9 @@ public:
      */
     void removeVariable(const std::string& name);
 
+    /**
+     * @brief Makes a single transition to the next state based on the current input.
+     */
     void transitionToState();
 
     /**
