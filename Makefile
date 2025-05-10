@@ -27,7 +27,8 @@ $(TEST_OBJ_DIR)/%.o: $(TEST_DIR)/%.cpp | directories
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 test: directories $(TEST_TARGET)
-	./$(TEST_TARGET)
+	./$(TEST_TARGET) -r junit -o test-results.xml || true
+	./$(TEST_TARGET) -r console
 
 $(TEST_TARGET): $(TEST_OBJS) $(OBJS)
 	$(CXX) $(CXXFLAGS) -o $@ $^
