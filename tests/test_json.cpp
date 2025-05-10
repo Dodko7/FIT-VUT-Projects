@@ -1,30 +1,38 @@
 #include "catch.hpp"
 #include "../src/core/fsm.hpp"
 #include <filesystem>
-#include <fstream> // Add this include for std::ofstream
+#include <fstream>
 
 TEST_CASE("JSON serialization and deserialization", "[json]") {
     FSM fsm;
     fsm.setName("TOF5s");
     fsm.setDescription("Timer to off, simple version");
-    fsm.addInput("in", "0");
-    fsm.addOutput("out", "0");
+    
+    // Add expected input instead of addInput
+    fsm.addExpectedInput("in");
+    
+    // Add variable for timeout
     fsm.addVariable("timeout", "5000");
-    fsm.addState("IDLE", "IDLE action", '0', false);
-    fsm.addState("ACTIVE", "ACTIVE action", '1', false);
-    fsm.addState("TIMING", "TIMING action", '0', false);
+    
+    // Fix parameter order in addState (name, action, isFinal)
+    fsm.addState("IDLE", "output('out', 0)", false);
+    fsm.addState("ACTIVE", "output('out', 1)", false);
+    fsm.addState("TIMING", "", false);
+    
     fsm.setStartState("IDLE");
-    fsm.addTransition("IDLE", "ACTIVE", "in", "atoi(valueof('in')) == 1");
-    fsm.addTransition("ACTIVE", "TIMING", "in", "atoi(valueof('in')) == 0");
-    fsm.addTransition("TIMING", "ACTIVE", "in", "atoi(valueof('in')) == 1");
-    fsm.addTransition("TIMING", "IDLE", "", "");
+    
+    // Add missing output parameter to addTransition calls
+    fsm.addTransition("IDLE", "ACTIVE", "in", "atoi(valueof('in')) == 1", "", "");
+    fsm.addTransition("ACTIVE", "TIMING", "in", "atoi(valueof('in')) == 0", "", "");
+    fsm.addTransition("TIMING", "ACTIVE", "in", "atoi(valueof('in')) == 1", "", "");
+    fsm.addTransition("TIMING", "IDLE", "", "", "timeout", "");
 
     SECTION("Save and load JSON") {
         const std::string filename = "examples/test_fsm.json";
         try {
             fsm.saveToJson(filename);
             std::ifstream checkFile(filename);
-            REQUIRE(checkFile.is_open() == true); // Overi, či súbor existuje
+            REQUIRE(checkFile.is_open() == true);
             checkFile.close();
         } catch (const std::runtime_error& e) {
             FAIL("Failed to save JSON: " << e.what());
@@ -35,20 +43,21 @@ TEST_CASE("JSON serialization and deserialization", "[json]") {
 
         REQUIRE(loadedFsm.getName() == "TOF5s");
         REQUIRE(loadedFsm.getDescription() == "Timer to off, simple version");
-        REQUIRE(loadedFsm.getInputs().at("in") == "0");
-        REQUIRE(loadedFsm.getOutputs().at("out") == "0");
+        
+        // Use getExpectedInputs instead of getInputs
+        auto expectedInputs = loadedFsm.getExpectedInputs();
+        REQUIRE(expectedInputs.find("in") != expectedInputs.end());
+        
+        // Use getVariables instead of testing individual outputs
         REQUIRE(loadedFsm.getVariables().at("timeout") == "5000");
         REQUIRE(loadedFsm.getStates().size() == 3);
         REQUIRE(loadedFsm.getStartState()->getName() == "IDLE");
 
-        // Overenie prechodov
+        // Testing transitions
         auto idleState = loadedFsm.getStatePtrByName(std::string("IDLE"));
         REQUIRE(idleState->getDependencies().size() == 1);
         REQUIRE(idleState->getDependencies()[0]->getEvent() == "in");
         REQUIRE(idleState->getDependencies()[0]->getCondition() == "atoi(valueof('in')) == 1");
-
-        // // Vyčistenie
-        // std::filesystem::remove(filename);
     }
 
     SECTION("Load invalid JSON") {

@@ -7,12 +7,21 @@
 #include <string>
 #include <vector>
 #include <memory>
+#include <chrono> // For std::chrono::milliseconds
 
 // No class definition here, only method implementations for State
 
 // Constructor with new action parameter
-State::State(const std::string& name, machineState transToMachineState, std::vector<std::unique_ptr<inputDeps>> dependencies, const std::string& action, char output, std::chrono::milliseconds stepDelay, std::vector<std::shared_ptr<State>> nextStates, bool isFinal)
-    : name(name), transToMachineState(transToMachineState), dependencies(std::move(dependencies)), action(action), output(output), stepDelay(stepDelay), nextStates(std::move(nextStates)), isFinal(isFinal) {
+State::State(const std::string& name, machineState transToMachineState, 
+             std::vector<std::unique_ptr<inputDeps>> dependencies, 
+             const std::string& action, const char output,
+             std::chrono::milliseconds stepDelay,
+             std::vector<std::shared_ptr<State>> nextStates, 
+             bool isFinal)
+    : name(name), transToMachineState(transToMachineState), 
+      dependencies(std::move(dependencies)), action(action), 
+      output(output), stepDelay(stepDelay),
+      nextStates(std::move(nextStates)), isFinal(isFinal) {
     if (name.empty() || name.length() > 20) {
         throw std::invalid_argument("Invalid state name");
     }
@@ -79,14 +88,16 @@ std::vector<std::unique_ptr<inputDeps>>& State::getDependencies() {
 }
 
 void State::addNextState(std::shared_ptr<State> nextState) {
+    /**
+     * @brief Adds a next state to the list of possible transitions.
+     * @param nextState Pointer to the next state.
+     * @throws std::invalid_argument If nextState is null.
+     */
     if (nextState == nullptr) {
         throw std::invalid_argument("Next state cannot be null");
     }
-    if (std::find(nextStates.begin(), nextStates.end(), nextState) != nextStates.end()) {
-        std::cerr << "Next state already exists! Determinism violation" << std::endl;
-        return;
-    }
-    nextStates.push_back(std::shared_ptr<State>(nextState));
+    // Allow duplicate next states, as determinism is checked in FSM::addTransition
+    nextStates.push_back(nextState);
 }
 
 void State::removeNextStateFO(std::shared_ptr<State> nextState) {

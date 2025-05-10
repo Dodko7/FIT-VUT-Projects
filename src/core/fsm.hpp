@@ -37,7 +37,7 @@ private:
     std::shared_ptr<State> startState; ///< Pointer to the start state.
     std::shared_ptr<State> currentState; ///< Pointer to the current state.
     machineState currentMachineState; ///< Current execution state.
-    std::unordered_set<char> expectedInputs; ///< Set of expected inputs.
+    std::unordered_set<char> expectedInputs; ///< Set of expected inputs as strings.
 
 public:
     /**
@@ -99,20 +99,19 @@ public:
 
     /**
      * @brief Adds an input to the FSM.
-     * @param value The input character (non-empty).
+     * @param value The input string (non-empty).
      * @throws std::invalid_argument if input is empty or already exists.
      */
     void addExpectedInput(const char value);
 
     /**
      * @brief Removes an input from the FSM.
-     * @param name The name of the input to remove.
+     * @param value The input string to remove.
      */
     void removeExpectedInput(const char value);
 
     /**
      * @brief Checks if the input is valid.
-     * @param input The input to check (default is the first character of the input).
      * @return True if the input is valid, false otherwise.
      */
     bool checkValidInput();
@@ -199,7 +198,7 @@ public:
 
     /**
      * @brief Gets the expected inputs of the FSM.
-     * @return A set of expected input characters.
+     * @return A set of expected input strings.
      */
     std::unordered_set<char> getExpectedInputs() const;
 

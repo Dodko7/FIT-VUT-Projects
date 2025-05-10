@@ -14,6 +14,8 @@
 #include <cstdlib> // Include standard library for system commands
 #include <thread> // For sleep functionality
 #include "nlohmann/json.hpp" // Include JSON library for serialization/deserialization
+#include <set>  
+#include <map>
 
 using json = nlohmann::json;
 
@@ -101,6 +103,7 @@ void FSM::addTransition(const std::string& fromState, const std::string& toState
     }
     auto dep = std::make_unique<inputDeps>(event, condition, from, input);
     from->addDependency(std::move(dep));
+    // Add next state only once
     from->addNextState(to);
 }
 
@@ -142,19 +145,17 @@ bool FSM::findStateExists(const std::string& name) const {
 void FSM::addExpectedInput(const char value) {
     /**
      * @brief Adds an input to the FSM.
-     * @param name The name of the input.
-     * @param value The initial value of the input.
-     * @throws std::invalid_argument If the name is empty, too long, or already exists.
+     * @param value The name of the input.
+     * @throws std::invalid_argument If the value is empty or already exists.
      */
     if (value == '\0') {
         throw std::invalid_argument("Input cannot be null");
     }
-    if(expectedInputs.find(value) != expectedInputs.end()) {
-        throw std::invalid_argument("Input already exists: " + value);
+    if (expectedInputs.find(value) != expectedInputs.end()) {
+        throw std::invalid_argument("Input already exists: " + std::string(1, value));
     }
-    expectedInputs.insert(value); // Add the input to the set
+    expectedInputs.insert(value);
 }
-
 
 void FSM::removeExpectedInput(const char value) {
     expectedInputs.erase(value); // Ignore if input doesn't exist
@@ -331,6 +332,10 @@ bool FSM::debugStep() {
 }
 
 void FSM::debug() {
+    /**
+     * @brief Generates a Graphviz DOT file representing the FSM.
+     * Uses the internal state of the FSM to ensure consistency with the automaton's specification.
+     */
     std::ofstream dotFile("assets/fsm_debug.dot");
     if (!dotFile.is_open()) {
         std::cerr << "Error: Failed to open assets/fsm_debug.dot for writing" << std::endl;
@@ -350,24 +355,64 @@ void FSM::debug() {
             attributes = "[shape=doublecircle, color=green]";
         } else if (finalStates.count(state->getName())) {
             attributes = "[shape=doublecircle, color=red]";
-        } else {
-            attributes = "";
         }
         dotFile << "    \"" << state->getName() << "\" " << attributes << ";\n";
     }
 
-    // Add transitions
+    // Add transitions from internal FSM state with deduplication
+    std::map<std::string, std::string> uniqueTransitions; // Key: from|event|condition|timeout, Value: to|label
     for (const auto& pair : states) {
         const auto& state = pair.second;
-        for (size_t i = 0; i < state->getDependencies().size(); ++i) {
-            const auto& dep = state->getDependencies()[i];
-            const auto& nextState = state->getNextStates()[i];
-            if (nextState) {
-                dotFile << "    \"" << state->getName() << "\" -> \"" 
-                        << nextState->getName() << "\" [label=\"" 
-                        << dep->getEvent() << "\"];\n";  // Changed from getExpectedInput()
+        const auto& deps = state->getDependencies();
+        const auto& nextStates = state->getNextStates();
+
+        // Iterate over dependencies and next states
+        for (size_t i = 0; i < deps.size() && i < nextStates.size(); ++i) {
+            const auto& dep = deps[i];
+            const auto& nextState = nextStates[i];
+            if (!nextState || dep->getFromState() != state) {
+                continue;
             }
+
+            // Create transition label
+            std::string label;
+            if (!dep->getTimeout().empty()) {
+                label = "[" + dep->getTimeout() + "]";
+            } else if (!dep->getEvent().empty()) {
+                label = dep->getEvent();
+                if (!dep->getCondition().empty()) {
+                    label += " [" + dep->getCondition() + "]";
+                }
+            } else {
+                continue; // Skip invalid transitions
+            }
+
+            // Create unique key for deduplication
+            std::string key = state->getName() + "|" + dep->getEvent() + "|" + 
+                             dep->getCondition() + "|" + dep->getTimeout();
+            if (uniqueTransitions.find(key) != uniqueTransitions.end()) {
+                std::cerr << "Warning: Duplicate transition detected for state: " 
+                          << state->getName() << ", event: " << dep->getEvent() 
+                          << ", condition: " << dep->getCondition() 
+                          << ", timeout: " << dep->getTimeout() << std::endl;
+                continue; // Skip duplicate
+            }
+            uniqueTransitions[key] = nextState->getName() + "|" + label;
         }
+    }
+
+    // Write unique transitions to DOT file
+    for (const auto& [key, value] : uniqueTransitions) {
+        // Extract toState and label from value
+        auto pos = value.find('|');
+        if (pos == std::string::npos) continue;
+        std::string to = value.substr(0, pos);
+        std::string label = value.substr(pos + 1);
+        // Extract from state from key
+        pos = key.find('|');
+        std::string from = key.substr(0, pos);
+        dotFile << "    \"" << from << "\" -> \"" << to 
+                << "\" [label=\"" << label << "\"];\n";
     }
 
     dotFile << "}\n";
@@ -444,7 +489,7 @@ void FSM::saveToJson(const std::string& filename) {
     // Expected inputs
     j["expectedInputs"] = json::array();
     for (const auto& input : expectedInputs) {
-        j["expectedInputs"].push_back(std::string(1, input));
+        j["expectedInputs"].push_back(input);
     }
 
 
@@ -470,21 +515,35 @@ void FSM::saveToJson(const std::string& filename) {
     }
 
     // Transitions
+    // Transitions with deduplication
     j["transitions"] = json::array();
+    std::set<std::string> seenTransitions; // Key: from|to|event|condition|timeout
     for (const auto& pair : states) {
         const auto& state = pair.second;
-        for (const auto& dep : state->getDependencies()) {
-            for (const auto& nextState : state->getNextStates()) {
-                if (nextState && dep->getFromState() == state) {
-                    json transition;
-                    transition["from"] = state->getName();
-                    transition["to"] = nextState->getName();
-                    transition["event"] = dep->getEvent();
-                    transition["condition"] = dep->getCondition();
-                    transition["input"] = std::string(1, dep->getInput());
-                    j["transitions"].push_back(transition);
-                }
+        const auto& deps = state->getDependencies();
+        const auto& nextStates = state->getNextStates();
+        for (size_t i = 0; i < deps.size() && i < nextStates.size(); ++i) {
+            const auto& dep = deps[i];
+            const auto& nextState = nextStates[i];
+            if (!nextState || dep->getFromState() != state) {
+                continue;
             }
+            // Create unique key for transition
+            std::string key = state->getName() + "|" + nextState->getName() + "|" +
+                             dep->getEvent() + "|" + dep->getCondition() + "|" + 
+                             dep->getTimeout();
+            if (seenTransitions.find(key) != seenTransitions.end()) {
+                continue; // Skip duplicate
+            }
+            seenTransitions.insert(key);
+            json transition;
+            transition["from"] = state->getName();
+            transition["to"] = nextState->getName();
+            transition["event"] = dep->getEvent();
+            transition["condition"] = dep->getCondition();
+            transition["timeout"] = dep->getTimeout();
+            transition["output"] = dep->getOutput();
+            j["transitions"].push_back(transition);
         }
     }
 
@@ -516,8 +575,8 @@ void FSM::loadFromJson(const std::string& filename) {
     // Clear current FSM
     states.clear();
     finalStates.clear();
-    inputs.clear();
-    outputs.clear();
+    input.clear();
+    output.clear();
     variables.clear();
     startState = nullptr;
     currentState = nullptr;
@@ -531,19 +590,17 @@ void FSM::loadFromJson(const std::string& filename) {
         setDescription(j["description"].get<std::string>());
     }
 
-    // Load inputs
-    if (j.contains("inputs")) {
-        for (const auto& item : j["inputs"].items()) {
-            addInput(item.key(), item.value().get<std::string>());
-        }
+    // Load input
+    if (j.contains("input")) {
+        setInput(j["input"].get<std::string>());
     }
 
-    // Load outputs
-    if (j.contains("outputs")) {
-        for (const auto& item : j["outputs"].items()) {
-            addOutput(item.key(), item.value().get<std::string>());
-        }
-    }
+    // // Load output
+    // if (j.contains("output")) {
+    //     for (const auto& item : j["outputs"].items()) {
+    //         addOutput(item.key(), item.value().get<std::string>());
+    //     }
+    // }
 
     // Load variables
     if (j.contains("variables")) {
@@ -579,23 +636,27 @@ void FSM::loadFromJson(const std::string& filename) {
     // Load transitions
     if (j.contains("transitions")) {
         for (const auto& transition : j["transitions"]) {
-            std::string from = transition["from"].get<std::string>();
-            std::string to = transition["to"].get<std::string>();
-            std::string event = transition.contains("event") ? 
-                               transition["event"].get<std::string>() : "";
-            std::string condition = transition.contains("condition") ? 
-                                   transition["condition"].get<std::string>() : "";
-            // Input is either specified directly or extracted from event
-            char input;
-            if (transition.contains("input") && transition["input"].is_string() && !transition["input"].get<std::string>().empty()) {
-                input = transition["input"].get<std::string>()[0];
-            } else {
-                input = (event.length() == 1) ? event[0] : '\0';
-            }
             try {
-                addTransition(from, to, event, condition, input);
-            } catch (const DeterminismViolationException& e) {
-                std::cerr << "Warning: " << e.what() << " (skipped during JSON loading)" << std::endl;
+                std::string from = transition["from"].get<std::string>();
+                std::string to = transition["to"].get<std::string>();
+                std::string event = transition.contains("event") ? 
+                                  transition["event"].get<std::string>() : "";
+                std::string condition = transition.contains("condition") ? 
+                                      transition["condition"].get<std::string>() : "";
+                std::string timeout = transition.contains("timeout") ? 
+                                    transition["timeout"].get<std::string>() : "";
+                std::string output = transition.contains("output") ? 
+                                   transition["output"].get<std::string>() : "";
+                
+                // Try to add the transition, but catch and just warn about determinism violations
+                try {
+                    addTransition(from, to, event, condition, timeout, output);
+                } catch (const DeterminismViolationException& e) {
+                    std::cerr << "Warning: " << e.what() << " (skipped during JSON loading)" << std::endl;
+                    // Skip this transition and continue with others
+                }
+            } catch (const std::exception& e) {
+                throw std::runtime_error("Error loading transition: " + std::string(e.what()));
             }
         }
     }
