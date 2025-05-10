@@ -72,15 +72,13 @@ public:
     void setStartState(const std::string& name);
 
     /**
-     * @brief Adds a transition between two states for a specific event.
+     * @brief Adds a transition between two states based on input.
      * @param fromState The source state name.
      * @param toState The destination state name.
-     * @param event The name of the event.
-     * @param condition The JavaScript condition for the transition.
      * @param input The expected input for the transition.
      * @throws InvalidStateException If states do not exist.
      */
-    void addTransition(const std::string& fromState, const std::string& toState, const std::string& event, const std::string& condition, const char input);
+    void addTransition(const std::string& fromState, const std::string& toState, const char input);
 
     /**
      * @brief Removes a transition between two states for a specific event.

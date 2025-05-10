@@ -2,23 +2,13 @@
 #include "fsmErrors.hpp"
 #include <stdexcept>
 
-inputDeps::inputDeps(const std::string& condition, 
-                        std::shared_ptr<State> state, 
+inputDeps::inputDeps(std::shared_ptr<State> state, 
                         const char input)
-    : condition(condition), fromState(state), input(input) {
+    : fromState(state), input(input) {
     if (!state) {
         throw std::invalid_argument("State cannot be null");
     }
 }
-
-std::string inputDeps::getCondition() const {
-    return condition;
-}
-
-void inputDeps::setCondition(const std::string& condition) {
-    this->condition = condition;
-}
-
 std::shared_ptr<State> inputDeps::getFromState() const {
     return fromState.lock();
 }

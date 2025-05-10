@@ -13,19 +13,16 @@ class State;
  */
 class inputDeps {
 private:
-    std::string condition; ///< JavaScript condition.
     std::weak_ptr<State> fromState; ///< The originating state for the transition.
     char input; ///< The expected input for the transition.
 
 public:
     /**
      * @brief Constructor for inputDeps.
-     * @param condition The JavaScript condition.
      * @param state The originating state for the transition.
      * @param input The expected input character for the transition.
      */
-    inputDeps(const std::string& condition, 
-                std::shared_ptr<State> state, 
+    inputDeps(std::shared_ptr<State> state, 
                 const char input);
 
     /**
@@ -34,30 +31,6 @@ public:
      * Smart pointers handle memory management automatically.
      */
     ~inputDeps() = default;
-
-    /**
-     * @brief Gets the name of the input event.
-     * @return The name of the input event.
-     */
-    std::string getEvent() const;
-
-    /**
-     * @brief Sets the name of the input event.
-     * @param event The new name of the input event.
-     */
-    void setEvent(const std::string& event);
-
-    /**
-     * @brief Gets the JavaScript condition.
-     * @return The JavaScript condition.
-     */
-    std::string getCondition() const;
-
-    /**
-     * @brief Sets the JavaScript condition.
-     * @param condition The new JavaScript condition.
-     */
-    void setCondition(const std::string& condition);
 
     /**
      * @brief Gets the originating state for the transition.
