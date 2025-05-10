@@ -121,7 +121,7 @@ public:
      * @throws std::invalid_argument If nextState is null.
      * @note If the state is not found, a warning is printed to stderr.
      */
-    void removeNextStateFirstOccurence(std::shared_ptr<State> nextState);
+    void removeNextStateFirstOccurrence(std::shared_ptr<State> nextState);
 
     /**
      * @brief Removes all occurrences of a state from the next states list.
@@ -129,7 +129,7 @@ public:
      * @throws std::invalid_argument If nextState is null.
      * @note If the state is not found, a warning is printed to stderr.
      */
-    void removeNextStateOccurences(std::shared_ptr<State> nextState);
+    void removeNextStateOccurrences(std::shared_ptr<State> nextState);
 
     /**
      * @brief Gets the JavaScript action code for this state.
