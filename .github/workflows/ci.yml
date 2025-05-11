@@ -25,8 +25,12 @@ jobs:
       if: matrix.os == 'ubuntu-latest'
       run: |
         sudo apt-get update
-        sudo apt-get install -y g++ make
+        # Install build tools
+        sudo apt-get install -y g++ make jq curl
+        # Install Qt5 with script support
         sudo apt-get install -y qtbase5-dev qt5-qmake qttools5-dev libqt5widgets5 libqt5gui5 libqt5core5a libqt5script5 qtscript5-dev
+        # List installed Qt packages for debugging
+        dpkg -l | grep qt5
     
     - name: Install Dependencies (macOS)
       if: matrix.os == 'macos-latest'
@@ -35,8 +39,11 @@ jobs:
         brew install qt@5
         # Make sure QtScript is available
         brew install qtscript || echo "QtScript already included in qt@5"
+        brew install jq
         echo "Adding Qt to PATH"
         echo "/usr/local/opt/qt@5/bin" >> $GITHUB_PATH
+        # List Qt packages for debugging
+        brew list | grep qt
     
     - name: Create Directory Structure
       run: mkdir -p lib/catch2 lib/nlohmann/single_include
@@ -46,6 +53,24 @@ jobs:
         curl -L https://github.com/catchorg/Catch2/releases/download/v2.13.9/catch.hpp -o lib/catch2/catch.hpp
         curl -L https://github.com/nlohmann/json/releases/download/v3.11.2/json.hpp -o lib/nlohmann/single_include/nlohmann/json.hpp
     
+    - name: Prepare Makefile for CI
+      run: |
+        if [ "${{ matrix.os }}" = "ubuntu-latest" ]; then
+          # Create a modified Makefile for Ubuntu
+          # Change Qt paths
+          sed -i 's|QT_PREFIX = /opt/homebrew/Cellar/qt@5/5.15.16_2|QT_PREFIX = /usr|g' Makefile
+          sed -i 's|MOC = /opt/homebrew/opt/qt@5/bin/moc|MOC = /usr/bin/moc-qt5|g' Makefile
+          # Change linking flags for Linux
+          sed -i 's|-framework QtCore -framework QtScript|-lQt5Core -lQt5Script|g' Makefile
+          # Update include paths for Linux
+          sed -i 's|MOCFLAGS = -I/opt/homebrew/opt/qt@5/include|MOCFLAGS = -I/usr/include/x86_64-linux-gnu/qt5|g' Makefile
+          sed -i 's|-I/opt/homebrew/opt/qt@5/include/QtCore|-I/usr/include/x86_64-linux-gnu/qt5/QtCore|g' Makefile
+          sed -i 's|-I/opt/homebrew/opt/qt@5/include/QtScript|-I/usr/include/x86_64-linux-gnu/qt5/QtScript|g' Makefile
+          
+          # No need to create a separate test target
+          # Using the existing 'test' target will be sufficient
+        fi
+
     - name: Build
       id: build
       run: |
@@ -82,6 +107,7 @@ jobs:
         elif [ "${{ matrix.os }}" = "ubuntu-latest" ]; then
           export QT_SELECT=qt5
         fi
+        # Use the same test target for both platforms
         make test > test-output.txt 2>&1 || echo "failed=true" >> $GITHUB_OUTPUT
         
     - name: Prepare Issue Content
@@ -98,6 +124,27 @@ jobs:
         FAILED_COUNT=$(grep -o 'test cases failed' test-output.txt | wc -l)
         echo "TEST_SUMMARY=Failed $FAILED_COUNT test cases" >> $GITHUB_ENV
     
+    - name: Delete Previous Issues
+      if: steps.build.outputs.failed == 'true' || steps.test.outputs.failed == 'true'
+      run: |
+        # Use GitHub CLI to delete previous issues
+        # Install GitHub CLI first
+        if [ "${{ matrix.os }}" = "ubuntu-latest" ]; then
+          sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-key C99B11DEB97541F0
+          sudo apt-add-repository https://cli.github.com/packages
+          sudo apt update
+          sudo apt install gh
+        elif [ "${{ matrix.os }}" = "macos-latest" ]; then
+          brew install gh
+        fi
+        
+        # Authenticate with GitHub CLI (using the GITHUB_TOKEN)
+        echo "${{ secrets.GITHUB_TOKEN }}" | gh auth login --with-token
+        
+        # Delete previous issues with the failure label
+        gh issue list --label failure --json number | jq '.[].number' | xargs -I {} gh issue close {} --delete-branch=false
+      continue-on-error: true
+    
     - name: Create Issue on Failure
       uses: JasonEtco/create-an-issue@v2
       if: steps.build.outputs.failed == 'true' || steps.test.outputs.failed == 'true'
@@ -113,4 +160,4 @@ jobs:
         GH_HEAD_COMMIT: ${{ toJSON(github.event.head_commit.message) }}
       with:
         filename: .github/test-failure-template.md
-        update_existing: true
+        update_existing: false
