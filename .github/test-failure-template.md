@@ -1,6 +1,6 @@
 ---
-title: {{ env.FAILURE_TYPE }} Failure on {{ env.OS }}
-labels: bug, failure
+title: "{{ env.FAILURE_TYPE }} Failure on {{ env.OS }}"
+labels: [bug, failure]
 assignees: chadmee
 ---
 
