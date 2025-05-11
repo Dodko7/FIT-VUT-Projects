@@ -1,3 +1,8 @@
+/**
+ * @file test_json.cpp
+ * @brief Unit tests for JSON serialization and deserialization.
+ */
+
 #include "catch.hpp"
 #include "../src/core/fsm.hpp"
 #include <filesystem>
@@ -8,24 +13,27 @@ TEST_CASE("JSON serialization and deserialization", "[json]") {
     fsm.setName("TOF5s");
     fsm.setDescription("Timer to off, simple version");
     
-    // Add expected input instead of addInput
-    fsm.addExpectedInput("in");
+    // Add expected inputs as char
+    fsm.addExpectedInput('i');
+    fsm.addExpectedInput('s');
+    fsm.addExpectedInput('r');
     
-    // Add variable for timeout
+    // Add variable for output
+    fsm.addVariable("out", "0");
     fsm.addVariable("timeout", "5000");
     
-    // Fix parameter order in addState (name, action, isFinal)
-    fsm.addState("IDLE", "output('out', 0)", false);
-    fsm.addState("ACTIVE", "output('out', 1)", false);
-    fsm.addState("TIMING", "", false);
+    // Add states
+    fsm.addState("IDLE", "output('out', 0)", '\0', false);
+    fsm.addState("ACTIVE", "output('out', 1)", '\0', false);
+    fsm.addState("TIMING", "", '\0', false);
     
     fsm.setStartState("IDLE");
     
-    // Add missing output parameter to addTransition calls
-    fsm.addTransition("IDLE", "ACTIVE", "in", "atoi(valueof('in')) == 1", "", "");
-    fsm.addTransition("ACTIVE", "TIMING", "in", "atoi(valueof('in')) == 0", "", "");
-    fsm.addTransition("TIMING", "ACTIVE", "in", "atoi(valueof('in')) == 1", "", "");
-    fsm.addTransition("TIMING", "IDLE", "", "", "timeout", "");
+    // Add transitions
+    fsm.addTransition("IDLE", "ACTIVE", "atoi(valueof('in')) == 1", 'i');
+    fsm.addTransition("ACTIVE", "TIMING", "atoi(valueof('in')) == 0", 'i');
+    fsm.addTransition("TIMING", "ACTIVE", "atoi(valueof('in')) == 1", 'i');
+    fsm.addTransition("TIMING", "IDLE", "", 't');
 
     SECTION("Save and load JSON") {
         const std::string filename = "examples/test_fsm.json";
@@ -43,20 +51,15 @@ TEST_CASE("JSON serialization and deserialization", "[json]") {
 
         REQUIRE(loadedFsm.getName() == "TOF5s");
         REQUIRE(loadedFsm.getDescription() == "Timer to off, simple version");
-        
-        // Use getExpectedInputs instead of getInputs
-        auto expectedInputs = loadedFsm.getExpectedInputs();
-        REQUIRE(expectedInputs.find("in") != expectedInputs.end());
-        
-        // Use getVariables instead of testing individual outputs
+        REQUIRE(loadedFsm.getExpectedInputs().find('i') != loadedFsm.getExpectedInputs().end());
+        REQUIRE(loadedFsm.getVariables().at("out") == "0");
         REQUIRE(loadedFsm.getVariables().at("timeout") == "5000");
         REQUIRE(loadedFsm.getStates().size() == 3);
         REQUIRE(loadedFsm.getStartState()->getName() == "IDLE");
 
-        // Testing transitions
-        auto idleState = loadedFsm.getStatePtrByName(std::string("IDLE"));
+        // Verify transitions
+        auto idleState = loadedFsm.getStatePtrByName("IDLE");
         REQUIRE(idleState->getDependencies().size() == 1);
-        REQUIRE(idleState->getDependencies()[0]->getEvent() == "in");
         REQUIRE(idleState->getDependencies()[0]->getCondition() == "atoi(valueof('in')) == 1");
     }
 
