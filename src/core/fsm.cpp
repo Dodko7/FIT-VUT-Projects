@@ -99,21 +99,6 @@ void FSM::addTransition(const std::string& fromState, const std::string& toState
         throw InvalidStateException("Invalid state name");
     }
     
-    // Parsovanie timeoutu
-    std::string actualCondition = condition;
-    if (condition.find("@") == 0) {
-        try {
-            auto duration = std::stoi(condition.substr(1));
-            activeTimers.push_back(Timer{
-                from, to, std::chrono::milliseconds(duration),
-                std::chrono::steady_clock::now()
-            });
-            actualCondition = "";
-        } catch (const std::exception& e) {
-            throw InvalidArgumentException("Invalid timeout format: " + condition);
-        }
-    }
-    
     // Kontrola determinizmu
     for (const auto& dep : from->getDependencies()) {
         if (dep->getInput() == input) {
@@ -121,8 +106,8 @@ void FSM::addTransition(const std::string& fromState, const std::string& toState
         }
     }
     
-    auto dep = std::make_unique<inputDeps>(actualCondition, from, input);
-    from->addDependency(std::move(dep));
+    auto dep = std::make_unique<inputDeps>(condition, from, input);
+    to->addDependency(std::move(dep));
     from->addNextState(to);
 }
 
@@ -749,13 +734,7 @@ void FSM::loadFromJson(const std::string& filename) {
             try {
                 std::string from = transition["from"].get<std::string>();
                 std::string to = transition["to"].get<std::string>();
-                
-                // Handle event field (prefer event over input when possible)
-                std::string event = "";
-                if (transition.contains("event")) {
-                    event = transition["event"].get<std::string>();
-                }
-                
+    
                 // Handle condition field
                 std::string condition = "";
                 if (transition.contains("condition")) {
