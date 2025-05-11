@@ -26,88 +26,54 @@ jobs:
       run: |
         sudo apt-get update
         # Install build tools and basic dependencies
-        sudo apt-get install -y g++ make jq curl build-essential libgl1-mesa-dev
+        sudo apt-get install -y g++ make jq curl build-essential
         
-        # Install Qt5 using the official installer
-        echo "=== Installing Qt5 from the official installer ==="
-        mkdir -p ~/qt-installer
-        cd ~/qt-installer
-        # Download the Qt online installer
-        wget -q https://download.qt.io/official_releases/qt/5.15/5.15.2/qt-opensource-linux-x64-5.15.2.run
-        chmod +x qt-opensource-linux-x64-5.15.2.run
+        # Install Qt5 using apt packages that are definitely available
+        echo "=== Installing Qt5 using apt packages ==="
+        sudo apt-get install -y qtbase5-dev qt5-qmake qttools5-dev-tools
+        sudo apt-get install -y libqt5core5a libqt5gui5 libqt5widgets5
+        sudo apt-get install -y libqt5network5 libqt5xml5 libqt5sql5
+        sudo apt-get install -y libqt5script5 qtscript5-dev
         
-        # Create a script for non-interactive installation
-        cat > qt-installer-noninteractive.qs << EOF
-        function Controller() {
-            installer.autoRejectMessageBoxes();
-            installer.installationFinished.connect(function() {
-                gui.clickButton(buttons.NextButton);
-            });
-        }
-        Controller.prototype.WelcomePageCallback = function() {
-            gui.clickButton(buttons.NextButton, 3000);
-        };
-        Controller.prototype.CredentialsPageCallback = function() {
-            gui.clickButton(buttons.NextButton);
-        };
-        Controller.prototype.IntroductionPageCallback = function() {
-            gui.clickButton(buttons.NextButton);
-        };
-        Controller.prototype.TargetDirectoryPageCallback = function() {
-            gui.currentPageWidget().TargetDirectoryLineEdit.setText("/opt/qt5");
-            gui.clickButton(buttons.NextButton);
-        };
-        Controller.prototype.ComponentSelectionPageCallback = function() {
-            var widget = gui.currentPageWidget();
-            widget.deselectAll();
-            widget.selectComponent("qt.qt5.5152.gcc_64");
-            widget.selectComponent("qt.qt5.5152.qtscript");
-            gui.clickButton(buttons.NextButton);
-        };
-        Controller.prototype.LicenseAgreementPageCallback = function() {
-            gui.currentPageWidget().AcceptLicenseRadioButton.setChecked(true);
-            gui.clickButton(buttons.NextButton);
-        };
-        Controller.prototype.StartMenuDirectoryPageCallback = function() {
-            gui.clickButton(buttons.NextButton);
-        };
-        Controller.prototype.ReadyForInstallationPageCallback = function() {
-            gui.clickButton(buttons.NextButton);
-        };
-        Controller.prototype.FinishedPageCallback = function() {
-            var checkBoxForm = gui.currentPageWidget().LaunchQtCreatorCheckBoxForm;
-            if (checkBoxForm && checkBoxForm.launchQtCreatorCheckBox) {
-                checkBoxForm.launchQtCreatorCheckBox.checked = false;
-            }
-            gui.clickButton(buttons.FinishButton);
-        };
-        EOF
-        
-        # Run the installer non-interactively
-        ./qt-opensource-linux-x64-5.15.2.run --script qt-installer-noninteractive.qs --no-force-installations -v
-        
-        # Verify installation and add to PATH
-        echo "=== Qt5 installation complete, setting up environment ==="
-        sudo ln -sf /opt/qt5/5.15.2/gcc_64/bin/qmake /usr/local/bin/qmake
-        sudo ln -sf /opt/qt5/5.15.2/gcc_64/bin/moc /usr/local/bin/moc
-        
-        # List installed Qt components
-        echo "=== Installed Qt Files ==="
-        ls -la /opt/qt5/5.15.2/gcc_64/bin/
-        qmake --version || echo "qmake not found in PATH"
+        # List installed Qt packages and versions
+        echo "=== Installed Qt packages ==="
+        dpkg -l | grep qt5
+        echo "=== Qt binaries ==="
+        which qmake moc 
+        echo "=== Qt version ==="
+        qmake --version
     
     - name: Install Dependencies (macOS)
       if: matrix.os == 'macos-latest'
       run: |
-        brew update
-        brew install qt@5
-        # Make sure QtScript is available
-        brew install qtscript || echo "QtScript already included in qt@5"
-        brew install jq
+        # Use the built-in Qt installation instead of installing via brew
+        echo "=== Using pre-installed Qt on macOS runners ==="
+        
+        # The GitHub macOS runners normally have Qt pre-installed
+        # We'll also try a more direct installation approach if needed
+        export QT_DIR="/usr/local/opt/qt@5"
+        
+        if [ ! -d "$QT_DIR" ]; then
+          echo "Qt not found in default location, attempting installation..."
+          # Try a more direct approach to install Qt
+          HOMEBREW_NO_AUTO_UPDATE=1 brew install qt@5 || true
+          
+          # If still not available, try installing qtscript separately
+          if [ -d "$QT_DIR" ]; then
+            HOMEBREW_NO_AUTO_UPDATE=1 brew install qtscript || echo "QtScript installation skipped"
+          fi
+        fi
+        
+        # Add Qt to PATH regardless of installation method
         echo "Adding Qt to PATH"
-        echo "/usr/local/opt/qt@5/bin" >> $GITHUB_PATH
-        # List Qt packages for debugging
-        brew list | grep qt
+        echo "$QT_DIR/bin" >> $GITHUB_PATH
+        export PATH="$QT_DIR/bin:$PATH"
+        
+        # Verify Qt installation
+        echo "=== Qt version and location ==="
+        which qmake || echo "qmake not found"
+        qmake --version || echo "qmake not available"
+        ls -la $QT_DIR/bin || echo "Qt bin directory not found"
     
     - name: Create Directory Structure
       run: mkdir -p lib/catch2 lib/nlohmann/single_include
@@ -127,21 +93,21 @@ jobs:
     - name: Prepare Makefile for CI
       run: |
         if [ "${{ matrix.os }}" = "ubuntu-latest" ]; then
-          # Create a modified Makefile for Ubuntu with paths to our custom Qt installation
-          # Change Qt paths to official Qt installation
-          sed -i 's|QT_PREFIX = /opt/homebrew/Cellar/qt@5/5.15.16_2|QT_PREFIX = /opt/qt5/5.15.2/gcc_64|g' Makefile
-          sed -i 's|MOC = /opt/homebrew/opt/qt@5/bin/moc|MOC = /opt/qt5/5.15.2/gcc_64/bin/moc|g' Makefile
+          # Create a modified Makefile for Ubuntu with paths to system Qt
+          # Change Qt paths to system paths
+          sed -i 's|QT_PREFIX = /opt/homebrew/Cellar/qt@5/5.15.16_2|QT_PREFIX = /usr|g' Makefile
+          sed -i 's|MOC = /opt/homebrew/opt/qt@5/bin/moc|MOC = /usr/bin/moc|g' Makefile
           
           # Change linking flags for Linux
           sed -i 's|-framework QtCore -framework QtScript|-lQt5Core -lQt5Script|g' Makefile
           
-          # Update include paths for the custom installation
-          sed -i 's|MOCFLAGS = -I/opt/homebrew/opt/qt@5/include|MOCFLAGS = -I/opt/qt5/5.15.2/gcc_64/include|g' Makefile
-          sed -i 's|-I/opt/homebrew/opt/qt@5/include/QtCore|-I/opt/qt5/5.15.2/gcc_64/include/QtCore|g' Makefile
-          sed -i 's|-I/opt/homebrew/opt/qt@5/include/QtScript|-I/opt/qt5/5.15.2/gcc_64/include/QtScript|g' Makefile
+          # Update include paths for system Qt
+          sed -i 's|MOCFLAGS = -I/opt/homebrew/opt/qt@5/include|MOCFLAGS = -I/usr/include/x86_64-linux-gnu/qt5 -I/usr/include/qt5|g' Makefile
+          sed -i 's|-I/opt/homebrew/opt/qt@5/include/QtCore|-I/usr/include/x86_64-linux-gnu/qt5/QtCore -I/usr/include/qt5/QtCore|g' Makefile
+          sed -i 's|-I/opt/homebrew/opt/qt@5/include/QtScript|-I/usr/include/x86_64-linux-gnu/qt5/QtScript -I/usr/include/qt5/QtScript|g' Makefile
           
-          # Add library path for Linux
-          sed -i 's|LDFLAGS =|LDFLAGS = -L/opt/qt5/5.15.2/gcc_64/lib|g' Makefile || echo "Failed to add library path"
+          # Add library paths for Linux
+          sed -i 's|LDFLAGS =|LDFLAGS = -L/usr/lib/x86_64-linux-gnu|g' Makefile || echo "Failed to add library path"
           
           # Debugging - print updated include paths in Makefile
           echo "=== Updated Makefile Qt paths ==="
@@ -157,22 +123,19 @@ jobs:
           export LDFLAGS="-L/usr/local/opt/qt@5/lib"
           export CPPFLAGS="-I/usr/local/opt/qt@5/include"
         elif [ "${{ matrix.os }}" = "ubuntu-latest" ]; then
-          # Set up environment for our custom Qt installation
-          export PATH="/opt/qt5/5.15.2/gcc_64/bin:$PATH"
-          export LD_LIBRARY_PATH="/opt/qt5/5.15.2/gcc_64/lib:$LD_LIBRARY_PATH"
-          export QT_PLUGIN_PATH="/opt/qt5/5.15.2/gcc_64/plugins"
+          # Set environment variables for system Qt
+          export QT_SELECT=qt5
+          export QT_PLUGIN_PATH=/usr/lib/x86_64-linux-gnu/qt5/plugins
           
           # Debug Qt installation
           echo "=== Qt installation paths ==="
-          echo "PATH: $PATH"
-          echo "LD_LIBRARY_PATH: $LD_LIBRARY_PATH"
           echo "QT_PLUGIN_PATH: $QT_PLUGIN_PATH"
           
           # Check Qt libraries and binaries
           echo "=== Qt libraries ==="
-          ls -la /opt/qt5/5.15.2/gcc_64/lib/libQt5* || echo "No Qt libraries found"
+          ls -la /usr/lib/x86_64-linux-gnu/libQt5* || echo "No Qt libraries found in /usr/lib"
           echo "=== Qt includes ==="
-          ls -la /opt/qt5/5.15.2/gcc_64/include/Qt* || echo "No Qt includes found"
+          ls -la /usr/include/x86_64-linux-gnu/qt5 || echo "No Qt includes found"
         fi
         
         # Print Qt version
@@ -206,10 +169,9 @@ jobs:
           export LDFLAGS="-L/usr/local/opt/qt@5/lib"
           export CPPFLAGS="-I/usr/local/opt/qt@5/include"
         elif [ "${{ matrix.os }}" = "ubuntu-latest" ]; then
-          # Set up environment for our custom Qt installation
-          export PATH="/opt/qt5/5.15.2/gcc_64/bin:$PATH"
-          export LD_LIBRARY_PATH="/opt/qt5/5.15.2/gcc_64/lib:$LD_LIBRARY_PATH"
-          export QT_PLUGIN_PATH="/opt/qt5/5.15.2/gcc_64/plugins"
+          # Set environment variables for system Qt
+          export QT_SELECT=qt5
+          export QT_PLUGIN_PATH=/usr/lib/x86_64-linux-gnu/qt5/plugins
         fi
         
         # Use the same test target for both platforms
