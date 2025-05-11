@@ -36,6 +36,7 @@ void FSM::addState(const std::string& name, const std::string& action, char outp
         std::vector<std::unique_ptr<inputDeps>>(), // Empty dependencies
         action,                             // Action
         output,                             // Output (Moore machine) - single character
+        std::chrono::milliseconds(0), // No run time
         stepDelay,                          // Step delay
         std::vector<std::shared_ptr<State>>(), // Empty next states
         isFinal                             // Is final state
@@ -227,7 +228,10 @@ void FSM::transitionToState() {
                     discardInputChar();
                     
                     // Execute action of the new state
-                    scriptEngine.executeAction(currentState->getAction());
+                    if (!currentState->getAction().empty()) {
+                        std::cout << "Executing action: " << currentState->getAction() << "\n";
+                        scriptEngine.executeAction(currentState->getAction());
+                    }
                     
                     if (currentState->getTransitionTo().has_value()) {
                         setCurrentMachineState(currentState->getTransitionTo().value());
@@ -266,42 +270,30 @@ void FSM::run() {
     addOutput(currentState->getOutput());
     
     // Vykonaj počiatočnú akciu
-    scriptEngine.executeAction(currentState->getAction());
+    if (!currentState->getAction().empty()) {
+        std::cout << "Executing initial action: " << currentState->getAction() << "\n";
+        scriptEngine.executeAction(currentState->getAction());
+    }
     
     std::cout << "Starting FSM at state: " << currentState->getName() << "\n";
-    
+    auto start = std::chrono::steady_clock::now();
     while (currentMachineState == machineState::RUNNING && !input.empty()) {
         try {
-            // Skontroluj timeouty
-            auto now = std::chrono::steady_clock::now();
-            for (auto it = activeTimers.begin(); it != activeTimers.end();) {
-                if (now >= it->startTime + it->duration && currentState == it->fromState) {
-                    std::cout << "Timeout transition from " << currentState->getName() 
-                              << " to " << it->toState->getName() << "\n";
-                    setCurrentState(it->toState);
-                    addOutput(currentState->getOutput());
-                    scriptEngine.executeAction(currentState->getAction());
-                    it = activeTimers.erase(it);
-                    continue;
-                }
-                ++it;
-            }
-            
-            // Spracuj vstup
+            // Use the existing transitionToState function to process transitions
             transitionToState();
-            
-            // Aplikuj zpožděnie stavu
+
+            // Check if the current state has its own delay
             std::chrono::milliseconds stateDelay = currentState->getStepDelay();
             if (stateDelay.count() > 0) {
                 std::this_thread::sleep_for(stateDelay);
             }
             
-            // Aplikuj globálne zpožděnie
+            // Apply step delay if set
             if (stepDelay.count() > 0) {
                 std::this_thread::sleep_for(stepDelay);
             }
             
-            // Over finálny stav
+            // Check if we've reached a final state
             if (currentState->getIsFinal()) {
                 std::cout << "Reached final state: " << currentState->getName() << "\n";
             }
@@ -311,7 +303,11 @@ void FSM::run() {
             break;
         }
     }
-    
+    // Measure run time
+    auto stop = std::chrono::steady_clock::now();
+    runTime = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
+    std::cout << "FSM run time: " << runTime.count() << " ms\n";
+
     if (currentMachineState == machineState::RUNNING) {
         setCurrentMachineState(machineState::STOPPED);
     }

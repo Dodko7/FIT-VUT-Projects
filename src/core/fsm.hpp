@@ -40,6 +40,7 @@ private:
     std::string name; ///< Name of the FSM.
     std::string description; ///< Description of the FSM.
     std::chrono::milliseconds stepDelay; ///< Delay between FSM steps (placeholder for future use).
+    std::chrono::milliseconds runTime; ///< Total run time of the FSM.
     std::shared_ptr<State> startState; ///< Pointer to the start state.
     std::shared_ptr<State> currentState; ///< Pointer to the current state.
     machineState currentMachineState; ///< Current execution state.
