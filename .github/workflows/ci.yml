@@ -26,6 +26,15 @@ jobs:
       run: |
         sudo apt-get update
         sudo apt-get install -y g++ make
+        sudo apt-get install -y qtbase5-dev qt5-qmake qttools5-dev libqt5widgets5 libqt5gui5 libqt5core5a
+    
+    - name: Install Dependencies (macOS)
+      if: matrix.os == 'macos-latest'
+      run: |
+        brew update
+        brew install qt@5
+        echo "Adding Qt to PATH"
+        echo "/usr/local/opt/qt@5/bin" >> $GITHUB_PATH
     
     - name: Create Directory Structure
       run: mkdir -p lib/catch2 lib/nlohmann/single_include
@@ -38,6 +47,10 @@ jobs:
     - name: Build
       id: build
       run: |
+        if [ "${{ matrix.os }}" = "macos-latest" ]; then
+          export PATH="/usr/local/opt/qt@5/bin:$PATH"
+          export PKG_CONFIG_PATH="/usr/local/opt/qt@5/lib/pkgconfig:$PKG_CONFIG_PATH"
+        fi
         make > build-output.txt 2>&1 || echo "failed=true" >> $GITHUB_OUTPUT
     
     - name: Prepare Build Failure Issue
@@ -54,6 +67,10 @@ jobs:
       id: test
       if: steps.build.outputs.failed != 'true'
       run: |
+        if [ "${{ matrix.os }}" = "macos-latest" ]; then
+          export PATH="/usr/local/opt/qt@5/bin:$PATH"
+          export PKG_CONFIG_PATH="/usr/local/opt/qt@5/lib/pkgconfig:$PKG_CONFIG_PATH"
+        fi
         make test > test-output.txt 2>&1 || echo "failed=true" >> $GITHUB_OUTPUT
         
     - name: Prepare Issue Content
