@@ -98,14 +98,15 @@ void FSM::addTransition(const std::string& fromState, const std::string& toState
         throw InvalidStateException("Invalid state name");
     }
     
-    // Kontrola determinizmu
-    for (const auto& dep : from->getDependencies()) {
-        if (dep->getInput() == input) {
-            throw DeterminismViolationException("Duplicate transition for state: " + fromState);
+    // Check if the destination state already has a dependency with the same input from this state
+    for (const auto& dep : to->getDependencies()) {
+        if (dep->getInput() == input && dep->getFromState() == from) {
+            throw DeterminismViolationException("Duplicate transition for input: " + std::string(1, input));
         }
     }
     
     auto dep = std::make_unique<inputDeps>(condition, from, input);
+    // Add dependency to the destination state, not the source state
     to->addDependency(std::move(dep));
     from->addNextState(to);
 }
@@ -131,11 +132,17 @@ void FSM::removeTransition(std::string& fromState, std::string& toState, char in
         throw InvalidStateException("Invalid state pointers for transition removal");
     }
 
-    // Remove the transition from the 'from' state
+    // Remove the transition from the 'from' state's nextStates
     from->removeNextStateOccurrences(to);
 
-    // Remove the dependency from the 'to' state
-    to->removeDependency(to->getDependency(input, from));
+    // Remove the dependency from the 'to' state that references 'from'
+    auto& deps = to->getDependencies();
+    deps.erase(
+        std::remove_if(deps.begin(), deps.end(), [&](const std::unique_ptr<inputDeps>& dep) {
+            return dep->getInput() == input && dep->getFromState() == from;
+        }),
+        deps.end()
+    );
 }
 
 bool FSM::findStateExists(const std::string& name) const {
@@ -211,6 +218,7 @@ void FSM::transitionToState() {
     // Then try to find a matching transition
     char inputCharToProcess = this->input[0]; // Get the first character of the input
     for (auto& next : currentState->getNextStates()) {
+        // Look for a dependency in the next state that references the current state
         for (auto& dep : next->getDependencies()) {
             if (dep->getInput() == inputCharToProcess && currentState == dep->getFromState()) { // Check if the input matches
                 std::cout << "Transitioning from state " << currentState->getName() << " to state " << next->getName() << " by input " << inputCharToProcess << "\n";
@@ -578,7 +586,7 @@ void FSM::saveToJson(const std::string& filename) {
     // Expected inputs
     j["expectedInputs"] = json::array();
     for (const auto& input : expectedInputs) {
-        j["expectedInputs"].push_back(input);
+        j["expectedInputs"].push_back(std::string(1, input)); // Save as string to avoid ASCII code issues
     }
 
     // Step delay
@@ -605,37 +613,41 @@ void FSM::saveToJson(const std::string& filename) {
     // Transitions - ensure we match the format used in loadFromJson
     j["transitions"] = json::array();
     std::set<std::string> seenTransitions;
-    for (const auto& pair : states) {
-        const auto& state = pair.second;
+    
+    // Iterate through all states
+    for (const auto& statePair : states) {
+        // For each state, get its dependencies
+        const auto& state = statePair.second;
         const auto& deps = state->getDependencies();
-        const auto& nextStates = state->getNextStates();
         
-        for (size_t i = 0; i < deps.size() && i < nextStates.size(); ++i) {
-            const auto& dep = deps[i];
-            const auto& nextState = nextStates[i];
-            
-            if (!nextState || dep->getFromState() != state) {
-                continue;
+        // For each dependency, check if it references another state
+        for (const auto& dep : deps) {
+            auto fromState = dep->getFromState();
+            if (!fromState) {
+                continue; // Skip invalid dependencies
             }
             
-            // Create unique key for transition
-            std::string key = state->getName() + "|" + nextState->getName() + "|" + dep->getCondition();
+            // Create unique key for this transition to avoid duplicates
+            std::string key = fromState->getName() + "|" + 
+                             state->getName() + "|" + 
+                             dep->getCondition() + "|" + 
+                             std::string(1, dep->getInput());
             
+            // Skip if we've already seen this transition
             if (seenTransitions.find(key) != seenTransitions.end()) {
-                continue; // Skip duplicate
+                continue;
             }
             
             seenTransitions.insert(key);
             
+            // Create the transition JSON object
             json transition;
-            transition["from"] = state->getName();
-            transition["to"] = nextState->getName();
+            transition["from"] = fromState->getName();
+            transition["to"] = state->getName();
             transition["condition"] = dep->getCondition();
+            transition["inputChar"] = std::string(1, dep->getInput());
             
-            // Store transition input in multiple formats for compatibility
-            char inputChar = dep->getInput();
-            transition["inputChar"] = std::string(1, inputChar);  // Store as single-char string
-            
+            // Add to transitions array
             j["transitions"].push_back(transition);
         }
     }
@@ -772,24 +784,46 @@ void FSM::loadFromJson(const std::string& filename) {
                 
                 // Try to add the transition
                 try {
-                    addTransition(from, to, condition, input);
-                    
-                    // Ensure the nextStates array is properly updated by adding this:
                     auto fromState = getStatePtrByName(from);
                     auto toState = getStatePtrByName(to);
-                    if (fromState && toState) {
-                        // Check if toState is already in fromState's nextStates
-                        bool found = false;
-                        for (const auto& next : fromState->getNextStates()) {
-                            if (next == toState) {
-                                found = true;
-                                break;
-                            }
+                    
+                    if (!fromState || !toState) {
+                        std::cerr << "Warning: Cannot create transition from " << from << " to " << to 
+                                  << " - one or both states don't exist" << std::endl;
+                        continue;
+                    }
+                    
+                    // Create a dependency for this transition
+                    auto dependency = std::make_unique<inputDeps>(condition, fromState, input);
+                    
+                    // First, check if the dependency already exists to avoid duplicates
+                    bool dependencyExists = false;
+                    for (const auto& dep : toState->getDependencies()) {
+                        if (dep->getInput() == input && 
+                            dep->getCondition() == condition &&
+                            dep->getFromState() == fromState) {
+                            dependencyExists = true;
+                            break;
                         }
-                        if (!found) {
-                            // Add destination state to the source state's nextStates
-                            fromState->addNextState(toState);
+                    }
+                    
+                    if (!dependencyExists) {
+                        // Add the dependency to the destination state
+                        toState->addDependency(std::move(dependency));
+                    }
+                    
+                    // Check if destination state is already in source state's nextStates
+                    bool nextStateExists = false;
+                    for (const auto& next : fromState->getNextStates()) {
+                        if (next == toState) {
+                            nextStateExists = true;
+                            break;
                         }
+                    }
+                    
+                    if (!nextStateExists) {
+                        // Add destination state to source state's nextStates
+                        fromState->addNextState(toState);
                     }
                 } catch (const DeterminismViolationException& e) {
                     std::cerr << "Warning: " << e.what() << " (skipped during JSON loading)" << std::endl;
@@ -803,7 +837,22 @@ void FSM::loadFromJson(const std::string& filename) {
     // Load expected inputs
     if (j.contains("expectedInputs")) {
         for (const auto& input : j["expectedInputs"]) {
-            addExpectedInput(input.get<char>());
+            if (input.is_string()) {
+                std::string inputStr = input.get<std::string>();
+                if (!inputStr.empty()) {
+                    addExpectedInput(inputStr[0]);
+                }
+            } else if (input.is_number()) {
+                // Handle the case where it was saved as ASCII code
+                addExpectedInput(static_cast<char>(input.get<int>()));
+            } else {
+                // Fallback for any other format
+                try {
+                    addExpectedInput(input.get<char>());
+                } catch (const std::exception& e) {
+                    std::cerr << "Warning: Failed to load expected input: " << e.what() << std::endl;
+                }
+            }
         }
     }
 

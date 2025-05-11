@@ -356,22 +356,16 @@ nlohmann::json FSMManager::getStateTransitions(const std::string& stateName) {
     // Get all transitions
     for (auto& dep : state->getDependencies()) {
         nlohmann::json transition;
-        transition["input"] = dep->getInput();
+        transition["input"] = std::string(1, dep->getInput());
         transition["condition"] = dep->getCondition();
         
         auto fromState = dep->getFromState();
         if (fromState) {
             transition["fromState"] = fromState->getName();
+            transition["toState"] = stateName; // This is the destination state
         } else {
             transition["fromState"] = nullptr;
-        }
-        
-        // Find the target state in next states
-        for (const auto& nextState : state->getNextStates()) {
-            // We need to match which nextState corresponds to this dependency
-            // This is a simplification, as the actual logic might be more complex
-            transition["toState"] = nextState->getName();
-            break;
+            transition["toState"] = stateName; // This is the destination state
         }
         
         transitions.push_back(transition);
