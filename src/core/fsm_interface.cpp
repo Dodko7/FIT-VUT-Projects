@@ -200,7 +200,7 @@ nlohmann::json FSMManager::getStateInfo(const std::string& name) {
     nlohmann::json stateInfo;
     stateInfo["name"] = state->getName();
     stateInfo["action"] = state->getAction();
-    stateInfo["output"] = state->getOutput();
+    stateInfo["output"] = std::string(1, state->getOutput()); // Save output as a string
     stateInfo["isFinal"] = state->getIsFinal();
     stateInfo["stepDelay"] = state->getStepDelay().count();
     
@@ -215,7 +215,7 @@ nlohmann::json FSMManager::getStateInfo(const std::string& name) {
     nlohmann::json dependencies = nlohmann::json::array();
     for (auto& dep : state->getDependencies()) {
         nlohmann::json depInfo;
-        depInfo["input"] = dep->getInput();
+        depInfo["input"] = std::string(1, dep->getInput()); // Save input as a string
         depInfo["condition"] = dep->getCondition();
         
         auto fromState = dep->getFromState();
