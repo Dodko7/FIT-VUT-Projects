@@ -36,7 +36,7 @@ TEST_OBJS = $(TEST_OBJ_DIR)/test_main.o $(patsubst $(TEST_DIR)/%.cpp,$(TEST_OBJ_
 EXAMPLE_OBJS = $(patsubst $(EXAMPLES_DIR)/%.cpp,$(EXAMPLES_OBJ_DIR)/%.o,$(EXAMPLE_SRCS))
 EXAMPLE_TARGETS = $(patsubst $(EXAMPLES_DIR)/%.cpp,$(EXAMPLES_OBJ_DIR)/%,$(EXAMPLE_SRCS))
 MOC_SRC = $(SRC_DIR)/scriptEngine.hpp
-MOC_OBJ = $(OBJ_DIR)/moc_script_engine.o
+MOC_OBJ = $(OBJ_DIR)/moc_scriptEngine.o
 TARGET = core_backend
 TEST_TARGET = test_suite
 
