@@ -1,5 +1,5 @@
 ---
-title: "{{ env.FAILURE_TYPE }} Failure on {{ env.OS }}"
+title: "{{ env.FAILURE_TYPE }} Failure on {{ env.OS }} - {{ env.DATETIME }}"
 labels: [bug, failure]
 assignees: chadmee
 ---

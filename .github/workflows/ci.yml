@@ -124,25 +124,11 @@ jobs:
         FAILED_COUNT=$(grep -o 'test cases failed' test-output.txt | wc -l)
         echo "TEST_SUMMARY=Failed $FAILED_COUNT test cases" >> $GITHUB_ENV
     
-    - name: Delete Previous Issues
+    - name: Set DateTime for Issue
       if: steps.build.outputs.failed == 'true' || steps.test.outputs.failed == 'true'
       run: |
-        # Use GitHub CLI to delete previous issues
-        # Install GitHub CLI first
-        if [ "${{ matrix.os }}" = "ubuntu-latest" ]; then
-          sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-key C99B11DEB97541F0
-          sudo apt-add-repository https://cli.github.com/packages
-          sudo apt update
-          sudo apt install gh
-        elif [ "${{ matrix.os }}" = "macos-latest" ]; then
-          brew install gh
-        fi
-        
-        # Authenticate with GitHub CLI (using the GITHUB_TOKEN)
-        echo "${{ secrets.GITHUB_TOKEN }}" | gh auth login --with-token
-        
-        # Delete previous issues with the failure label
-        gh issue list --label failure --json number | jq '.[].number' | xargs -I {} gh issue close {} --delete-branch=false
+        # Generate current datetime in format: YYYY-MM-DD HH:MM UTC
+        echo "DATETIME=$(date -u +'%Y-%m-%d %H:%M UTC')" >> $GITHUB_ENV
       continue-on-error: true
     
     - name: Create Issue on Failure
