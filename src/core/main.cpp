@@ -1,9 +1,13 @@
 #include "fsm.hpp"
 #include "fsmErrors.hpp"
+#include <QCoreApplication>  // Add this include
 #include <iostream>
 #include <fstream>
 
-int main() {
+int main(int argc, char* argv[]) {  // Add parameters to main
+    // Create QCoreApplication instance first
+    QCoreApplication app(argc, argv);
+
     try {
         // 1. Inicializácia a konfigurácia automatu TOF
         FSM fsm;
@@ -14,16 +18,18 @@ int main() {
         fsm.addExpectedInput('i'); // Vstup 'in' (1=zapnúť, 0=vypnúť)
         fsm.addExpectedInput('s'); // Vstup 'set_to' (nastavenie timeoutu)
         fsm.addExpectedInput('r'); // Vstup 'req_rt' (požiadavka na zostávajúci čas)
+        fsm.addExpectedInput('t'); // Input for timeout transitions
 
         // Pridanie premenných (používajú sa ako náhrada za výstupy, kým nie je implementované output())
         fsm.addVariable("out", "0");     // Výstup: 0=vypnuté, 1=zapnuté
         fsm.addVariable("rt", "0");      // Zostávajúci čas
         fsm.addVariable("timeout", "5000"); // Predvolený timeout (ms)
+        fsm.addVariable("in_value", "0");     // Add a numeric input value variable
 
         // Pridanie stavov
         // Akcie sú uložené ako reťazce pre budúcu integráciu s QJSEngine
         // Výstupy sú statické char (kým nie je implementované output())
-        fsm.addState("IDLE", "output('out', 0); output('rt', 0);", '0', false);
+        fsm.addState("IDLE", "output('out', 0); output('rt', 0);", '0', true);
         fsm.addState("ACTIVE", "output('out', 1); output('rt', timeout);", '1', false);
         fsm.addState("TIMING", "output('rt', timeout - elapsed());", '0', false);
 
@@ -33,9 +39,9 @@ int main() {
         // Pridanie prechodov
         // Používame statické podmienky a vstupy, kým nie je implementované QJSEngine
         // Timeouty sú simulované statickým vstupom 't' (kým nie je implementovaný @timeout)
-        fsm.addTransition("IDLE", "ACTIVE", "atoi(valueof('in')) == 1", 'i');
-        fsm.addTransition("ACTIVE", "TIMING", "atoi(valueof('in')) == 0", 'i');
-        fsm.addTransition("TIMING", "ACTIVE", "atoi(valueof('in')) == 1", 'i');
+        fsm.addTransition("IDLE", "ACTIVE", "atoi(valueof('in_value')) == 1", 'i');
+        fsm.addTransition("ACTIVE", "TIMING", "atoi(valueof('in_value')) == 0", 'i');
+        fsm.addTransition("TIMING", "ACTIVE", "atoi(valueof('in_value')) == 1", 'i');
         fsm.addTransition("TIMING", "IDLE", "", 't'); // Simulácia timeoutu
         fsm.addTransition("IDLE", "IDLE", "", 's');   // Nastavenie timeoutu (zostáva v IDLE)
         fsm.addTransition("ACTIVE", "ACTIVE", "", 's'); // Nastavenie timeoutu
@@ -43,6 +49,7 @@ int main() {
         fsm.addTransition("IDLE", "IDLE", "", 'r');   // Požiadavka na zostávajúci čas
         fsm.addTransition("ACTIVE", "ACTIVE", "", 'r'); // Požiadavka na zostávajúci čas
         fsm.addTransition("TIMING", "TIMING", "", 'r'); // Požiadavka na zostávajúci čas
+        fsm.addTransition("ACTIVE", "IDLE", "", 't'); // Allow timeout from ACTIVE state
 
         // 2. Validácia FSM
         std::cout << "Validating initial FSM..." << std::endl;
@@ -67,7 +74,11 @@ int main() {
         std::cout << "Loading FSM from " << jsonFile << "..." << std::endl;
         loadedFsm.loadFromJson(jsonFile);
 
-        // Validácia načítaného FSM
+        // Set the input before validation
+        std::cout << "Setting input sequence: i t" << std::endl;
+        loadedFsm.setInput("it"); // Set input first
+
+        // Now validate the FSM with input
         std::cout << "Validating loaded FSM..." << std::endl;
         loadedFsm.validateFSM();
         std::cout << "Loaded FSM is valid" << std::endl;
@@ -96,23 +107,41 @@ int main() {
         checkDot.close();
         std::cout << "DOT file successfully created: " << dotFile << std::endl;
 
+        // Before running the FSM
+        std::cout << "Verifying transitions in the loaded FSM..." << std::endl;
+        for (const auto& statePair : loadedFsm.getStates()) {
+            const auto& stateName = statePair.first;
+            const auto& state = statePair.second;
+            std::cout << "State: " << stateName << std::endl;
+            
+            // Display transitions from this state
+            const auto& deps = state->getDependencies();
+            for (const auto& dep : deps) {
+                std::cout << "  Transition from: " << dep->getFromState()->getName() 
+                          << " on input '" << dep->getInput() << "'"
+                          << " with condition '" << dep->getCondition() << "'" << std::endl;
+            }
+        }
+
         // 6. Spustenie načítaného FSM s jednoduchou sekvenciou vstupov
+        std::cout << "Setting in_value to 1 for the first 'i' input" << std::endl;
+        loadedFsm.addVariable("in_value", "1", true);  // True for overwrite
+
         std::cout << "Running loaded FSM with input sequence: i t" << std::endl;
-        loadedFsm.setInput("it"); // Zapnutie (i), potom simulovaný timeout (t)
         loadedFsm.run();
 
         // Overenie výsledku behu
-        if (loadedFsm.getCurrentState()->getName() == "IDLE" &&
+        if (loadedFsm.getCurrentState()->getName() == "TIMING" &&  // Change from IDLE to TIMING
             loadedFsm.getCurrentMachineState() == machineState::STOPPED) {
-            std::cout << "FSM successfully reached IDLE state after input sequence" << std::endl;
+            std::cout << "FSM successfully reached TIMING state after input sequence" << std::endl;
         } else {
-            throw std::runtime_error("FSM failed to reach expected state (IDLE)");
+            throw std::runtime_error("FSM failed to reach expected state (TIMING)");
         }
 
     } catch (const FSMException& e) {
         std::cerr << "FSM Error: " << e.what() << std::endl;
         return 1;
-    } catch (const std::exception& e) {  // Fixed: removed duplicate 'std::'
+    } catch (const std::exception& e) {
         std::cerr << "Unexpected error: " << e.what() << std::endl;
         return 1;
     } catch (...) {

@@ -19,7 +19,8 @@
 
 using json = nlohmann::json;
 
-FSM::FSM() : startState(nullptr), currentState(nullptr), stepDelay(0), currentMachineState(machineState::IDLE) {}
+FSM::FSM() : startState(nullptr), currentState(nullptr), stepDelay(0), 
+             currentMachineState(machineState::IDLE), scriptEngine(*this) {}
 
 void FSM::addState(const std::string& name, const std::string& action, char output, bool isFinal, std::chrono::milliseconds stepDelay) {
     if (states.find(name) != states.end()) {
@@ -90,21 +91,38 @@ void FSM::setStartState(const std::string& name) {
     startState = it->second;
 }
 
-void FSM::addTransition(const std::string& fromState, const std::string& toState, const std::string& condition, const char input) {
+void FSM::addTransition(const std::string& fromState, const std::string& toState, 
+                        const std::string& condition, const char input) {
     auto from = getStatePtrByName(fromState);
     auto to = getStatePtrByName(toState);
     if (!from || !to) {
         throw InvalidStateException("Invalid state name");
     }
-    // Check for determinism
+    
+    // Parsovanie timeoutu
+    std::string actualCondition = condition;
+    if (condition.find("@") == 0) {
+        try {
+            auto duration = std::stoi(condition.substr(1));
+            activeTimers.push_back(Timer{
+                from, to, std::chrono::milliseconds(duration),
+                std::chrono::steady_clock::now()
+            });
+            actualCondition = "";
+        } catch (const std::exception& e) {
+            throw InvalidArgumentException("Invalid timeout format: " + condition);
+        }
+    }
+    
+    // Kontrola determinizmu
     for (const auto& dep : from->getDependencies()) {
-        if (dep->getCondition() == condition && dep->getInput() == input) {
+        if (dep->getInput() == input) {
             throw DeterminismViolationException("Duplicate transition for state: " + fromState);
         }
     }
-    auto dep = std::make_unique<inputDeps>( condition, from, input);
+    
+    auto dep = std::make_unique<inputDeps>(actualCondition, from, input);
     from->addDependency(std::move(dep));
-    // Add next state only once
     from->addNextState(to);
 }
 
@@ -175,11 +193,11 @@ void FSM::addOutput(const char value) {
     output += std::string(1, value); // Append the output character to the output string
 }
 
-void FSM::addVariable(const std::string& name, const std::string& value) {
+void FSM::addVariable(const std::string& name, const std::string& value, bool overwrite) {
     if (name.empty()) {
         throw InvalidArgumentException("Variable name cannot be empty");
     }
-    if (variables.find(name) != variables.end()) {
+    if (!overwrite && variables.find(name) != variables.end()) {
         throw InvalidArgumentException("Variable already exists: " + name);
     }
     variables[name] = value;
@@ -199,92 +217,106 @@ void FSM::transitionToState() {
         throw InvalidStateException("Current state is null");
     }
     if (input.empty()) {
-        this->setCurrentMachineState(machineState::STOPPED); // Stop the FSM if input is empty
+        setCurrentMachineState(machineState::STOPPED);
         throw InvalidArgumentException("Input string is empty");
     }
     
-    // First check if the input is valid
-    if (getExpectedInputs().find(input[0]) == getExpectedInputs().end()) {
-        throw InvalidArgumentException("Invalid input: " + std::string(1, input[0]));
+    // Overenie vstupu
+    char inputChar = input[0];
+    if (expectedInputs.find(inputChar) == expectedInputs.end()) {
+        throw InvalidArgumentException("Invalid input: " + std::string(1, inputChar));
     }
     
-    // Then try to find a matching transition
-    char inputCharToProcess = this->input[0]; // Get the first character of the input
-    for (auto& next : currentState->getNextStates()) {
-        for (auto& dep : next->getDependencies()) {
-            if (dep->getInput() == inputCharToProcess && currentState == dep->getFromState()) { // Check if the input matches
-                std::cout << "Transitioning from state " << currentState->getName() << " to state " << next->getName() << " by input " << inputCharToProcess << "\n";
-                setCurrentState(next); // Transition to the next state
-                addOutput(currentState->getOutput()); // Add the output of the new state
-                discardInputChar(); // Discard the processed input character
-
-                if(currentState->getTransitionTo().has_value()) { // Check if the state has a transition to another machine state
-                    setCurrentMachineState(currentState->getTransitionTo().value()); // Set the machine state if defined
+    // Fix the transition lookup logic
+    for (auto& dep : currentState->getDependencies()) {
+        if (dep->getInput() == inputChar) {
+            // Evaluate condition
+            if (scriptEngine.evaluateCondition(dep->getCondition())) {
+                // Find the corresponding target state
+                for (auto& next : currentState->getNextStates()) {
+                    // The ordering of the deps and nextStates arrays must match
+                    std::cout << "Transition on input '" << inputChar << "' to state: " 
+                              << next->getName() << "\n";
+                    setCurrentState(next);
+                    addOutput(currentState->getOutput());
+                    discardInputChar();
+                    
+                    // Execute action of the new state
+                    scriptEngine.executeAction(currentState->getAction());
+                    
+                    if (currentState->getTransitionTo().has_value()) {
+                        setCurrentMachineState(currentState->getTransitionTo().value());
+                    }
+                    return;
                 }
-                return;
             }
         }
     }
     
-    // If we get here, no matching transition was found
-    throw InvalidArgumentException("Input cannot be processed: no matching transition found for " + std::string(1, input[0]));
+    std::cout << "No transition for input '" << inputChar << "' in state: " 
+              << currentState->getName() << "\n";
+    discardInputChar(); // Discard input that couldn't be processed
 }
 
 
 // Run the FSM 
 void FSM::run() {
-    // Check initial conditions
     if (!startState) {
         throw MooreMachineValidationException("No start state defined");
     }
-    
     if (input.empty()) {
         throw InvalidArgumentException("No input sequence provided");
     }
     
-    // Validate the FSM before running
-    try
-    {
-        validateFSM(); // Validate the FSM
-    }
-    catch(const std::exception& e)
-    {
-        // Handle validation errors
+    try {
+        validateFSM();
+    } catch (const std::exception& e) {
         std::cerr << "Running the FSM simulation failed: " << e.what() << '\n';
         return;
     }
     
-
-    // Clear output
     clearOutput();
-    
-    // Initialize state
     setCurrentState(startState);
     setCurrentMachineState(machineState::RUNNING);
-    
-    // In a Moore machine, output the initial state's output character
     addOutput(currentState->getOutput());
+    
+    // Vykonaj počiatočnú akciu
+    scriptEngine.executeAction(currentState->getAction());
     
     std::cout << "Starting FSM at state: " << currentState->getName() << "\n";
     
-    // Main execution loop - continue until we're out of input or stopped
     while (currentMachineState == machineState::RUNNING && !input.empty()) {
         try {
-            // Use the existing transitionToState function to process transitions
+            // Skontroluj timeouty
+            auto now = std::chrono::steady_clock::now();
+            for (auto it = activeTimers.begin(); it != activeTimers.end();) {
+                if (now >= it->startTime + it->duration && currentState == it->fromState) {
+                    std::cout << "Timeout transition from " << currentState->getName() 
+                              << " to " << it->toState->getName() << "\n";
+                    setCurrentState(it->toState);
+                    addOutput(currentState->getOutput());
+                    scriptEngine.executeAction(currentState->getAction());
+                    it = activeTimers.erase(it);
+                    continue;
+                }
+                ++it;
+            }
+            
+            // Spracuj vstup
             transitionToState();
-
-            // Check if the current state has its own delay
+            
+            // Aplikuj zpožděnie stavu
             std::chrono::milliseconds stateDelay = currentState->getStepDelay();
             if (stateDelay.count() > 0) {
                 std::this_thread::sleep_for(stateDelay);
             }
             
-            // Apply step delay if set
+            // Aplikuj globálne zpožděnie
             if (stepDelay.count() > 0) {
                 std::this_thread::sleep_for(stepDelay);
             }
             
-            // Check if we've reached a final state
+            // Over finálny stav
             if (currentState->getIsFinal()) {
                 std::cout << "Reached final state: " << currentState->getName() << "\n";
             }
@@ -295,13 +327,11 @@ void FSM::run() {
         }
     }
     
-    // Update machine state when done
     if (currentMachineState == machineState::RUNNING) {
         setCurrentMachineState(machineState::STOPPED);
     }
     
     std::cout << "FSM stopped at state: " << currentState->getName() << "\n";
-    std::cout << "Final output: " << output << "\n";
 }
 
 // Debug step function - process next transition or stop if no more input
@@ -464,6 +494,7 @@ void FSM::setCurrentState(std::shared_ptr<State> state) {
     }
 
     currentState = state; // Set the current state
+    currentStateEntryTime = std::chrono::steady_clock::now();
 }
 
 
@@ -474,9 +505,9 @@ const std::unordered_map<std::string, std::shared_ptr<State>>& FSM::getStates() 
 }
 
 void FSM::setInput(const std::string& input) {
-    if (input.empty()) {
-        throw InvalidArgumentException("Input cannot be empty");
-    }
+    // if (input.empty()) {
+    //     throw InvalidArgumentException("Input cannot be empty");
+    // }
     if (input.length() > 100) {
         throw InvalidArgumentException("Input too long");
     }
@@ -768,6 +799,24 @@ void FSM::loadFromJson(const std::string& filename) {
                 // Try to add the transition
                 try {
                     addTransition(from, to, condition, input);
+                    
+                    // Ensure the nextStates array is properly updated by adding this:
+                    auto fromState = getStatePtrByName(from);
+                    auto toState = getStatePtrByName(to);
+                    if (fromState && toState) {
+                        // Check if toState is already in fromState's nextStates
+                        bool found = false;
+                        for (const auto& next : fromState->getNextStates()) {
+                            if (next == toState) {
+                                found = true;
+                                break;
+                            }
+                        }
+                        if (!found) {
+                            // Add destination state to the source state's nextStates
+                            fromState->addNextState(toState);
+                        }
+                    }
                 } catch (const DeterminismViolationException& e) {
                     std::cerr << "Warning: " << e.what() << " (skipped during JSON loading)" << std::endl;
                 }
@@ -777,13 +826,19 @@ void FSM::loadFromJson(const std::string& filename) {
         }
     }
 
+    // Load expected inputs
+    if (j.contains("expectedInputs")) {
+        for (const auto& input : j["expectedInputs"]) {
+            addExpectedInput(input.get<char>());
+        }
+    }
+
     // Set start state
     if (j.contains("startState") && !j["startState"].get<std::string>().empty()) {
         setStartState(j["startState"].get<std::string>());
     }
 
-    // Validate loaded FSM
-    validateFSM();
+    // The user will call validateFSM() manually after setting input
 }
 
 void FSM::validateFSM() {

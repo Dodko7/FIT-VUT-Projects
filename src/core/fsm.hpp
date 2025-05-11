@@ -9,6 +9,7 @@ class State;
 #include <deque>
 #include <chrono>
 #include "nlohmann/json.hpp"
+#include "script_engine.hpp"
 
 /**
  * @enum machineState
@@ -43,6 +44,17 @@ private:
     std::shared_ptr<State> currentState; ///< Pointer to the current state.
     machineState currentMachineState; ///< Current execution state.
     std::unordered_set<char> expectedInputs; ///< Set of expected inputs as strings.
+    
+    // New members
+    ScriptEngine scriptEngine; ///< JavaScript engine for executing conditions and actions
+    std::chrono::steady_clock::time_point currentStateEntryTime; ///< Time when entered the current state
+    struct Timer {
+        std::shared_ptr<State> fromState; ///< Source state for the timer transition
+        std::shared_ptr<State> toState; ///< Destination state when timer expires
+        std::chrono::milliseconds duration; ///< Duration of the timer
+        std::chrono::steady_clock::time_point startTime; ///< When the timer started
+    };
+    std::vector<Timer> activeTimers; ///< Currently active timers
 
 public:
     /**
@@ -134,12 +146,13 @@ public:
     void clearOutput();
 
     /**
-     * @brief Adds a new variable to the FSM.
+     * @brief Adds a new variable to the FSM or updates an existing one.
      * @param name The name of the variable (non-empty).
-     * @param value The initial value of the variable.
-     * @throws std::invalid_argument If name is empty or variable already exists.
+     * @param value The value of the variable.
+     * @param overwrite If true, update the variable if it already exists.
+     * @throws std::invalid_argument If name is empty or variable already exists and overwrite is false.
      */
-    void addVariable(const std::string& name, const std::string& value);
+    void addVariable(const std::string& name, const std::string& value, bool overwrite = false);
 
     /**
      * @brief Removes a variable from the FSM.
@@ -319,6 +332,14 @@ public:
      * @return The description of the FSM.
      */
     const std::string& getDescription() const;
+
+    /**
+     * @brief Returns the entry time of the current state.
+     * @return The entry time point.
+     */
+    std::chrono::steady_clock::time_point getCurrentStateEntryTime() const {
+        return currentStateEntryTime;
+    }
 
 private:
     /**

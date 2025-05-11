@@ -3,7 +3,6 @@
  * @brief Unit tests for adding and removing states in the FSM.
  */
 
-#define CATCH_CONFIG_MAIN
 #include "catch.hpp"
 #include "../src/core/fsm.hpp"
 #include "../src/core/fsmErrors.hpp"
