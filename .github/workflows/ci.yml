@@ -27,9 +27,15 @@ jobs:
         sudo apt-get update
         # Install build tools
         sudo apt-get install -y g++ make jq curl
-        # Install Qt5 with script support
-        sudo apt-get install -y qtbase5-dev qt5-qmake qttools5-dev libqt5widgets5 libqt5gui5 libqt5core5a libqt5script5 qtscript5-dev
+        # Install complete Qt5 environment and dependencies
+        sudo apt-get install -y qt5-default qtbase5-dev qt5-qmake qttools5-dev qttools5-dev-tools
+        # Install Qt5 libraries
+        sudo apt-get install -y libqt5core5a libqt5gui5 libqt5widgets5 libqt5network5 libqt5xml5 libqt5sql5 
+        sudo apt-get install -y libqt5printsupport5 libqt5dbus5 libqt5test5 libqt5concurrent5
+        # Install Qt5 modules
+        sudo apt-get install -y libqt5script5 qtscript5-dev
         # List installed Qt packages for debugging
+        echo "=== Installed Qt5 Packages ==="
         dpkg -l | grep qt5
     
     - name: Install Dependencies (macOS)
@@ -52,6 +58,13 @@ jobs:
       run: |
         curl -L https://github.com/catchorg/Catch2/releases/download/v2.13.9/catch.hpp -o lib/catch2/catch.hpp
         curl -L https://github.com/nlohmann/json/releases/download/v3.11.2/json.hpp -o lib/nlohmann/single_include/nlohmann/json.hpp
+        
+    - name: Inspect Original Makefile
+      run: |
+        echo "=== Original Makefile Qt Configuration ==="
+        grep -E "QT_PREFIX|MOC|MOCFLAGS|QtCore|QtScript" Makefile || echo "No Qt configuration found in Makefile"
+        echo "Makefile content:"
+        head -n 30 Makefile
     
     - name: Prepare Makefile for CI
       run: |
@@ -59,16 +72,17 @@ jobs:
           # Create a modified Makefile for Ubuntu
           # Change Qt paths
           sed -i 's|QT_PREFIX = /opt/homebrew/Cellar/qt@5/5.15.16_2|QT_PREFIX = /usr|g' Makefile
-          sed -i 's|MOC = /opt/homebrew/opt/qt@5/bin/moc|MOC = /usr/bin/moc-qt5|g' Makefile
+          sed -i 's|MOC = /opt/homebrew/opt/qt@5/bin/moc|MOC = /usr/bin/moc|g' Makefile
           # Change linking flags for Linux
           sed -i 's|-framework QtCore -framework QtScript|-lQt5Core -lQt5Script|g' Makefile
-          # Update include paths for Linux
-          sed -i 's|MOCFLAGS = -I/opt/homebrew/opt/qt@5/include|MOCFLAGS = -I/usr/include/x86_64-linux-gnu/qt5|g' Makefile
-          sed -i 's|-I/opt/homebrew/opt/qt@5/include/QtCore|-I/usr/include/x86_64-linux-gnu/qt5/QtCore|g' Makefile
-          sed -i 's|-I/opt/homebrew/opt/qt@5/include/QtScript|-I/usr/include/x86_64-linux-gnu/qt5/QtScript|g' Makefile
+          # Update include paths for Linux - use generic paths for better compatibility
+          sed -i 's|MOCFLAGS = -I/opt/homebrew/opt/qt@5/include|MOCFLAGS = -I/usr/include/qt5 -I/usr/include/x86_64-linux-gnu/qt5|g' Makefile
+          sed -i 's|-I/opt/homebrew/opt/qt@5/include/QtCore|-I/usr/include/qt5/QtCore -I/usr/include/x86_64-linux-gnu/qt5/QtCore|g' Makefile
+          sed -i 's|-I/opt/homebrew/opt/qt@5/include/QtScript|-I/usr/include/qt5/QtScript -I/usr/include/x86_64-linux-gnu/qt5/QtScript|g' Makefile
           
-          # No need to create a separate test target
-          # Using the existing 'test' target will be sufficient
+          # Debugging - print updated include paths in Makefile
+          echo "=== Updated Makefile Qt paths ==="
+          grep -E "QT_PREFIX|MOC|MOCFLAGS|Qt" Makefile || echo "No Qt paths found in Makefile"
         fi
 
     - name: Build
@@ -80,10 +94,29 @@ jobs:
           export LDFLAGS="-L/usr/local/opt/qt@5/lib"
           export CPPFLAGS="-I/usr/local/opt/qt@5/include"
         elif [ "${{ matrix.os }}" = "ubuntu-latest" ]; then
-          # Set QT environment variable for Ubuntu if needed
+          # Set Qt environment variables for Linux
           export QT_SELECT=qt5
+          export QT_PLUGIN_PATH=/usr/lib/x86_64-linux-gnu/qt5/plugins
+          export QT_QPA_PLATFORM_PLUGIN_PATH=/usr/lib/x86_64-linux-gnu/qt5/plugins/platforms
+          
+          # Debug Qt installations
+          echo "=== Qt installation paths ==="
+          ls -la /usr/include/qt5 || echo "Directory /usr/include/qt5 not found"
+          ls -la /usr/include/x86_64-linux-gnu/qt5 || echo "Directory /usr/include/x86_64-linux-gnu/qt5 not found"
+          echo "=== Qt pkg-config details ==="
+          pkg-config --list-all | grep -i qt || echo "No Qt pkg-config files found"
         fi
-        make > build-output.txt 2>&1 || echo "failed=true" >> $GITHUB_OUTPUT
+        
+        # Print Qt version
+        echo "=== Qt Version ==="
+        qmake --version || echo "qmake not found"
+        
+        # Build with detailed output
+        echo "=== Starting build ==="
+        make > build-output.txt 2>&1 || { 
+          cat build-output.txt
+          echo "failed=true" >> $GITHUB_OUTPUT
+        }
     
     - name: Prepare Build Failure Issue
       if: steps.build.outputs.failed == 'true'
@@ -105,10 +138,18 @@ jobs:
           export LDFLAGS="-L/usr/local/opt/qt@5/lib"
           export CPPFLAGS="-I/usr/local/opt/qt@5/include"
         elif [ "${{ matrix.os }}" = "ubuntu-latest" ]; then
+          # Set Qt environment variables for Linux
           export QT_SELECT=qt5
+          export QT_PLUGIN_PATH=/usr/lib/x86_64-linux-gnu/qt5/plugins
+          export QT_QPA_PLATFORM_PLUGIN_PATH=/usr/lib/x86_64-linux-gnu/qt5/plugins/platforms
         fi
+        
         # Use the same test target for both platforms
-        make test > test-output.txt 2>&1 || echo "failed=true" >> $GITHUB_OUTPUT
+        echo "=== Running tests ==="
+        make test > test-output.txt 2>&1 || { 
+          cat test-output.txt
+          echo "failed=true" >> $GITHUB_OUTPUT
+        }
         
     - name: Prepare Issue Content
       if: steps.test.outputs.failed == 'true'
