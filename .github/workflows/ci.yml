@@ -6,6 +6,11 @@ on:
   pull_request:
     branches: [ main, dev ]
 
+# Add permissions for GitHub Actions
+permissions:
+  contents: read
+  issues: write
+
 jobs:
   build-and-test:
     runs-on: ${{ matrix.os }}
@@ -71,5 +76,13 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         OS: ${{ matrix.os }}
+        # Explicitly provide GitHub context variables
+        GH_SHA: ${{ github.sha }}
+        GH_REF_NAME: ${{ github.ref_name }}
+        GH_ACTOR: ${{ github.actor }}
+        GH_REPOSITORY: ${{ github.repository }}
+        GH_RUN_ID: ${{ github.run_id }}
+        GH_HEAD_COMMIT: ${{ toJSON(github.event.head_commit.message) }}
       with:
         filename: .github/test-failure-template.md
+        update_existing: true
