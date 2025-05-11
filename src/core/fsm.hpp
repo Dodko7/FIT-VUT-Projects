@@ -342,6 +342,10 @@ public:
         return currentStateEntryTime;
     }
 
+    void setStepDelay(std::chrono::milliseconds delay);
+
+    std::chrono::milliseconds getStepDelay() const;
+
 private:
     /**
      * @brief Checks if a state is referenced elsewhere.

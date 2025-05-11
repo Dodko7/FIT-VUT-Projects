@@ -201,49 +201,41 @@ void FSM::transitionToState() {
         throw InvalidStateException("Current state is null");
     }
     if (input.empty()) {
-        setCurrentMachineState(machineState::STOPPED);
+        this->setCurrentMachineState(machineState::STOPPED); // Stop the FSM if input is empty
         throw InvalidArgumentException("Input string is empty");
     }
     
-    // Overenie vstupu
-    char inputChar = input[0];
-    if (expectedInputs.find(inputChar) == expectedInputs.end()) {
-        throw InvalidArgumentException("Invalid input: " + std::string(1, inputChar));
-    }
+    // First check if the input is valid
+    checkValidInput();
     
-    // Fix the transition lookup logic
-    for (auto& dep : currentState->getDependencies()) {
-        if (dep->getInput() == inputChar) {
-            // Evaluate condition
-            if (scriptEngine.evaluateCondition(dep->getCondition())) {
-                // Find the corresponding target state
-                for (auto& next : currentState->getNextStates()) {
-                    // The ordering of the deps and nextStates arrays must match
-                    std::cout << "Transition on input '" << inputChar << "' to state: " 
-                              << next->getName() << "\n";
-                    setCurrentState(next);
-                    addOutput(currentState->getOutput());
-                    discardInputChar();
-                    
-                    // Execute action of the new state
-                    if (!currentState->getAction().empty()) {
-                        std::cout << "Executing action: " << currentState->getAction() << "\n";
-                        scriptEngine.executeAction(currentState->getAction());
-                    }
-                    
-                    if (currentState->getTransitionTo().has_value()) {
-                        setCurrentMachineState(currentState->getTransitionTo().value());
-                    }
-                    return;
+    // Then try to find a matching transition
+    char inputCharToProcess = this->input[0]; // Get the first character of the input
+    for (auto& next : currentState->getNextStates()) {
+        for (auto& dep : next->getDependencies()) {
+            if (dep->getInput() == inputCharToProcess && currentState == dep->getFromState()) { // Check if the input matches
+                std::cout << "Transitioning from state " << currentState->getName() << " to state " << next->getName() << " by input " << inputCharToProcess << "\n";
+                setCurrentState(next); // Transition to the next state
+                addOutput(currentState->getOutput()); // Add the output of the new state
+                
+                if (!currentState->getAction().empty()) { // Check if the state has an action
+                    std::cout << "Executing action: " << currentState->getAction() << "\n";
+                    scriptEngine.executeAction(currentState->getAction()); // Execute the action
                 }
+
+                discardInputChar(); // Discard the processed input character
+
+                if(currentState->getTransitionTo().has_value()) { // Check if the state has a transition to another machine state
+                    setCurrentMachineState(currentState->getTransitionTo().value()); // Set the machine state if defined
+                }
+                return;
             }
         }
     }
     
-    std::cout << "No transition for input '" << inputChar << "' in state: " 
-              << currentState->getName() << "\n";
-    discardInputChar(); // Discard input that couldn't be processed
+    // If we get here, no matching transition was found
+    throw InvalidArgumentException("Input cannot be processed: no matching transition found for " + std::string(1, input[0]));
 }
+
 
 
 // Run the FSM 
@@ -315,37 +307,46 @@ void FSM::run() {
 
 // Debug step function - process next transition or stop if no more input
 bool FSM::debugStep() {
+    if (!startState) {
+        throw MooreMachineValidationException("No start state defined");
+    }
     if (input.empty()) {
         setCurrentMachineState(machineState::STOPPED);
         std::cout << "Debug: No more input to process.\n";
         return false;
     }
-    
+
     try {
-        // Set machine state to running if not already
+        // If the FSM is not already running, initialize it
         if (currentMachineState != machineState::RUNNING) {
+            clearOutput();
+            setCurrentState(startState);
             setCurrentMachineState(machineState::RUNNING);
+            addOutput(currentState->getOutput());
+
+            if (!currentState->getAction().empty()) {
+                std::cout << "Executing initial action: " << currentState->getAction() << "\n";
+                scriptEngine.executeAction(currentState->getAction());
+            }
+
+            std::cout << "Debug: Starting FSM at state: " << currentState->getName() << "\n";
         }
-        
-        // Use existing transitionToState to process one transition
+
+        // Perform a single transition step
         transitionToState();
-        
+
         // Check if we've reached a final state
         if (currentState->getIsFinal()) {
             std::cout << "Debug: Reached final state: " << currentState->getName() << "\n";
         }
-        
+
         // Check if we're out of input
         if (input.empty()) {
             setCurrentMachineState(machineState::STOPPED);
             std::cout << "Debug: No more input to process.\n";
         }
-        
+
         return true;
-    } catch (const InvalidArgumentException& e) {
-        // This is expected when input is empty
-        setCurrentMachineState(machineState::STOPPED);
-        return false;
     } catch (const std::exception& e) {
         std::cerr << "Error during debug step: " << e.what() << "\n";
         setCurrentMachineState(machineState::ERROR);
@@ -864,48 +865,42 @@ void FSM::validateFSM() {
     // 4. Check determinism (no duplicate input symbols for transitions from the same state)
     for (const auto& pair : states) {
         const auto& state = pair.second;
-        std::unordered_map<char, std::string> inputToDestination;  // Change from string to char
-        
-        for (const auto& dep : state->getDependencies()) {
-            char input = dep->getInput();  // Use getInput() which returns a char
-            
-            // Convert to string for error message purposes only
-            std::string inputStr(1, input);
-            
-            // Check for duplicate transitions with same input
-            if (inputToDestination.find(input) != inputToDestination.end()) {
-                std::string errorMsg = "State '" + state->getName() + 
-                                    "' has multiple transitions for input '" + inputStr + 
-                                    "', which violates determinism";
-                validationErrors.push_back(errorMsg);
-                throw DeterminismViolationException(errorMsg);
-            }
-            
-            // Find the destination state for this transition
-            for (const auto& nextState : state->getNextStates()) {
-                if (nextState && dep->getFromState() == state) {
-                    inputToDestination[input] = nextState->getName();
-                    break;
+        std::unordered_set<char> seenInputs;
+
+        for (const auto& nextState : state->getNextStates()) {
+            if (!nextState) continue;
+
+            for (const auto& dep : nextState->getDependencies()) {
+                if (dep->getFromState() == state) {
+                    char input = dep->getInput();
+
+                    // Check for duplicate input symbols
+                    if (seenInputs.find(input) != seenInputs.end()) {
+                        std::string errorMsg = "State '" + state->getName() +
+                                               "' has multiple transitions for input '" +
+                                               std::string(1, input) + "', which violates determinism";
+                        validationErrors.push_back(errorMsg);
+                        throw DeterminismViolationException(errorMsg);
+                    }
+
+                    seenInputs.insert(input);
                 }
             }
         }
-}
+    }
     
     // 6. Check for dead-end states (non-final states with no outgoing transitions)
     for (const auto& pair : states) {
         const auto& state = pair.second;
         
         // Check if state has any outgoing transitions
-        if (state->getDependencies().empty()) {
+        if (state->getNextStates().empty() && !state->getIsFinal()) {
             std::string errorMsg = "State '" + state->getName() + 
                                   "' is a non-final state with no outgoing transitions (dead-end)";
             validationErrors.push_back(errorMsg);
             throw MooreMachineValidationException(errorMsg);
         }
     }
-    
-    // If this comment is reached, the FSM is valid
-    std::cout << "FSM validation successful!" << std::endl;
 }
 std::shared_ptr<State> FSM::getStatePtrByName(const std::string& name) {
     auto it = states.find(name);
@@ -1032,4 +1027,12 @@ void FSM::deleteStateRecursive(const std::string& name) {
     states.erase(name);
     finalStates.erase(name);
     // Smart pointers ensure destructors are called
+}
+
+void FSM::setStepDelay(std::chrono::milliseconds delay) {
+        stepDelay = delay;
+    }
+    
+std::chrono::milliseconds FSM::getStepDelay() const {
+    return stepDelay;
 }

@@ -2,7 +2,7 @@
 
 # Kompilátor
 CXX = clang++
-CXXFLAGS = -std=c++17 -Wall -Wextra -Ilib/nlohmann/single_include -Ilib/catch2 -Isrc/core -w
+CXXFLAGS = -std=gnu++2b -Wall -Wextra -Ilib/nlohmann/single_include -Ilib/catch2 -Isrc/core -w
 MOC = /opt/homebrew/opt/qt@5/bin/moc
 
 # Qt konfigurácia
@@ -24,20 +24,27 @@ MOCFLAGS = -I/opt/homebrew/opt/qt@5/include \
 # Adresáre a súbory
 SRC_DIR = src/core
 TEST_DIR = tests
+EXAMPLES_DIR = examples
 OBJ_DIR = build
 TEST_OBJ_DIR = build/tests
+EXAMPLES_OBJ_DIR = build/examples
 SRCS = $(filter-out $(SRC_DIR)/main.cpp, $(wildcard $(SRC_DIR)/*.cpp))
 TEST_SRCS = $(filter-out $(TEST_DIR)/test_main.cpp, $(wildcard $(TEST_DIR)/*.cpp))
+EXAMPLE_SRCS = $(wildcard $(EXAMPLES_DIR)/*.cpp)
 OBJS = $(patsubst $(SRC_DIR)/%.cpp,$(OBJ_DIR)/%.o,$(SRCS))
 TEST_OBJS = $(TEST_OBJ_DIR)/test_main.o $(patsubst $(TEST_DIR)/%.cpp,$(TEST_OBJ_DIR)/%.o,$(TEST_SRCS))
+EXAMPLE_OBJS = $(patsubst $(EXAMPLES_DIR)/%.cpp,$(EXAMPLES_OBJ_DIR)/%.o,$(EXAMPLE_SRCS))
+EXAMPLE_TARGETS = $(patsubst $(EXAMPLES_DIR)/%.cpp,$(EXAMPLES_OBJ_DIR)/%,$(EXAMPLE_SRCS))
 MOC_SRC = $(SRC_DIR)/script_engine.hpp
 MOC_OBJ = $(OBJ_DIR)/moc_script_engine.o
 TARGET = core_backend
 TEST_TARGET = test_suite
 
-.PHONY: all clean directories test
+.PHONY: all clean directories test examples
 
-all: directories $(TARGET)
+all: directories $(TARGET) examples test
+
+examples: directories $(EXAMPLE_TARGETS)
 
 $(TARGET): $(OBJ_DIR)/main.o $(OBJS) $(MOC_OBJ)
 	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -o $@ $^ $(LDFLAGS)
@@ -61,8 +68,16 @@ test: directories $(TEST_TARGET)
 $(TEST_TARGET): $(TEST_OBJS) $(OBJS) $(MOC_OBJ)
 	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -o $@ $^ $(LDFLAGS)
 
+# Rule to compile example object files
+$(EXAMPLES_OBJ_DIR)/%.o: $(EXAMPLES_DIR)/%.cpp | directories
+	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -c $< -o $@
+
+# Rule to link example executables
+$(EXAMPLES_OBJ_DIR)/%: $(EXAMPLES_OBJ_DIR)/%.o $(OBJS) $(MOC_OBJ) | directories
+	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -o $@ $^ $(LDFLAGS)
+
 directories:
-	@mkdir -p $(OBJ_DIR) $(TEST_OBJ_DIR) assets examples
+	@mkdir -p $(OBJ_DIR) $(TEST_OBJ_DIR) $(EXAMPLES_OBJ_DIR) assets examples
 
 clean:
-	rm -rf $(OBJ_DIR) $(TEST_OBJ_DIR) assets $(TARGET) $(TEST_TARGET)
+	rm -rf $(OBJ_DIR) $(TEST_OBJ_DIR) $(EXAMPLES_OBJ_DIR) assets $(TARGET) $(TEST_TARGET) $(EXAMPLE_TARGETS)
