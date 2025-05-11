@@ -31,18 +31,32 @@ jobs:
         curl -L https://github.com/nlohmann/json/releases/download/v3.11.2/json.hpp -o lib/nlohmann/single_include/nlohmann/json.hpp
     
     - name: Build
-      run: make
+      id: build
+      run: |
+        make > build-output.txt 2>&1 || echo "failed=true" >> $GITHUB_OUTPUT
+    
+    - name: Prepare Build Failure Issue
+      if: steps.build.outputs.failed == 'true'
+      run: |
+        BUILD_OUTPUT=$(cat build-output.txt)
+        echo "FAILURE_TYPE=Build" >> $GITHUB_ENV
+        echo "TEST_OUTPUT<<EOF" >> $GITHUB_ENV
+        echo "$BUILD_OUTPUT" >> $GITHUB_ENV
+        echo "EOF" >> $GITHUB_ENV
+        echo "TEST_SUMMARY=Build failed, see details above" >> $GITHUB_ENV
     
     - name: Run Tests
       id: test
+      if: steps.build.outputs.failed != 'true'
       run: |
-        make test > test-output.txt 2>&1 || echo "::set-output name=failed::true"
+        make test > test-output.txt 2>&1 || echo "failed=true" >> $GITHUB_OUTPUT
         
     - name: Prepare Issue Content
       if: steps.test.outputs.failed == 'true'
       run: |
         # Get test output
         TEST_OUTPUT=$(cat test-output.txt)
+        echo "FAILURE_TYPE=Test" >> $GITHUB_ENV
         echo "TEST_OUTPUT<<EOF" >> $GITHUB_ENV
         echo "$TEST_OUTPUT" >> $GITHUB_ENV
         echo "EOF" >> $GITHUB_ENV
@@ -51,9 +65,9 @@ jobs:
         FAILED_COUNT=$(grep -o 'test cases failed' test-output.txt | wc -l)
         echo "TEST_SUMMARY=Failed $FAILED_COUNT test cases" >> $GITHUB_ENV
     
-    - name: Create Issue on Test Failure
+    - name: Create Issue on Failure
       uses: JasonEtco/create-an-issue@v2
-      if: steps.test.outputs.failed == 'true'
+      if: steps.build.outputs.failed == 'true' || steps.test.outputs.failed == 'true'
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         OS: ${{ matrix.os }}
