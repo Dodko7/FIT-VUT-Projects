@@ -1,7 +1,7 @@
 #include <catch.hpp>
 #include <thread>  // For std::this_thread::sleep_for
 #include "fsm.hpp"
-#include "script_engine.hpp"
+#include "scriptEngine.hpp"
 #include "fsmErrors.hpp"  // For InvalidScriptException
 
 TEST_CASE("ScriptEngine evaluates conditions", "[ScriptEngine]") {

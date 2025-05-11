@@ -1,4 +1,4 @@
-#include "fsm_interface.hpp"
+#include "fsmInterface.hpp"
 #include <iostream>
 #include <QtCore/QCoreApplication>
 #include <fstream>
