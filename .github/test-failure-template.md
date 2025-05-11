@@ -9,20 +9,24 @@ assignees: chadmee
 {{ env.FAILURE_TYPE }} has failed on the **{{ env.OS }}** platform in the most recent commit.
 
 ### Details
-- **Commit:** ${{ github.sha }}
-- **Branch:** ${{ github.ref_name }}
-- **Triggered by:** ${{ github.actor }}
-- **Run URL:** https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+- **Commit:** {{ env.GH_SHA }}
+- **Branch:** {{ env.GH_REF_NAME }}
+- **Triggered by:** {{ env.GH_ACTOR }}
+- **Run URL:** [GitHub Actions Run](https://github.com/{{ env.GH_REPOSITORY }}/actions/runs/{{ env.GH_RUN_ID }})
 
 ### Commit Message
-```
-${{ github.event.head_commit.message }}
+
+```text
+{{ env.GH_HEAD_COMMIT }}
 ```
 
-### Test Output
-```
+### Output
+
+```text
 {{ env.TEST_OUTPUT }}
 ```
 
 ### Summary
+
 {{ env.TEST_SUMMARY }}
