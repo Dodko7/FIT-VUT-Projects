@@ -1,3 +1,14 @@
+/**
+ * @file fsm.cpp
+ * @brief Implementation of the Finite State Machine (FSM) class
+ * @author xvalenk00 && xondre16
+ * @date May 2025
+ * 
+ * This file contains the implementation of a Moore-type Finite State Machine,
+ * supporting state creation/management, transitions, serialization, validation,
+ * execution, and debugging visualization.
+ */
+
 #include "fsm.hpp" // Include FSM header
 #include "state.hpp" // Include State class
 #include "inputDeps.hpp" // Include InputDeps for managing transitions
@@ -14,11 +25,16 @@
 #include <cstdlib> // Include standard library for system commands
 #include <thread> // For sleep functionality
 #include "nlohmann/json.hpp" // Include JSON library for serialization/deserialization
-#include <set>
-#include <map>
+#include <set> // For set container
+#include <map> // For map container
 
 using json = nlohmann::json;
 
+/**
+ * @brief Constructs a new FSM instance
+ * 
+ * Initializes a new FSM with default values (no states, no transitions, IDLE machine state).
+ */
 FSM::FSM() : startState(nullptr), currentState(nullptr), stepDelay(0), 
              currentMachineState(machineState::IDLE), scriptEngine(*this) {}
 
@@ -47,6 +63,12 @@ void FSM::addState(const std::string& name, const std::string& action, char outp
     }
 }
 
+/**
+ * @brief Sets the name of the FSM
+ * 
+ * @param name The name to set (non-empty, max 20 characters)
+ * @throws InvalidArgumentException If the name is empty or too long
+ */
 void FSM::setName(const std::string& name) {
     if (name.empty()) { // Validate that the name is not empty
         throw InvalidArgumentException("FSM name cannot be empty");
@@ -57,7 +79,12 @@ void FSM::setName(const std::string& name) {
     this->name = name; // Set the FSM name
 }
 
-// Set the description of the FSM
+/**
+ * @brief Sets the description of the FSM
+ * 
+ * @param description The description to set (non-empty, max 100 characters)
+ * @throws InvalidArgumentException If the description is empty or too long
+ */
 void FSM::setDescription(const std::string& description) {
     if (description.empty()) { // Validate that the description is not empty
         throw InvalidArgumentException("FSM description cannot be empty");
@@ -68,20 +95,39 @@ void FSM::setDescription(const std::string& description) {
     this->description = description; // Set the FSM description
 }
 
+/**
+ * @brief Gets the name of the FSM
+ * 
+ * @return The name of the FSM
+ */
 const std::string& FSM::getName() const {
     return name;
 }
 
+/**
+ * @brief Gets the description of the FSM
+ * 
+ * @return The description of the FSM
+ */
 const std::string& FSM::getDescription() const {
     return description;
 }
 
-// Public: Remove a state and recursively prune unreachable children
+/**
+ * @brief Removes a state from the FSM and recursively prunes unreachable children
+ * 
+ * @param name The name of the state to remove
+ */
 void FSM::removeState(const std::string& name) {
     deleteStateRecursive(name); // Call helper function to delete state recursively
 }
 
-// Set the start state of the FSM
+/**
+ * @brief Sets the start state of the FSM
+ * 
+ * @param name The name of the state to set as the start state
+ * @throws InvalidStateException If the state does not exist
+ */
 void FSM::setStartState(const std::string& name) {
     auto it = states.find(name);
     if (it == states.end()) {
@@ -90,6 +136,16 @@ void FSM::setStartState(const std::string& name) {
     startState = it->second;
 }
 
+/**
+ * @brief Adds a transition between two states
+ * 
+ * @param fromState The name of the source state
+ * @param toState The name of the target state
+ * @param condition JavaScript condition expression that must evaluate to true for this transition
+ * @param input The input character that triggers this transition
+ * @throws InvalidStateException If either state does not exist
+ * @throws DeterminismViolationException If the source state already has a transition with the same input
+ */
 void FSM::addTransition(const std::string& fromState, const std::string& toState, 
                         const std::string& condition, const char input) {
     auto from = getStatePtrByName(fromState);
@@ -111,7 +167,15 @@ void FSM::addTransition(const std::string& fromState, const std::string& toState
     from->addNextState(to);
 }
 
-// Remove a transition between two states
+/**
+ * @brief Removes a transition between two states
+ * 
+ * @param fromState The name of the source state
+ * @param toState The name of the target state
+ * @param input The input character associated with the transition to remove
+ * @throws InvalidArgumentException If state names are empty
+ * @throws InvalidStateException If states do not exist
+ */
 void FSM::removeTransition(std::string& fromState, std::string& toState, char input) {
     if (fromState.empty() || toState.empty()) {
         throw InvalidArgumentException("State names cannot be empty");
@@ -145,6 +209,14 @@ void FSM::removeTransition(std::string& fromState, std::string& toState, char in
     );
 }
 
+/**
+ * @brief Checks if a state with the given name exists in the FSM
+ * 
+ * @param name The name of the state to check
+ * @return true If the state exists
+ * @return false If the state does not exist
+ * @throws InvalidArgumentException If the name is empty
+ */
 bool FSM::findStateExists(const std::string& name) const {
     if (name.empty()) {
         throw InvalidArgumentException("State name cannot be empty");
@@ -152,6 +224,12 @@ bool FSM::findStateExists(const std::string& name) const {
     return states.find(name) != states.end();
 }
 
+/**
+ * @brief Adds an expected input character to the FSM
+ * 
+ * @param value The input character to add
+ * @throws InvalidArgumentException If the input is null or already exists
+ */
 void FSM::addExpectedInput(const char value) {
     /**
      * @brief Adds an input to the FSM.
@@ -167,16 +245,35 @@ void FSM::addExpectedInput(const char value) {
     expectedInputs.insert(value);
 }
 
+/**
+ * @brief Removes an expected input character from the FSM
+ * 
+ * Silently ignores if the input does not exist.
+ * 
+ * @param value The input character to remove
+ */
 void FSM::removeExpectedInput(const char value) {
     expectedInputs.erase(value); // Ignore if input doesn't exist
 }
 
+/**
+ * @brief Checks if the first character of the input string is a valid expected input
+ * 
+ * @return true If the input character is valid
+ * @return false If the input character is not valid
+ */
 bool FSM::checkValidInput() {
 
     char input = this->input[0]; // Get the first character of the input
     return expectedInputs.find(input) != expectedInputs.end();
 }
 
+/**
+ * @brief Adds an output character to the output string
+ * 
+ * @param value The output character to add
+ * @throws InvalidArgumentException If the output character is null
+ */
 void FSM::addOutput(const char value) {
     if (value == '\0') {
         throw InvalidArgumentException("Output cannot be null");
@@ -184,6 +281,14 @@ void FSM::addOutput(const char value) {
     output += std::string(1, value); // Append the output character to the output string
 }
 
+/**
+ * @brief Adds or updates a variable in the FSM
+ * 
+ * @param name The name of the variable
+ * @param value The value to assign to the variable
+ * @param overwrite Whether to overwrite the variable if it already exists
+ * @throws InvalidArgumentException If the name is empty or the variable already exists and overwrite is false
+ */
 void FSM::addVariable(const std::string& name, const std::string& value, bool overwrite) {
     if (name.empty()) {
         throw InvalidArgumentException("Variable name cannot be empty");
@@ -194,15 +299,33 @@ void FSM::addVariable(const std::string& name, const std::string& value, bool ov
     variables[name] = value;
 }
 
+/**
+ * @brief Removes a variable from the FSM
+ * 
+ * @param name The name of the variable to remove
+ */
 void FSM::removeVariable(const std::string& name) {
     variables.erase(name);
 }
 
+/**
+ * @brief Gets all variables in the FSM
+ * 
+ * @return Reference to the map of variable names to values
+ */
 const std::unordered_map<std::string, std::string>& FSM::getVariables() const {
     return variables;
 }
 
-// Make the current transition to the next state
+/**
+ * @brief Performs a single transition based on the current input character
+ * 
+ * This method processes the first character of the input string, finds a matching transition,
+ * updates the current state, executes any associated actions, and updates the output.
+ * 
+ * @throws InvalidStateException If the current state is null
+ * @throws InvalidArgumentException If the input string is empty or no matching transition is found
+ */
 void FSM::transitionToState() {
     if (!currentState) {
         throw InvalidStateException("Current state is null");
@@ -246,7 +369,15 @@ void FSM::transitionToState() {
 
 
 
-// Run the FSM 
+/**
+ * @brief Runs the FSM with the current input string until completion
+ * 
+ * Processes the entire input string, updating states, executing actions, 
+ * and generating output according to the FSM definition.
+ * 
+ * @throws MooreMachineValidationException If no start state is defined
+ * @throws InvalidArgumentException If the input string is empty
+ */
 void FSM::run() {
     if (!startState) {
         throw MooreMachineValidationException("No start state defined");
@@ -313,7 +444,15 @@ void FSM::run() {
     std::cout << "FSM stopped at state: " << currentState->getName() << "\n";
 }
 
-// Debug step function - process next transition or stop if no more input
+/**
+ * @brief Executes a single step of the FSM for debugging purposes
+ * 
+ * Processes one input character, updating the state and output.
+ * 
+ * @return true If a step was successfully executed
+ * @return false If no more steps can be executed (no more input or error occurred)
+ * @throws MooreMachineValidationException If no start state is defined
+ */
 bool FSM::debugStep() {
     if (!startState) {
         throw MooreMachineValidationException("No start state defined");
@@ -362,6 +501,12 @@ bool FSM::debugStep() {
     }
 }
 
+/**
+ * @brief Generates a Graphviz DOT file visualization of the FSM
+ * 
+ * Creates a DOT file representation of the FSM structure including states,
+ * transitions, and outputs. The file is saved as "assets/fsm_debug.dot".
+ */
 void FSM::debug() {
     /**
      * @brief Generates a Graphviz DOT file representing the FSM.
@@ -467,11 +612,22 @@ void FSM::debug() {
     std::cout << "FSM graph generated to assets/fsm_debug.dot" << std::endl;
 }
 
-// Get the current state of the FSM
+/**
+ * @brief Gets the current state of the FSM
+ * 
+ * @return Shared pointer to the current state
+ */
 std::shared_ptr<State> FSM::getCurrentState() const {
     return currentState;
 }
 
+/**
+ * @brief Sets the current state of the FSM
+ * 
+ * @param state The state to set as current
+ * @throws InvalidArgumentException If the state is null
+ * @throws InvalidStateException If the state does not exist in the FSM
+ */
 void FSM::setCurrentState(std::shared_ptr<State> state) {
     if (!state) {
         throw InvalidArgumentException("State cannot be null");
@@ -485,13 +641,21 @@ void FSM::setCurrentState(std::shared_ptr<State> state) {
     currentStateEntryTime = std::chrono::steady_clock::now();
 }
 
-
-
-// Get all states in the FSM
+/**
+ * @brief Gets all states in the FSM
+ * 
+ * @return Reference to the map of state names to state objects
+ */
 const std::unordered_map<std::string, std::shared_ptr<State>>& FSM::getStates() const {
     return states;
 }
 
+/**
+ * @brief Sets the input string for the FSM
+ * 
+ * @param input The input string to set
+ * @throws InvalidArgumentException If the input is too long or contains unexpected characters
+ */
 void FSM::setInput(const std::string& input) {
     // if (input.empty()) {
     //     throw InvalidArgumentException("Input cannot be empty");
@@ -509,47 +673,87 @@ void FSM::setInput(const std::string& input) {
     this->input = input; // Set the FSM input
 }
 
-// Get the input string of FSM
+/**
+ * @brief Gets the current input string
+ * 
+ * @return The current input string
+ */
 std::string FSM::getInput() const {
     return input;
 }
 
-// Discard the first character of the input string
+/**
+ * @brief Removes the first character from the input string
+ * 
+ * Used after processing a character during state transitions.
+ */
 void FSM::discardInputChar() {
     if (!input.empty()) {
         input.erase(0, 1); // Remove the first character from the input string
     }
 }
 
-// Get the current output of the FSM
+/**
+ * @brief Gets the current output string
+ * 
+ * @return The current output string
+ */
 std::string FSM::getOutput() const {
     return output;
 }
 
+/**
+ * @brief Clears the output string
+ * 
+ * Used when resetting or restarting the FSM.
+ */
 void FSM::clearOutput() {
     output.clear(); // Clear the output string
 }
 
+/**
+ * @brief Gets the set of expected input characters
+ * 
+ * @return Set of expected input characters
+ */
 std::unordered_set<char> FSM::getExpectedInputs() const {
     return expectedInputs;
 }
 
-// Get the start state of the FSM
+/**
+ * @brief Gets the start state of the FSM
+ * 
+ * @return Shared pointer to the start state
+ */
+
 std::shared_ptr<State> FSM::getStartState() const {
     return startState;
 }
 
-// Get all final states in the FSM
+/**
+ * @brief Gets all final states in the FSM
+ * 
+ * @return Reference to the map of final state names to state objects
+ */
 const std::unordered_map<std::string, std::shared_ptr<State>>& FSM::getFinalStates() const {
     return finalStates;
 }
 
-// Get the current machine state
+/**
+ * @brief Gets the current machine state
+ * 
+ * @return The current machine state (IDLE, RUNNING, STOPPED, PAUSED, ERROR)
+ */
 machineState FSM::getCurrentMachineState() const {
     return currentMachineState;
 }
 
-// Set the current machine state
+/**
+ * @brief Sets the current machine state
+ * 
+ * @param state The machine state to set
+ * @throws InvalidArgumentException If the state is not a valid machine state
+ */
 void FSM::setCurrentMachineState(machineState state) {
     static const std::unordered_set<machineState> validStates = {
         machineState::IDLE,
@@ -564,6 +768,15 @@ void FSM::setCurrentMachineState(machineState state) {
     currentMachineState = state;
 }
 
+/**
+ * @brief Saves the FSM to a JSON file
+ * 
+ * Serializes the entire FSM including states, transitions, variables,
+ * and configuration to a JSON file.
+ * 
+ * @param filename Path to save the JSON file
+ * @throws std::runtime_error If the file cannot be opened for writing
+ */
 void FSM::saveToJson(const std::string& filename) {
     json j;
 
@@ -661,6 +874,15 @@ void FSM::saveToJson(const std::string& filename) {
     file.close();
 }
 
+/**
+ * @brief Loads an FSM from a JSON file
+ * 
+ * Deserializes an FSM from a JSON file, creating states, transitions,
+ * and setting configuration according to the file contents.
+ * 
+ * @param filename Path to the JSON file to load
+ * @throws std::runtime_error If the file cannot be opened or contains invalid JSON
+ */
 void FSM::loadFromJson(const std::string& filename) {
     // Load file
     std::ifstream file(filename);
@@ -864,6 +1086,19 @@ void FSM::loadFromJson(const std::string& filename) {
     // The user will call validateFSM() manually after setting input
 }
 
+/**
+ * @brief Validates the FSM for correctness
+ * 
+ * Checks that the FSM:
+ * 1. Has a defined start state
+ * 2. Has at least one final state
+ * 3. All states are reachable from the start state
+ * 4. Is deterministic (no duplicate transitions for the same input)
+ * 5. Has no dead-end non-final states
+ * 
+ * @throws MooreMachineValidationException For general validation errors
+ * @throws DeterminismViolationException If the FSM is not deterministic
+ */
 void FSM::validateFSM() {
     std::vector<std::string> validationErrors;
 
