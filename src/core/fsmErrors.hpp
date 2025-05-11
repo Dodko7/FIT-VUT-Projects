@@ -107,4 +107,10 @@ class InvalidArgumentException : public FSMException {
             : FSMException("Invalid Argument: " + input) {}
 };
 
+class InvalidScriptException : public FSMException {
+    public:
+        explicit InvalidScriptException(const std::string& details)
+            : FSMException("Invalid JavaScript: " + details) {}
+    };
+
 #endif // FSM_ERRORS_HPP

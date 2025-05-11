@@ -4,7 +4,7 @@
  */
 
 #include "catch.hpp"
-#include "fsm.hpp"
+#include "../src/core/fsm.hpp"
 
 TEST_CASE("Output management", "[outputs]") {
     FSM fsm;

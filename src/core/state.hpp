@@ -1,12 +1,16 @@
 #ifndef STATE_HPP
 #define STATE_HPP
 
-#include "fsm.hpp" // Ensure machineState is known
 #include <string>
 #include <vector>
 #include <functional>
 #include <memory>
+#include <optional>
+#include <chrono>
 #include "inputDeps.hpp"
+
+// Forward declare machineState enum
+enum class machineState;
 
 /**
  * @class State
@@ -156,22 +160,22 @@ public:
     void setOutput(char output);
 
     /**
-     * @brief Gets all possible next states from this state.
-     * @return A reference to the vector of next states.
-     */
-    std::vector<std::shared_ptr<State>>& getNextStates();
-
-    /**
      * @brief Gets all possible next states from this state (const version).
      * @return A const reference to the vector of next states.
      */
-    const std::vector<std::shared_ptr<State>>& getNextStates() const;
+    std::vector<std::shared_ptr<State>>& getNextStates();
     
     /**
      * @brief Gets the delay applied when entering this state.
      * @return Time delay in milliseconds.
      */
     std::chrono::milliseconds getStepDelay() const;
+    
+    /**
+     * @brief Sets the delay applied when entering this state.
+     * @param delay The delay in milliseconds.
+     */
+    void setStepDelay(std::chrono::milliseconds delay);
     
     /**
      * @brief Gets the optional transition to another machine state.
@@ -189,6 +193,11 @@ public:
      * @brief Clears any automatic transition to another machine state.
      */
     void clearTransitionTo();
+    
+    /**
+     * @brief Clears all next states, removing all transitions from this state.
+     */
+    void clearNextStates();
 };
 
 #endif // STATE_HPP

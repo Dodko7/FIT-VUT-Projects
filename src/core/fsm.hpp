@@ -1,13 +1,15 @@
 #ifndef FSM_HPP
 #define FSM_HPP
 
-#include "state.hpp"
+// Forward declare the State class
+class State;
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
 #include <deque>
 #include <chrono>
 #include "nlohmann/json.hpp"
+#include "scriptEngine.hpp"
 
 /**
  * @enum machineState
@@ -20,6 +22,9 @@ enum class machineState {
     PAUSED,
     ERROR
 };
+
+// Now include the State class
+#include "state.hpp"
 
 /**
  * @class FSM
@@ -35,10 +40,22 @@ private:
     std::string name; ///< Name of the FSM.
     std::string description; ///< Description of the FSM.
     std::chrono::milliseconds stepDelay; ///< Delay between FSM steps (placeholder for future use).
+    std::chrono::milliseconds runTime; ///< Total run time of the FSM.
     std::shared_ptr<State> startState; ///< Pointer to the start state.
     std::shared_ptr<State> currentState; ///< Pointer to the current state.
     machineState currentMachineState; ///< Current execution state.
     std::unordered_set<char> expectedInputs; ///< Set of expected inputs as strings.
+    
+    // New members
+    ScriptEngine scriptEngine; ///< JavaScript engine for executing conditions and actions
+    std::chrono::steady_clock::time_point currentStateEntryTime; ///< Time when entered the current state
+    struct Timer {
+        std::shared_ptr<State> fromState; ///< Source state for the timer transition
+        std::shared_ptr<State> toState; ///< Destination state when timer expires
+        std::chrono::milliseconds duration; ///< Duration of the timer
+        std::chrono::steady_clock::time_point startTime; ///< When the timer started
+    };
+    std::vector<Timer> activeTimers; ///< Currently active timers
 
 public:
     /**
@@ -72,13 +89,15 @@ public:
     void setStartState(const std::string& name);
 
     /**
-     * @brief Adds a transition between two states based on input.
+     * @brief Adds a transition between two states for a specific event.
      * @param fromState The source state name.
      * @param toState The destination state name.
+     * @param event The name of the event.
+     * @param condition The JavaScript condition for the transition.
      * @param input The expected input for the transition.
      * @throws InvalidStateException If states do not exist.
      */
-    void addTransition(const std::string& fromState, const std::string& toState, const char input);
+    void addTransition(const std::string& fromState, const std::string& toState, const std::string& condition, const char input);
 
     /**
      * @brief Removes a transition between two states for a specific event.
@@ -128,12 +147,13 @@ public:
     void clearOutput();
 
     /**
-     * @brief Adds a new variable to the FSM.
+     * @brief Adds a new variable to the FSM or updates an existing one.
      * @param name The name of the variable (non-empty).
-     * @param value The initial value of the variable.
-     * @throws std::invalid_argument If name is empty or variable already exists.
+     * @param value The value of the variable.
+     * @param overwrite If true, update the variable if it already exists.
+     * @throws std::invalid_argument If name is empty or variable already exists and overwrite is false.
      */
-    void addVariable(const std::string& name, const std::string& value);
+    void addVariable(const std::string& name, const std::string& value, bool overwrite = false);
 
     /**
      * @brief Removes a variable from the FSM.
@@ -313,6 +333,18 @@ public:
      * @return The description of the FSM.
      */
     const std::string& getDescription() const;
+
+    /**
+     * @brief Returns the entry time of the current state.
+     * @return The entry time point.
+     */
+    std::chrono::steady_clock::time_point getCurrentStateEntryTime() const {
+        return currentStateEntryTime;
+    }
+
+    void setStepDelay(std::chrono::milliseconds delay);
+
+    std::chrono::milliseconds getStepDelay() const;
 
 private:
     /**

@@ -74,6 +74,10 @@ std::chrono::milliseconds State::getStepDelay() const {
     return stepDelay;
 }
 
+void State::setStepDelay(std::chrono::milliseconds delay) {
+    this->stepDelay = delay;
+}
+
 void State::removeDependency(std::unique_ptr<inputDeps> dependency) {
     auto it = std::find(dependencies.begin(), dependencies.end(), dependency);
     if (it == dependencies.end()) {
@@ -167,4 +171,8 @@ void State::setTransitionTo(machineState transToMachineState) {
 
 void State::clearTransitionTo() {
     transToMachineState = std::nullopt;
+}
+
+void State::clearNextStates() {
+    nextStates.clear();
 }
