@@ -1284,7 +1284,6 @@ void FSM::deleteStateRecursive(const std::string& name) {
     auto it = states.find(name);
     if (it == states.end()) {
         throw InvalidArgumentException("State not found for deletion: " + name);
-        return;
     }
     auto state = it->second;
     // For each child, check if it is referenced elsewhere
