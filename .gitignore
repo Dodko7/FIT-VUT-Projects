@@ -43,3 +43,4 @@ cmake_install.cmake
 
 # Gitignore
 .gitignore
+fsm_test_report.txt

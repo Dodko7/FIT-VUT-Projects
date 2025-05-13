@@ -41,9 +41,13 @@ TARGET = core_backend
 TEST_TARGET = test_suite
 FSM_TEST_RUNNER = fsm_test_runner
 
-.PHONY: all clean directories test examples tests_only run_tests run_fsm_tests
+.PHONY: all clean directories test examples tests_only run_tests run_fsm_tests build_all
 
-all: directories $(TARGET) examples test
+# Default target just builds the core program
+all: directories $(TARGET)
+
+# Separate target for building everything
+build_all: directories $(TARGET) examples test
 
 examples: directories $(EXAMPLE_TARGETS)
 

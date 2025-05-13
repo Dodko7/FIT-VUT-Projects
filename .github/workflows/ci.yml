@@ -174,9 +174,9 @@ jobs:
           export QT_PLUGIN_PATH=/usr/lib/x86_64-linux-gnu/qt5/plugins
         fi
         
-        # Use the new run_tests target to compile and run tests
+        # Use the test target to compile and run tests
         echo "=== Building and running tests ==="
-        make run_fsm_tests > test-output.txt 2>&1 || { 
+        make test > test-output.txt 2>&1 || { 
           cat test-output.txt
           echo "failed=true" >> $GITHUB_OUTPUT
         }
