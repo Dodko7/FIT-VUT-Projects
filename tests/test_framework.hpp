@@ -1,3 +1,40 @@
+/**
+ * @file test_framework.hpp
+ * @brief A comprehensive test framework for FSM implementation
+ * 
+ * This framework provides a structured way to organize, run, and report on
+ * tests for the Finite State Machine (FSM) implementation. It supports
+ * test suites, individual tests, setup/teardown functions, and detailed
+ * failure reporting with debug context.
+ * 
+ * Key components:
+ * - TestResult: Represents the result of a single test
+ * - TestSuite: Contains and manages a group of related tests
+ * - assert_* functions: Verification functions with detailed failure reporting
+ * - TestRunner: Executes test suites and generates reports
+ * 
+ * Usage example:
+ * ```cpp
+ * // Create a test suite
+ * TestFramework::TestSuite suite("My Test Suite", "Suite Description");
+ * 
+ * // Add a test
+ * suite.addTest("Test Name", []() {
+ *     // Test code...
+ *     return TestFramework::assert_that(condition, "Test message");
+ * });
+ * 
+ * // Run tests
+ * TestFramework::TestRunner runner;
+ * runner.addSuite(suite);
+ * runner.runAllTests();
+ * ```
+ * 
+ * @author xvalenk00
+ * @date May 2025
+ * @version 1.0
+ */
+
 #ifndef TEST_FRAMEWORK_HPP
 #define TEST_FRAMEWORK_HPP
 
@@ -11,20 +48,9 @@
 #include <sstream>
 #include <fstream>
 
-/**
- * @brief Output stream operator for vector types
- * Used to print vector contents in test failure messages
- */
-template<typename T>
-std::ostream& operator<<(std::ostream& os, const std::vector<T>& vec) {
-    os << "[";
-    for (size_t i = 0; i < vec.size(); ++i) {
-        os << vec[i];
-        if (i < vec.size() - 1) os << ", ";
-    }
-    os << "]";
-    return os;
-}
+// Include stream operators first to avoid "not visible in template definition" errors
+#include "test_stream_operators.hpp"
+#include "test_debug_helpers.hpp"
 
 /**
  * @file test_framework.hpp
@@ -124,7 +150,7 @@ public:
         bool allPassed = true;
         
         for (const auto& test : tests) {
-            std::cout << "Running test: " << test.first << std::endl;
+            std::cout << "Running test: \033[1m" << test.first << "\033[0m" << std::endl;
             
             auto startTime = std::chrono::high_resolution_clock::now();
             TestResult result = test.second();
@@ -139,9 +165,21 @@ public:
                 allPassed = false;
             }
             
-            std::cout << "  Result: " << (result.passed ? "PASS" : "FAIL") << std::endl;
+            std::cout << "  Result: " << (result.passed ? "\033[32mPASS\033[0m" : "\033[31mFAIL\033[0m") << std::endl;
             if (!result.message.empty()) {
-                std::cout << "  Details: " << result.message << std::endl;
+                // Handle multi-line messages by properly indenting
+                std::istringstream msgStream(result.message);
+                std::string line;
+                bool firstLine = true;
+                
+                while (std::getline(msgStream, line)) {
+                    if (firstLine) {
+                        std::cout << "  Details: " << line << std::endl;
+                        firstLine = false;
+                    } else {
+                        std::cout << "           " << line << std::endl;
+                    }
+                }
             }
             std::cout << "  Duration: " << duration.count() << "ms\n" << std::endl;
         }
@@ -185,12 +223,28 @@ public:
         // Generate detailed results
         report << "DETAILS:" << std::endl;
         for (const auto& result : results) {
+            std::string resultStatus = result.second.passed ? "PASS" : "FAIL";
+            std::string statusDisplay = result.second.passed ? 
+                                       resultStatus : 
+                                       "*** " + resultStatus + " ***";
+            
             report << "  " << std::setw(30) << std::left << result.first 
-                   << ": " << (result.second.passed ? "PASS" : "FAIL") 
+                   << ": " << statusDisplay 
                    << " (" << result.second.duration.count() << "ms)" << std::endl;
             
             if (!result.second.message.empty()) {
-                report << "      " << result.second.message << std::endl;
+                // Process multi-line messages with proper indentation
+                std::istringstream msgStream(result.second.message);
+                std::string line;
+                
+                while (std::getline(msgStream, line)) {
+                    report << "      " << line << std::endl;
+                }
+            }
+            
+            // Add a separator after each test for better readability
+            if (!result.second.passed) {
+                report << "      " << std::string(40, '-') << std::endl;
             }
         }
         
@@ -256,6 +310,14 @@ public:
     }
 
     /**
+     * @brief Get all suites in the runner
+     * @return Const reference to all test suites
+     */
+    const std::vector<TestSuite>& getSuites() const {
+        return suites;
+    }
+
+    /**
      * @brief Run all test suites
      * @return True if all suites passed, false otherwise
      */
@@ -291,6 +353,8 @@ public:
         int failedTests = 0;
         std::chrono::milliseconds totalDuration(0);
         
+        std::vector<std::pair<std::string, std::string>> failedTestDetails;
+        
         for (const auto& suite : suites) {
             const auto& results = suite.getResults();
             totalTests += results.size();
@@ -300,6 +364,10 @@ public:
                     passedTests++;
                 } else {
                     failedTests++;
+                    failedTestDetails.push_back(std::make_pair(
+                        suite.getName() + "::" + result.first,
+                        result.second.message
+                    ));
                 }
                 totalDuration += result.second.duration;
             }
@@ -318,6 +386,25 @@ public:
         report << "  Failed Tests:  " << failedTests << std::endl;
         report << "  Success Rate:  " << (totalTests > 0 ? (passedTests * 100 / totalTests) : 0) << "%" << std::endl;
         report << "  Total Time:    " << totalDuration.count() << "ms\n" << std::endl;
+        
+        // If there are failed tests, show them first for quick reference
+        if (!failedTestDetails.empty()) {
+            report << "FAILED TESTS SUMMARY:" << std::endl;
+            for (size_t i = 0; i < failedTestDetails.size(); ++i) {
+                report << "  " << (i+1) << ". " << failedTestDetails[i].first << std::endl;
+                
+                // Format the error message with indentation
+                std::istringstream msgStream(failedTestDetails[i].second);
+                std::string line;
+                
+                while (std::getline(msgStream, line)) {
+                    report << "     " << line << std::endl;
+                }
+                
+                report << std::endl;
+            }
+            report << std::endl;
+        }
         
         // Generate suite summaries
         report << "SUITE SUMMARIES:" << std::endl;
@@ -380,6 +467,23 @@ inline TestResult assert_that(bool condition, const std::string& message = "") {
 }
 
 /**
+ * @brief Assertion function with debug context
+ * @param condition The condition to check
+ * @param message The message to include with the result
+ * @param debugContext Debug context with state information
+ * @return A TestResult object indicating pass/fail
+ */
+inline TestResult assert_that(bool condition, const std::string& message, 
+                             const TestDebug::DebugContext& debugContext) {
+    if (condition) {
+        return TestResult(true, "Assertion passed: " + message, std::chrono::milliseconds(0));
+    } else {
+        std::string detailedMessage = "Assertion failed: " + message + debugContext.toString();
+        return TestResult(false, detailedMessage, std::chrono::milliseconds(0));
+    }
+}
+
+/**
  * @brief Helper function to compare expected and actual values with custom message
  * @param expected The expected value
  * @param actual The actual value
@@ -407,6 +511,38 @@ inline TestResult assert_equal(const T& expected, const T& actual, const std::st
 }
 
 /**
+ * @brief Helper function to compare expected and actual values with debug context
+ * @param expected The expected value
+ * @param actual The actual value
+ * @param message Additional context message
+ * @param debugContext Debug context with additional state information
+ * @return A TestResult object indicating pass/fail
+ */
+template<typename T>
+inline TestResult assert_equal(const T& expected, const T& actual, const std::string& message, 
+                               const TestDebug::DebugContext& debugContext) {
+    std::stringstream detailedMessage;
+    bool passed = (expected == actual);
+    
+    if (passed) {
+        detailedMessage << "Values match" << (message.empty() ? "" : ": " + message);
+    } else {
+        detailedMessage << "Expected: ";
+        detailedMessage << expected;
+        detailedMessage << ", Actual: ";
+        detailedMessage << actual;
+        if (!message.empty()) {
+            detailedMessage << " (" << message << ")";
+        }
+        
+        // Add debug context
+        detailedMessage << debugContext.toString();
+    }
+    
+    return TestResult(passed, detailedMessage.str(), std::chrono::milliseconds(0));
+}
+
+/**
  * @brief Helper function to check if an operation throws an exception
  * @param func The function to execute
  * @param message Additional context message
@@ -424,6 +560,37 @@ inline TestResult assert_throws(std::function<void()> func, const std::string& m
     } catch (...) {
         return TestResult(false, "Wrong exception type thrown" + (message.empty() ? "" : ": " + message), 
                          std::chrono::milliseconds(0));
+    }
+}
+
+/**
+ * @brief Helper function to check if an operation throws an exception, with debug context
+ * @param func The function to execute
+ * @param message Additional context message
+ * @param debugContext Debug context with additional state information
+ * @return A TestResult object indicating pass/fail
+ */
+template<typename ExceptionType = std::exception>
+inline TestResult assert_throws(std::function<void()> func, const std::string& message, 
+                               const TestDebug::DebugContext& debugContext) {
+    try {
+        func();
+        std::string errorMsg = "Expected exception not thrown" + (message.empty() ? "" : ": " + message);
+        errorMsg += debugContext.toString();
+        return TestResult(false, errorMsg, std::chrono::milliseconds(0));
+    } catch (const ExceptionType&) {
+        return TestResult(true, "Expected exception thrown correctly" + (message.empty() ? "" : ": " + message), 
+                         std::chrono::milliseconds(0));
+    } catch (const std::exception& e) {
+        std::string errorMsg = "Wrong exception type thrown. Got: " + std::string(e.what()) + 
+                              (message.empty() ? "" : " (" + message + ")");
+        errorMsg += debugContext.toString();
+        return TestResult(false, errorMsg, std::chrono::milliseconds(0));
+    } catch (...) {
+        std::string errorMsg = "Wrong non-standard exception type thrown" + 
+                              (message.empty() ? "" : " (" + message + ")");
+        errorMsg += debugContext.toString();
+        return TestResult(false, errorMsg, std::chrono::milliseconds(0));
     }
 }
 
@@ -446,6 +613,32 @@ inline TestResult assert_no_throw(std::function<void()> func, const std::string&
         return TestResult(false, "Unexpected non-standard exception thrown" + 
                          (message.empty() ? "" : " (" + message + ")"), 
                          std::chrono::milliseconds(0));
+    }
+}
+
+/**
+ * @brief Helper function to check if an operation doesn't throw an exception, with debug context
+ * @param func The function to execute
+ * @param message Additional context message
+ * @param debugContext Debug context with additional state information
+ * @return A TestResult object indicating pass/fail
+ */
+inline TestResult assert_no_throw(std::function<void()> func, const std::string& message, 
+                                 const TestDebug::DebugContext& debugContext) {
+    try {
+        func();
+        return TestResult(true, "No exception thrown as expected" + (message.empty() ? "" : ": " + message), 
+                         std::chrono::milliseconds(0));
+    } catch (const std::exception& e) {
+        std::string errorMsg = "Unexpected exception thrown: " + std::string(e.what()) + 
+                              (message.empty() ? "" : " (" + message + ")");
+        errorMsg += debugContext.toString();
+        return TestResult(false, errorMsg, std::chrono::milliseconds(0));
+    } catch (...) {
+        std::string errorMsg = "Unexpected non-standard exception thrown" + 
+                              (message.empty() ? "" : " (" + message + ")");
+        errorMsg += debugContext.toString();
+        return TestResult(false, errorMsg, std::chrono::milliseconds(0));
     }
 }
 

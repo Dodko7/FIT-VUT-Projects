@@ -2,6 +2,7 @@
 #define FSM_CREATION_TESTS_HPP
 
 #include "test_framework.hpp"
+#include "test_debug_helpers.hpp"
 #include "fsmInterface.hpp"
 #include <iostream>
 #include <memory>
@@ -38,55 +39,212 @@ TestFramework::TestSuite createTestSuite() {
     
     // Test 1: Create FSM with valid parameters
     suite.addTest("Create FSM with valid parameters", []() {
-        FSMManager manager;
-        bool created = manager.createFSM("TestFSM", "A test FSM", std::chrono::milliseconds(100));
+        TestDebug::DebugContext debugContext;
+        debugContext.addHeader("FSM Creation");
         
-        return TestFramework::assert_that(created, "FSM should be created successfully");
+        FSMManager manager;
+        std::string fsmName = "TestFSM";
+        std::string fsmDescription = "A test FSM";
+        auto stepDelay = std::chrono::milliseconds(100);
+        
+        debugContext.add("FSM Name", fsmName);
+        debugContext.add("FSM Description", fsmDescription);
+        debugContext.add("Step Delay (ms)", stepDelay.count());
+        
+        bool created = manager.createFSM(fsmName, fsmDescription, stepDelay);
+        debugContext.add("Creation Result", created);
+        
+        if (created) {
+            // Get FSM to verify it was created
+            auto fsm = manager.getFSM();
+            bool fsmExists = (fsm != nullptr);
+            debugContext.add("FSM Object Exists", fsmExists);
+            
+            if (fsmExists) {
+                std::string actualName = fsm->getName();
+                std::string actualDesc = fsm->getDescription();
+                auto actualDelay = fsm->getStepDelay();
+                
+                debugContext.add("Actual Name", actualName);
+                debugContext.add("Actual Description", actualDesc);
+                debugContext.add("Actual Step Delay (ms)", actualDelay.count());
+                
+                bool nameMatches = (actualName == fsmName);
+                bool descMatches = (actualDesc == fsmDescription);
+                bool delayMatches = (actualDelay == stepDelay);
+                
+                debugContext.add("Name Matches", nameMatches);
+                debugContext.add("Description Matches", descMatches);
+                debugContext.add("Delay Matches", delayMatches);
+            }
+        }
+        
+        return TestFramework::assert_that(created, "FSM should be created successfully", debugContext);
     });
     
     // Test 2: Create FSM with empty name
     suite.addTest("Create FSM with empty name", []() {
-        FSMManager manager;
-        bool created = manager.createFSM("", "A test FSM", std::chrono::milliseconds(100));
+        TestDebug::DebugContext debugContext;
+        debugContext.addHeader("FSM Creation with Empty Name");
         
-        return TestFramework::assert_that(!created, "FSM creation should fail with empty name");
+        FSMManager manager;
+        std::string fsmName = "";  // Empty name
+        std::string fsmDescription = "A test FSM";
+        auto stepDelay = std::chrono::milliseconds(100);
+        
+        debugContext.add("FSM Name", fsmName.empty() ? "(empty)" : fsmName);
+        debugContext.add("FSM Description", fsmDescription);
+        debugContext.add("Step Delay (ms)", stepDelay.count());
+        
+        bool created = manager.createFSM(fsmName, fsmDescription, stepDelay);
+        debugContext.add("Creation Result", created);
+        
+        if (created) {
+            debugContext.add("Unexpected Result", "FSM was created despite empty name");
+            // Get FSM to verify it was unexpectedly created
+            auto fsm = manager.getFSM();
+            bool fsmExists = (fsm != nullptr);
+            debugContext.add("FSM Object Exists", fsmExists);
+            
+            if (fsmExists) {
+                std::string actualName = fsm->getName();
+                debugContext.add("Actual Name", actualName.empty() ? "(empty)" : actualName);
+            }
+        } else {
+            debugContext.add("Expected Result", "FSM creation failed due to empty name");
+        }
+        
+        return TestFramework::assert_that(!created, "FSM creation should fail with empty name", debugContext);
     });
     
     // Test 3: Create FSM with very long name
     suite.addTest("Create FSM with very long name", []() {
+        TestDebug::DebugContext debugContext;
+        debugContext.addHeader("FSM Creation with Long Name");
+        
         FSMManager manager;
         std::string longName(100, 'a'); // Create a string of 100 'a's - much longer than allowed
-        bool created = manager.createFSM(longName, "A test FSM", std::chrono::milliseconds(100));
+        std::string fsmDescription = "A test FSM";
+        auto stepDelay = std::chrono::milliseconds(100);
+        
+        debugContext.add("FSM Name Length", longName.length());
+        debugContext.add("FSM Name (first 20 chars)", longName.substr(0, 20) + "...");
+        debugContext.add("FSM Description", fsmDescription);
+        debugContext.add("Step Delay (ms)", stepDelay.count());
+        debugContext.add("Expected Max Name Length", 20);  // The implementation limit
+        
+        bool created = manager.createFSM(longName, fsmDescription, stepDelay);
+        debugContext.add("Creation Result", created);
+        
+        if (created) {
+            debugContext.add("Unexpected Result", "FSM was created despite name length exceeding limit");
+            // Get FSM to verify it was unexpectedly created
+            auto fsm = manager.getFSM();
+            bool fsmExists = (fsm != nullptr);
+            debugContext.add("FSM Object Exists", fsmExists);
+            
+            if (fsmExists) {
+                std::string actualName = fsm->getName();
+                debugContext.add("Actual Name Length", actualName.length());
+                debugContext.add("Actual Name", actualName);
+                
+                // Check if the name was truncated
+                bool wasTruncated = actualName.length() < longName.length();
+                debugContext.add("Name Was Truncated", wasTruncated);
+            }
+        } else {
+            debugContext.add("Expected Result", "FSM creation failed due to name exceeding length limit");
+        }
         
         // The implementation limits names to 20 characters, so this should fail
-        return TestFramework::assert_that(!created, "FSM should reject names longer than 20 characters");
+        return TestFramework::assert_that(!created, "FSM should reject names longer than 20 characters", debugContext);
     });
     
     // Test 4: Create FSM with negative step delay
     suite.addTest("Create FSM with negative step delay", []() {
         FSMManager manager;
-        bool created = manager.createFSM("TestFSM", "A test FSM", std::chrono::milliseconds(-100));
+        TestDebug::DebugContext debug;
+        
+        auto delay = std::chrono::milliseconds(-100);
+        debug.add("FSM Name", "TestFSM");
+        debug.add("FSM Description", "A test FSM");
+        debug.add("Step Delay", delay.count());
+        
+        bool created = manager.createFSM("TestFSM", "A test FSM", delay);
+        debug.add("Creation Result", created);
         
         // Implementation-dependent: some systems handle negative values differently
         // Here we assume it fails or resets to a positive value
         // Test requires knowledge of actual expected behavior
-        return TestFramework::assert_that(created, "FSM should handle negative delay appropriately");
+        return TestFramework::assert_that(created, "FSM should handle negative delay appropriately", debug);
     });
     
     // Test 5: Create FSM with zero step delay
     suite.addTest("Create FSM with zero step delay", []() {
-        FSMManager manager;
-        bool created = manager.createFSM("TestFSM", "A test FSM", std::chrono::milliseconds(0));
+        TestDebug::DebugContext debugContext;
+        debugContext.addHeader("FSM Creation with Zero Delay");
         
-        return TestFramework::assert_that(created, "FSM should handle zero delay");
+        FSMManager manager;
+        std::string fsmName = "TestFSM";
+        std::string fsmDescription = "A test FSM";
+        auto stepDelay = std::chrono::milliseconds(0);
+        
+        debugContext.add("FSM Name", fsmName);
+        debugContext.add("FSM Description", fsmDescription);
+        debugContext.add("Step Delay (ms)", stepDelay.count());
+        
+        bool created = manager.createFSM(fsmName, fsmDescription, stepDelay);
+        debugContext.add("Creation Result", created);
+        
+        if (created) {
+            // Get FSM to verify it was created with zero delay
+            auto fsm = manager.getFSM();
+            bool fsmExists = (fsm != nullptr);
+            debugContext.add("FSM Object Exists", fsmExists);
+            
+            if (fsmExists) {
+                auto actualDelay = fsm->getStepDelay();
+                debugContext.add("Actual Step Delay (ms)", actualDelay.count());
+                bool delayIsZero = (actualDelay.count() == 0);
+                debugContext.add("Delay Is Zero", delayIsZero);
+            }
+        }
+        
+        return TestFramework::assert_that(created, "FSM should handle zero delay", debugContext);
     });
     
     // Test 6: Create FSM with very large step delay
     suite.addTest("Create FSM with very large step delay", []() {
-        FSMManager manager;
-        bool created = manager.createFSM("TestFSM", "A test FSM", std::chrono::milliseconds(1000000));
+        TestDebug::DebugContext debugContext;
+        debugContext.addHeader("FSM Creation with Large Delay");
         
-        return TestFramework::assert_that(created, "FSM should handle very large delay");
+        FSMManager manager;
+        std::string fsmName = "TestFSM";
+        std::string fsmDescription = "A test FSM";
+        auto stepDelay = std::chrono::milliseconds(1000000);  // 1000 seconds
+        
+        debugContext.add("FSM Name", fsmName);
+        debugContext.add("FSM Description", fsmDescription);
+        debugContext.add("Step Delay (ms)", stepDelay.count());
+        
+        bool created = manager.createFSM(fsmName, fsmDescription, stepDelay);
+        debugContext.add("Creation Result", created);
+        
+        if (created) {
+            // Get FSM to verify it was created with large delay
+            auto fsm = manager.getFSM();
+            bool fsmExists = (fsm != nullptr);
+            debugContext.add("FSM Object Exists", fsmExists);
+            
+            if (fsmExists) {
+                auto actualDelay = fsm->getStepDelay();
+                debugContext.add("Actual Step Delay (ms)", actualDelay.count());
+                bool delayIsLarge = (actualDelay.count() >= 1000000);
+                debugContext.add("Delay Is Large (≥1000000ms)", delayIsLarge);
+            }
+        }
+        
+        return TestFramework::assert_that(created, "FSM should handle very large delay", debugContext);
     });
     
     // Test 7: Create FSM and verify its name

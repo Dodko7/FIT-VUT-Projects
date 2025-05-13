@@ -38,22 +38,73 @@ TestFramework::TestSuite createTestSuite() {
     
     // Test 1: Add a basic state
     suite.addTest("Add a basic state", []() {
+        TestDebug::DebugContext debugContext;
+        debugContext.addHeader("FSM Setup");
+        
         FSMManager manager;
-        manager.createFSM("TestFSM", "A test FSM", std::chrono::milliseconds(100));
+        bool created = manager.createFSM("TestFSM", "A test FSM", std::chrono::milliseconds(100));
+        debugContext.add("FSM Created", created);
+        debugContext.add("FSM Name", "TestFSM");
+        debugContext.add("FSM Description", "A test FSM");
         
-        bool added = manager.addState("State1", "console.log('State1');", 'A', false);
+        debugContext.addHeader("State Addition");
+        std::string stateName = "State1";
+        std::string stateCode = "console.log('State1');";
+        char stateOutput = 'A';
+        bool isFinal = false;
         
-        return TestFramework::assert_that(added, "Basic state should be added successfully");
+        debugContext.add("State Name", stateName);
+        debugContext.add("State Code", stateCode);
+        debugContext.add("State Output", std::string(1, stateOutput));
+        debugContext.add("Is Final", isFinal);
+        
+        bool added = manager.addState(stateName, stateCode, stateOutput, isFinal);
+        debugContext.add("State Added", added);
+        
+        if (added) {
+            // Verify the state was actually added
+            auto stateNames = manager.getAllStateNames();
+            bool stateExists = std::find(stateNames.begin(), stateNames.end(), stateName) != stateNames.end();
+            debugContext.add("State Found in FSM", stateExists);
+            debugContext.add("All States", stateNames);
+        }
+        
+        return TestFramework::assert_that(added, "Basic state should be added successfully", debugContext);
     });
     
     // Test 2: Add a state with empty name
     suite.addTest("Add a state with empty name", []() {
+        TestDebug::DebugContext debugContext;
+        debugContext.addHeader("FSM Setup");
+        
         FSMManager manager;
-        manager.createFSM("TestFSM", "A test FSM", std::chrono::milliseconds(100));
+        bool created = manager.createFSM("TestFSM", "A test FSM", std::chrono::milliseconds(100));
+        debugContext.add("FSM Created", created);
         
-        bool added = manager.addState("", "console.log('Empty');", 'E', false);
+        debugContext.addHeader("State Addition");
+        std::string stateName = ""; // Empty name
+        std::string stateCode = "console.log('Empty');";
+        char stateOutput = 'E';
+        bool isFinal = false;
         
-        return TestFramework::assert_that(!added, "State with empty name should not be added");
+        debugContext.add("State Name", stateName.empty() ? "(empty)" : stateName);
+        debugContext.add("State Code", stateCode);
+        debugContext.add("State Output", std::string(1, stateOutput));
+        debugContext.add("Is Final", isFinal);
+        
+        bool added = manager.addState(stateName, stateCode, stateOutput, isFinal);
+        debugContext.add("State Added", added);
+        
+        if (added) {
+            // This should not happen, but let's verify
+            auto stateNames = manager.getAllStateNames();
+            debugContext.add("All States", stateNames);
+            debugContext.add("Unexpected Success", "Empty state name was accepted");
+        } else {
+            debugContext.add("Expected Failure", "Empty state name was rejected");
+        }
+        
+        return TestFramework::assert_that(!added, "State with empty name should not be added", debugContext);
     });
     
     // Test 3: Add a final state
