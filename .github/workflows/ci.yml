@@ -174,12 +174,19 @@ jobs:
           export QT_PLUGIN_PATH=/usr/lib/x86_64-linux-gnu/qt5/plugins
         fi
         
-        # Use the same test target for both platforms
-        echo "=== Running tests ==="
+        # Use the test target to compile and run tests
+        echo "=== Building and running tests ==="
         make test > test-output.txt 2>&1 || { 
           cat test-output.txt
           echo "failed=true" >> $GITHUB_OUTPUT
         }
+        
+        # Check if test report file exists and print basic stats
+        if [ -f "fsm_test_report.txt" ]; then
+          echo "=== Test results summary ==="
+          echo "Test report found at fsm_test_report.txt"
+          cat fsm_test_report.txt
+        fi
         
     - name: Prepare Issue Content
       if: steps.test.outputs.failed == 'true'
@@ -191,9 +198,26 @@ jobs:
         echo "$TEST_OUTPUT" >> $GITHUB_ENV
         echo "EOF" >> $GITHUB_ENV
         
-        # Create a short summary
-        FAILED_COUNT=$(grep -o 'test cases failed' test-output.txt | wc -l)
-        echo "TEST_SUMMARY=Failed $FAILED_COUNT test cases" >> $GITHUB_ENV
+        # Extract more detailed test information if fsm_test_report.txt exists
+        if [ -f "fsm_test_report.txt" ]; then
+          # Extract test results from the FSM test report
+          echo "=== Extracting test results from FSM test report ==="
+          PASSED_TESTS=$(grep -o "PASS" fsm_test_report.txt | wc -l || echo "Unknown")
+          FAILED_TESTS=$(grep -o "FAIL" fsm_test_report.txt | wc -l || echo "Unknown")
+          TOTAL_TESTS=$(($PASSED_TESTS + $FAILED_TESTS))
+          echo "TEST_SUMMARY=Failed $FAILED_TESTS of $TOTAL_TESTS test cases" >> $GITHUB_ENV
+          
+          # Include detailed failures in the GitHub issue
+          if [ "$FAILED_TESTS" -gt "0" ] && [ "$FAILED_TESTS" != "Unknown" ]; then
+            echo "DETAILED_FAILURES<<EOF" >> $GITHUB_ENV
+            grep -B 2 -A 5 "FAIL" fsm_test_report.txt >> $GITHUB_ENV
+            echo "EOF" >> $GITHUB_ENV
+          fi
+        else
+          # Fallback to grep method if report file doesn't exist
+          FAILED_COUNT=$(grep -o 'TEST_RESULT:FAIL' test-output.txt | wc -l)
+          echo "TEST_SUMMARY=Failed $FAILED_COUNT test cases" >> $GITHUB_ENV
+        fi
     
     - name: Set DateTime for Issue
       if: steps.build.outputs.failed == 'true' || steps.test.outputs.failed == 'true'

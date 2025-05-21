@@ -29,22 +29,39 @@ OBJ_DIR = build
 TEST_OBJ_DIR = build/tests
 EXAMPLES_OBJ_DIR = build/examples
 SRCS = $(filter-out $(SRC_DIR)/main.cpp, $(wildcard $(SRC_DIR)/*.cpp))
-TEST_SRCS = $(filter-out $(TEST_DIR)/test_main.cpp, $(wildcard $(TEST_DIR)/*.cpp))
+TEST_SRCS = $(wildcard $(TEST_DIR)/*.cpp)
 EXAMPLE_SRCS = $(wildcard $(EXAMPLES_DIR)/*.cpp)
 OBJS = $(patsubst $(SRC_DIR)/%.cpp,$(OBJ_DIR)/%.o,$(SRCS))
-TEST_OBJS = $(TEST_OBJ_DIR)/test_main.o $(patsubst $(TEST_DIR)/%.cpp,$(TEST_OBJ_DIR)/%.o,$(TEST_SRCS))
+TEST_OBJS = $(patsubst $(TEST_DIR)/%.cpp,$(TEST_OBJ_DIR)/%.o,$(TEST_SRCS))
 EXAMPLE_OBJS = $(patsubst $(EXAMPLES_DIR)/%.cpp,$(EXAMPLES_OBJ_DIR)/%.o,$(EXAMPLE_SRCS))
 EXAMPLE_TARGETS = $(patsubst $(EXAMPLES_DIR)/%.cpp,$(EXAMPLES_OBJ_DIR)/%,$(EXAMPLE_SRCS))
 MOC_SRC = $(SRC_DIR)/scriptEngine.hpp
 MOC_OBJ = $(OBJ_DIR)/moc_scriptEngine.o
 TARGET = core_backend
 TEST_TARGET = test_suite
+FSM_TEST_RUNNER = fsm_test_runner
 
-.PHONY: all clean directories test examples
+.PHONY: all clean directories test examples tests_only run_tests run_fsm_tests build_all
 
-all: directories $(TARGET) examples test
+# Default target just builds the core program
+all: directories $(TARGET)
+
+# Separate target for building everything
+build_all: directories $(TARGET) examples test
 
 examples: directories $(EXAMPLE_TARGETS)
+
+# Target to compile only the tests without running them
+tests_only: directories $(TEST_TARGET)
+
+# Target to run the tests after compiling them
+run_tests: tests_only
+	./$(TEST_TARGET) -r junit -o test-results.xml || true
+	./$(TEST_TARGET) -r console
+
+# Target to compile and run the new FSM test runner
+run_fsm_tests: directories $(FSM_TEST_RUNNER)
+	./$(FSM_TEST_RUNNER) || true
 
 $(TARGET): $(OBJ_DIR)/main.o $(OBJS) $(MOC_OBJ)
 	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -o $@ $^ $(LDFLAGS)
@@ -61,11 +78,14 @@ $(OBJ_DIR)/moc_%.cpp: $(SRC_DIR)/%.hpp
 $(TEST_OBJ_DIR)/%.o: $(TEST_DIR)/%.cpp | directories
 	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -c $< -o $@
 
-test: directories $(TEST_TARGET)
-	./$(TEST_TARGET) -r junit -o test-results.xml || true
-	./$(TEST_TARGET) -r console
+# Update the test target to use our FSM test runner
+test: run_fsm_tests
 
 $(TEST_TARGET): $(TEST_OBJS) $(OBJS) $(MOC_OBJ)
+	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -o $@ $^ $(LDFLAGS)
+
+# Rule to compile the FSM test runner
+$(FSM_TEST_RUNNER): $(TEST_OBJ_DIR)/fsm_test_runner.o $(OBJS) $(MOC_OBJ)
 	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -o $@ $^ $(LDFLAGS)
 
 # Rule to compile example object files
@@ -80,4 +100,4 @@ directories:
 	@mkdir -p $(OBJ_DIR) $(TEST_OBJ_DIR) $(EXAMPLES_OBJ_DIR) assets examples
 
 clean:
-	rm -rf $(OBJ_DIR) $(TEST_OBJ_DIR) $(EXAMPLES_OBJ_DIR) assets $(TARGET) $(TEST_TARGET) $(EXAMPLE_TARGETS)
+	rm -rf $(OBJ_DIR) $(TEST_OBJ_DIR) $(EXAMPLES_OBJ_DIR) assets $(TARGET) $(TEST_TARGET) $(FSM_TEST_RUNNER) $(EXAMPLE_TARGETS)
