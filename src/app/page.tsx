@@ -1,11 +1,9 @@
-import Link from "next/link";
-
 export default function HomePage() {
-  return (
-    <main className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-[#2e026d] to-[#15162c] text-white">
-      <div className="flex w-full h-full bg-black">
-        <h1 className="m-auto text-5xl font-bold">ITU ITU ITU ITU</h1>
-      </div>
-    </main>
-  );
+	return (
+		<main className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-[#2e026d] to-[#15162c] text-white">
+			<div className="flex h-full w-full bg-black">
+				<h1 className="m-auto text-5xl font-bold">ITU ITU ITU ITU</h1>
+			</div>
+		</main>
+	);
 }
