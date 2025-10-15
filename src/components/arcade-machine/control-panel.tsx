@@ -1,4 +1,5 @@
 import { FaChevronDown, FaChevronUp } from "react-icons/fa";
+import { Press_Start_2P } from 'next/font/google';
 
 export default function ArcadeControlPanel() {
     return (
@@ -22,20 +23,32 @@ export default function ArcadeControlPanel() {
             >
                 {/** Y */}
                 <button
-                    className="bg-yellow-400 w-1/2 h-1/2 rounded-full shadow-lg shadow-yellow-400/50 col-start-2 row-start-1"
-                ></button>
+                    className="bg-yellow-400 w-1/2 h-1/2 rounded-full shadow-lg shadow-yellow-400/50 col-start-2 row-start-1 \
+                    text-black items-center justify-center flex text-2xl font-['Press_Start_2P']"
+                >
+                    Y
+                </button>
                 {/** X */}
                 <button
-                    className="bg-blue-800 w-1/2 h-1/2 rounded-full shadow-lg shadow-blue-800/50 col-start-1 row-start-2"
-                ></button>
+                    className="bg-blue-800 w-1/2 h-1/2 rounded-full shadow-lg shadow-blue-800/50 col-start-1 row-start-2 \
+                    text-black items-center justify-center flex text-2xl font-['Press_Start_2P']"
+                >
+                    X
+                </button>
                 {/** A */}
                 <button
-                    className="bg-green-600 w-1/2 h-1/2 rounded-full shadow-lg shadow-green-600/50 col-start-2 row-start-3"
-                ></button>
+                    className="bg-green-600 w-1/2 h-1/2 rounded-full shadow-lg shadow-green-600/50 col-start-2 row-start-3 \
+                    text-black items-center justify-center flex text-2xl font-['Press_Start_2P']"
+                >
+                    A
+                    </button>
                 {/** B */}
                 <button
-                    className="bg-red-600 w-1/2 h-1/2 rounded-full shadow-lg shadow-red-600/50 col-start-3 row-start-2"
-                ></button>
+                    className="bg-red-600 w-1/2 h-1/2 rounded-full shadow-lg shadow-red-600/50 col-start-3 row-start-2 \
+                    text-black items-center justify-center flex text-2xl font-['Press_Start_2P']"
+                >
+                    B
+                </button>
             </div>
         </div>
     )

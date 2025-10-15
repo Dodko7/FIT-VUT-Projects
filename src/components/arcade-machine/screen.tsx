@@ -14,10 +14,21 @@ export default function ArcadeScreen() {
             <div
                 className="absolute inset-0 z-20 flex flex-col items-center justify-between p-15 space-y-7 bg-none rounded-lg"
             >
-                <div>dsad</div>
-                <div>dsadsadsds</div>
-                <div>dsadsadsds</div>
-                <div>dsahuidshia</div>
+                <h1
+                    className="text-yellow-400 text-4xl font-['Press_Start_2P'] cursor-default"
+                >Arcade Machine</h1>
+                <h2
+                    className="text-yellow-400 text-3xl font-['Press_Start_2P'] cursor-pointer"
+                >Pacman</h2>
+                <h2
+                    className="text-yellow-400 text-3xl font-['Press_Start_2P'] cursor-pointer"
+                >Snake</h2>
+                <h2
+                    className="text-yellow-400 text-3xl font-['Press_Start_2P'] cursor-pointer"
+                >Ludo</h2>
+                <h2
+                    className="text-yellow-400 text-3xl font-['Press_Start_2P'] cursor-pointer"
+                >Settings</h2>
             </div>
         </div>
     )
