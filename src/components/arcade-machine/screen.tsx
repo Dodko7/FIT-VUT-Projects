@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 
 export default function ArcadeScreen() {
     return (
@@ -18,11 +19,12 @@ export default function ArcadeScreen() {
                     className="text-yellow-400 text-4xl font-['Press_Start_2P'] cursor-default"
                 >Arcade Machine</h1>
                 <h2
-                    className="text-yellow-400 text-3xl font-['Press_Start_2P'] cursor-pointer"
-                >Pacman</h2>
-                <h2
-                    className="text-yellow-400 text-3xl font-['Press_Start_2P'] cursor-pointer"
-                >Snake</h2>
+                className="text-yellow-400 text-3xl font-['Press_Start_2P'] cursor-pointer"
+                >
+                <Link href="/games/pacman" className="text-yellow-400">
+                Pacman
+                </Link>
+                </h2>
                 <h2
                     className="text-yellow-400 text-3xl font-['Press_Start_2P'] cursor-pointer"
                 >Ludo</h2>

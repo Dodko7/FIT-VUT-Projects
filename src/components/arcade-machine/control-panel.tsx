@@ -8,7 +8,7 @@ export default function ArcadeControlPanel() {
         >
             {/** Arrow Controls */}
             <div
-                className="flex flex-col w-1/3 h-full space-y-15 justify-center items-center border-r-2 border-black"
+                className="flex flex-col w-1/2 h-full space-y-15 justify-center items-center border-r-2 border-black"
             >
                 <FaChevronUp
                     className="text-black text-5xl"
@@ -19,7 +19,7 @@ export default function ArcadeControlPanel() {
             </div>
             {/** Buttons */}
             <div
-                className="grid grid-cols-3 grid-rows-3 w-2/3 h-full place-items-center"
+                className="grid grid-cols-3 grid-rows-3 w-1/2 h-full place-items-center"
             >
                 {/** Y */}
                 <button
