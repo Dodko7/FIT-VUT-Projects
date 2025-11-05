@@ -4,3 +4,17 @@
   --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif,
     "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
 } 
+
+/*pacman text blink*/
+@keyframes blink {
+  0%, 100% { 
+    opacity: 1; 
+  }
+  50% { 
+    opacity: 0; 
+  }
+}
+
+.blink {
+  animation: blink 1s infinite;
+}
