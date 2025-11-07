@@ -10,11 +10,43 @@ datasource db {
     url      = "file:./db.sqlite"
 }
 
-model Post {
-    id        Int      @id @default(autoincrement())
-    name      String
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
+// LUDO MODELS
 
-    @@index([name])
+// Game model
+model Game {
+    id        Int       @id @default(autoincrement())
+    lastPlayed DateTime
+    players   Player[]
+    // This can be used as a turn tracker
+    turn Color
+    // Has to be false by default (because web api...)
+    musicOn   Boolean   @default(false)
+}
+
+// Player model
+model Player {
+    id        Int       @id @default(autoincrement())
+    name      String
+    color     Color
+    game      Game      @relation(fields: [gameId], references: [id])
+    gameId    Int
+    pawns     Pawn[]
+    isBot     Boolean   @default(false)
+}
+
+// Pawn model
+model Pawn {
+    id        Int       @id @default(autoincrement())
+    // If the pawn has completed the game can be deduced by this
+    position  Int
+    player    Player    @relation(fields: [playerId], references: [id])
+    playerId  Int
+}
+
+// Color enum
+enum Color {
+    RED
+    BLUE
+    GREEN
+    YELLOW
 }
