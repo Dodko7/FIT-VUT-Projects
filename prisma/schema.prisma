@@ -12,6 +12,13 @@ datasource db {
 
 // LUDO MODELS
 
+// Current game model (basically set when a match starts, cleared upon exiting or when it ends since then the entire match data is deleted)
+model CurrentGame {
+    id      Int   @id @default(autoincrement())
+    game    Game  @relation(fields: [gameId], references: [id])
+    gameId  Int   @unique
+}
+
 // Game model
 model Game {
     id        Int       @id @default(autoincrement())
@@ -21,6 +28,9 @@ model Game {
     turn Color
     // Has to be false by default (because web api...)
     musicOn   Boolean   @default(false)
+    currentGame CurrentGame?
+    // JSON loaded games - can be saved though on pause
+    isTemp    Boolean   @default(false)
 }
 
 // Player model
@@ -32,15 +42,16 @@ model Player {
     gameId    Int
     pawns     Pawn[]
     isBot     Boolean   @default(false)
+    finished  Boolean   @default(false)
 }
 
 // Pawn model
 model Pawn {
     id        Int       @id @default(autoincrement())
-    // If the pawn has completed the game can be deduced by this
     position  Int
     player    Player    @relation(fields: [playerId], references: [id])
     playerId  Int
+    inHome     Boolean   @default(false)
 }
 
 // Color enum
@@ -50,3 +61,5 @@ enum Color {
     GREEN
     YELLOW
 }
+
+// END OF LUDO MODELS

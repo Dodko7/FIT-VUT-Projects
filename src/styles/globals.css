@@ -3,18 +3,55 @@
 @theme {
   --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif,
     "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
-} 
+}
 
 /*pacman text blink*/
 @keyframes blink {
-  0%, 100% { 
-    opacity: 1; 
+
+  0%,
+  100% {
+    opacity: 1;
   }
-  50% { 
-    opacity: 0; 
+
+  50% {
+    opacity: 0;
   }
 }
 
 .blink {
   animation: blink 1s infinite;
+}
+
+/* Arcade machine styles */
+.control-panel-outer {
+  background: #0e0c11;
+  clip-path: polygon(8% 0%, 92% 0%, 100% 100%, 0% 100%);
+}
+
+.control-panel-inner {
+  background: radial-gradient(circle, #2d1d3f 50%, #1d1c1d 100%);
+  clip-path: polygon(8% 0%, 92% 0%, 100% 100%, 0% 100%);
+  transform: scale(0.94);
+}
+
+.triangle-button {
+  background: linear-gradient(180deg, #C47CF2 0%, #737373 97.6%);
+  border-radius: 10px;
+}
+
+.triangle-button:hover {
+  background: linear-gradient(180deg, #E29CFF 0%, #8C8C8C 97.6%);
+  cursor: pointer;
+}
+
+.triangle-button:active {
+  background: linear-gradient(180deg, #A65FE0 0%, #5C5C5C 97.6%);
+}
+
+.triangle-button-up {
+  clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
+}
+
+.triangle-button-down {
+  clip-path: polygon(50% 100%, 0% 0%, 100% 0%);
 }
