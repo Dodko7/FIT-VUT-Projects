@@ -4,7 +4,17 @@ import { useState } from "react";
 import type { CircularButtonProps } from "~/components/games/ludo/buttons/circular-button";
 import CircularButton from "~/components/games/ludo/buttons/circular-button";
 import LudoMenuHeader from "~/components/games/ludo/other/menu-header";
-import Pawn from "~/components/games/ludo/other/pawn";
+import type { PlayerNameInputProps } from "~/components/games/ludo/other/player-name-input";
+import PlayerNameInput from "~/components/games/ludo/other/player-name-input";
+import {
+	MENU_BLUE_PAWN_COLOR,
+	MENU_RED_PAWN_COLOR,
+	MENU_YELLOW_PAWN_COLOR,
+	MENU_GREEN_PAWN_COLOR,
+} from "~/lib/ludo/constants";
+import { useRouter } from "next/navigation";
+import LudoMenuButton from "~/components/games/ludo/buttons/menu-button";
+import ErrorDiv from "~/components/games/ludo/other/error-div";
 
 export default function LudoSetupPage() {
 	// State vars that can't be represented by a form
@@ -12,6 +22,10 @@ export default function LudoSetupPage() {
 		1 | 2 | 3 | 4 | null
 	>(null);
 	const [botsOn, setBotsOn] = useState<boolean>(false);
+	const [error, setError] = useState<string | undefined>(undefined);
+
+	// Router to go back/load game
+	const router = useRouter();
 
 	// Props for number of players buttons
 	const circularButtons: CircularButtonProps[] = [
@@ -41,15 +55,39 @@ export default function LudoSetupPage() {
 		},
 	];
 
+	// Props for player name inputs
+	const playerNameInputs: PlayerNameInputProps[] = [
+		{
+			pawnColor: MENU_RED_PAWN_COLOR,
+			inputDivClassName: "ludo-player-input-red",
+			isVisible: numberOfPlayers !== null && numberOfPlayers >= 1,
+		},
+		{
+			pawnColor: MENU_YELLOW_PAWN_COLOR,
+			inputDivClassName: "ludo-player-input-yellow",
+			isVisible: numberOfPlayers !== null && numberOfPlayers >= 2,
+		},
+		{
+			pawnColor: MENU_BLUE_PAWN_COLOR,
+			inputDivClassName: "ludo-player-input-blue",
+			isVisible: numberOfPlayers !== null && numberOfPlayers >= 3,
+		},
+		{
+			pawnColor: MENU_GREEN_PAWN_COLOR,
+			inputDivClassName: "ludo-player-input-green",
+			isVisible: numberOfPlayers !== null && numberOfPlayers >= 4,
+		},
+	];
+
 	return (
-		<div className="flex h-full w-full flex-col items-center justify-start">
+		<div className="flex min-h-full w-full flex-col items-center justify-start overflow-y-auto">
 			{/** Header */}
 			<LudoMenuHeader
 				title="🎲 NEW GAME"
 				className="h-1/11"
 			/>
 			{/** Rest of the page */}
-			<form className="flex w-full flex-col items-center justify-start gap-10 px-25 py-15">
+			<form className="flex w-full flex-grow flex-col items-center justify-between px-25 py-15">
 				{/** Game name input */}
 				<div className="ludo-secondary flex w-full items-center justify-start rounded-[15px] px-10 py-4">
 					<label
@@ -82,9 +120,7 @@ export default function LudoSetupPage() {
 					<h2 className="ludo-form-text text-5xl">
 						Use bots as missing players:
 					</h2>
-					<div
-						className="flex items-center justify-center gap-5 flex-grow"
-					>
+					<div className="flex flex-grow items-center justify-center gap-5">
 						<CircularButton
 							text={botsOn ? "ON" : "OFF"}
 							className={
@@ -94,6 +130,27 @@ export default function LudoSetupPage() {
 							onClick={() => setBotsOn(!botsOn)}
 						/>
 					</div>
+				</div>
+				{/** Player name inputs */}
+				{playerNameInputs.map((props, index) => (
+					<PlayerNameInput
+						key={index}
+						{...props}
+					/>
+				))}
+				{/** Potential error */}
+				<ErrorDiv message={error} onClose={() => setError(undefined)} isVisible={!!error} />
+
+				{/** Submit and back buttons */}
+				<div className="flex w-full items-center justify-center gap-25">
+					<LudoMenuButton
+						text="Start game"
+						type="submit"
+					/>
+					<LudoMenuButton
+						text="Go back"
+						onClick={() => router.push("/games/ludo/menu")}
+					/>
 				</div>
 			</form>
 		</div>

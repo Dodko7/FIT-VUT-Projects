@@ -1,4 +1,4 @@
-import type { Result } from "~/lib/types/ludo";
+import type { Result } from "~/lib/ludo/types";
 
 /**
  * Reacts to the user loading a game from a JSON file.

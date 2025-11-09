@@ -1,0 +1,146 @@
+.ludo-bg {
+  background: linear-gradient(#840abd 0%,
+      #0077ff 50%,
+      #005040 100%);
+}
+
+.ludo-secondary {
+  background: #841889;
+  color: #2ddada;
+  font-family: var(--font-russo);
+}
+
+.ludo-button {
+  background: #841889;
+  color: #2ddada;
+  font-family: var(--font-russo);
+  border-radius: 15px;
+}
+
+.ludo-button:hover {
+  background: #9e23b3;
+}
+
+.ludo-button:active {
+  background: #6b127f;
+}
+
+.ludo-text-primary {
+  color: #facc15;
+  font-family: var(--font-luckiest-guy);
+}
+
+.ludo-header {
+  border-bottom: 4px solid #facc15;
+}
+
+.ludo-yellow-button {
+  background: #fde68a;
+  color: #78350f;
+  box-shadow: 0 4px 0 #b45309;
+  font-family: var(--font-russo);
+}
+
+.ludo-yellow-button:hover {
+  background: #fcd34d;
+}
+
+.ludo-yellow-button:active {
+  background: #fbbf24;
+}
+
+.ludo-yellow-button-active {
+  background: #fbbf24;
+}
+
+.ludo-blue-button {
+  background: #93c5fd;
+  color: #1e3a8a;
+  box-shadow: 0 4px 0 #1e40af;
+  font-family: var(--font-russo);
+}
+
+.ludo-blue-button:hover {
+  background: #60a5fa;
+}
+
+.ludo-blue-button:active {
+  background: #3b82f6;
+}
+
+.ludo-blue-button-active {
+  background: #3b82f6;
+}
+
+.ludo-red-button {
+  background: #fca5a5;
+  color: #7f1d1d;
+  box-shadow: 0 4px 0 #b91c1c;
+  font-family: var(--font-russo);
+}
+
+.ludo-red-button:hover {
+  background: #f87171;
+}
+
+.ludo-red-button:active {
+  background: #ef4444;
+}
+
+.ludo-red-button-active {
+  background: #ef4444;
+}
+
+.ludo-green-button {
+  background: #86efac;
+  color: #064e38;
+  box-shadow: 0 4px 0 #15803d;
+  font-family: var(--font-russo);
+}
+
+.ludo-green-button:hover {
+  background: #4ade80;
+}
+
+.ludo-green-button:active {
+  background: #22c55e;
+}
+
+.ludo-green-button-active {
+  background: #22c55e;
+}
+
+.ludo-form-text {
+  color: #facc15;
+  font-family: var(--font-russo);
+}
+
+.ludo-player-input-red {
+  background: #fca5a5;
+  color: #7f1d1d;
+  font-family: var(--font-russo);
+}
+
+.ludo-player-input-yellow {
+  background: #fde68a;
+  color: #78350f;
+  font-family: var(--font-russo);
+}
+
+.ludo-player-input-blue {
+  background: #93c5fd;
+  color: #1e3a8a;
+  font-family: var(--font-russo);
+}
+
+.ludo-player-input-green {
+  background: #86efac;
+  color: #065f46;
+  font-family: var(--font-russo);
+}
+
+.ludo-menu-error {
+  background: linear-gradient(90deg, #ff4b6e, #d2274e);
+  color: #fff;
+  font-family: var(--font-russo);
+}

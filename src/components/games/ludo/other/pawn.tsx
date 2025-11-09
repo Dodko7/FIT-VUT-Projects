@@ -5,7 +5,7 @@ export type PawnProps = {
 };
 
 /**
- * Pawn component. Made with the help of https://www.svgviewer.dev/svg-to-react-jsx.
+ * Pawn component. Mostly generated with the help of https://www.svgviewer.dev/svg-to-react-jsx.
  */
 export default function Pawn(props: PawnProps) {
 	return (
