@@ -55,3 +55,32 @@
 .triangle-button-down {
   clip-path: polygon(50% 100%, 0% 0%, 100% 0%);
 }
+
+/* Ludo styles */
+.ludo-bg {
+  background: linear-gradient(
+    #840abd 0%,
+    #0077ff 50%,
+    #005040 100%
+  );
+}
+
+.ludo-button {
+  background: #841889;
+  color: #2ddada;
+  font-family: var(--font-russo);
+  border-radius: 15px;
+}
+
+.ludo-button:hover {
+  background: #9e23b3;
+}
+
+.ludo-button:active {
+  background: #6b127f;
+}
+
+.ludo-text-primary {
+  color: #facc15;
+  font-family: var(--font-luckiest-guy);
+}

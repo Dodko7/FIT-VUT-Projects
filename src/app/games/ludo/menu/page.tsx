@@ -42,22 +42,22 @@ export default function LudoMenuPage() {
     return (
         <div
             className="flex flex-col items-center justify-start w-screen h-screen \
-            bg-gradient-to-b from-[#840abd] via-[#0077ff] to-[#00ffcc] py-10 gap-10"
+            ludo-bg py-10 gap-10"
         >
             {/** Title and pawn svg */}
             <div
                 className="w-full items-center justify-center flex gap-4 mt-10"
             >
                 <h1
-                    className="font-['Luckiest_Guy'] text-5xl text-[#ffc916]"
+                    className="ludo-text-primary text-7xl text-[#ffc916]"
                 >
                     Ludo Hero
                 </h1>
                 <Image
                     src="/ludo/pawn.svg"
                     alt="Ludo Pawn"
-                    width={64}
-                    height={64}
+                    width={128}
+                    height={128}
                 />
             </div>
             {/** Menu */}
