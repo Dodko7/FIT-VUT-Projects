@@ -1,6 +1,5 @@
 "use client";
-
-import { useEffect, useRef, useState } from "react";
+import { forwardRef, useEffect, useRef, useState, useImperativeHandle } from "react";
 import { GameController } from "./pacmanControl";
 import { GameModel } from "./pacmanModel";
 
@@ -62,12 +61,23 @@ export class GameView {
 			);
 			countdown.restore();
 		}
+
+		if (model.isPaused) {
+			const ctx = this.context;
+			ctx.save();
+			ctx.fillStyle = "yellow";
+			ctx.font = "48px 'Press Start 2P'";
+			ctx.textAlign = "center";
+			ctx.fillText("PAUSED", this.canvas.width / 2, this.canvas.height / 2);
+			ctx.restore();
+		}
 	}
 }
 
-export default function PacmanGame() {
+const PacmanGame = forwardRef((props, ref) => {
 	const canvasRef = useRef<HTMLCanvasElement>(null);
 	const controllerRef = useRef<GameController | null>(null);
+	
 	const [gameState, setGameState] = useState({
 		score: 0,
 		lives: 3,
@@ -78,6 +88,8 @@ export default function PacmanGame() {
 		countdownValue: 3,
 	});
 	const [resetTrigger, setResetTrigger] = useState(0);
+
+	useImperativeHandle(ref, () => controllerRef.current);
 
 	useEffect(() => {
 		const canvas = canvasRef.current!;
@@ -156,4 +168,7 @@ export default function PacmanGame() {
 				)}
 		</div>
 	);
-}
+});
+
+PacmanGame.displayName = "PacmanGame";
+export default PacmanGame;
