@@ -96,6 +96,11 @@ export class GameModel {
 	win = false;
 	isCountingDown = false;
 	isRestarting = false;
+	isPaused = false;
+
+	togglePause() {
+		this.isPaused = !this.isPaused;
+	}
 
 	Map = [
 		"1111111111111111111",
@@ -245,7 +250,7 @@ export class GameModel {
 	}
 
 	move() {
-		if (this.isCountingDown) {
+		if (this.isPaused || this.isCountingDown) {
 			return;
 		}
 
@@ -363,7 +368,7 @@ export class GameModel {
 	}
 
 	movePacman(keyCode: string) {
-		if (this.gameOver || this.win || this.isCountingDown) {
+		if (this.gameOver || this.win || this.isCountingDown || this.isPaused) {
 			return;
 		}
 
