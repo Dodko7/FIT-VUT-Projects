@@ -24,8 +24,8 @@ export default function LudoMenuPage() {
 
     // Button props
     const buttonProps = [
-        { text: "New Game", link: "/games/ludo/setup" },
-        { text: "Load Game", link: "/games/ludo/load" },
+        { text: "New Game", link: "/games/ludo/menu/setup" },
+        { text: "Load Game", link: "/games/ludo/menu/load" },
         { text: "Load from JSON", onClick: () => fileInputRef.current?.click() },
         { text: "Back to Arcade", link: "/" },
     ];
@@ -41,8 +41,7 @@ export default function LudoMenuPage() {
 
     return (
         <div
-            className="flex flex-col items-center justify-start w-screen h-screen \
-            ludo-bg py-10 gap-10"
+            className="flex flex-col items-center justify-start w-full h-full py-10 gap-10"
         >
             {/** Title and pawn svg */}
             <div
