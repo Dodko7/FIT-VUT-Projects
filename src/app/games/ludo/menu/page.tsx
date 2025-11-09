@@ -5,8 +5,8 @@ import { useRef, useState } from "react";
 import LudoMenuButton from "~/components/games/ludo/buttons/menu-button";
 import { LoadFromJSON } from "~/lib/requests/ludo/load-game";
 import { useRouter } from "next/navigation";
-import LudoErrorPage from "~/components/games/ludo/error-page";
-import LudoLoadingPage from "~/components/games/ludo/loading-page";
+import LudoErrorPage from "~/components/games/ludo/pages/error-page";
+import LudoLoadingPage from "~/components/games/ludo/pages/loading-page";
 
 /**
  * Main menu page for the ludo game.

@@ -4,6 +4,7 @@ import { useState } from "react";
 import type { CircularButtonProps } from "~/components/games/ludo/buttons/circular-button";
 import CircularButton from "~/components/games/ludo/buttons/circular-button";
 import LudoMenuHeader from "~/components/games/ludo/other/menu-header";
+import Pawn from "~/components/games/ludo/other/pawn";
 
 export default function LudoSetupPage() {
 	// State vars that can't be represented by a form
@@ -53,7 +54,7 @@ export default function LudoSetupPage() {
 				<div className="ludo-secondary flex w-full items-center justify-start rounded-[15px] px-10 py-4">
 					<label
 						htmlFor="gameName"
-						className="mr-5 text-2xl"
+						className="mr-5 text-3xl"
 					>
 						Game Name:
 					</label>
