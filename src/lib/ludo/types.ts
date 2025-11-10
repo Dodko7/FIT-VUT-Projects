@@ -33,3 +33,12 @@ export type MenuGame = {
 	players: number;
 	bots: number;
 };
+
+/**
+ * Type for new game requests.
+ */
+export type NewGameRequest = {
+	name: string;
+	playerNames: string[];
+	bots: boolean;
+};

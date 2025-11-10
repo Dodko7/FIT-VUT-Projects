@@ -7,7 +7,7 @@ import LudoMenuHeader from "~/components/games/ludo/other/menu-header";
 import LudoSavedGame from "~/components/games/ludo/other/saved-game";
 import LudoErrorPage from "~/components/games/ludo/pages/error-page";
 import LudoLoadingPage from "~/components/games/ludo/pages/loading-page";
-import { LoadAllGames } from "~/lib/ludo/requests/load";
+import { LoadAllGames } from "~/lib/ludo/client-api/load";
 import { type MenuGame } from "~/lib/ludo/types";
 
 export default function LudoLoadPage() {

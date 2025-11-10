@@ -87,7 +87,16 @@ export default function LudoSetupPage() {
 				className="h-1/11"
 			/>
 			{/** Rest of the page */}
-			<form className="flex w-full flex-grow flex-col items-center justify-between px-25 py-15">
+			<form 
+				className="flex w-full flex-grow flex-col items-center justify-between px-25 py-15"
+				onSubmit={(e) => {
+					// Form stuff
+					e.preventDefault();
+					const formData = new FormData(e.currentTarget);
+
+					// Pass to handler
+				}}
+			>
 				{/** Game name input */}
 				<div className="ludo-secondary flex w-full items-center justify-start rounded-[15px] px-10 py-4">
 					<label

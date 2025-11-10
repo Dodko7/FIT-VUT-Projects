@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { useRef, useState } from "react";
 import LudoMenuButton from "~/components/games/ludo/buttons/menu-button";
-import { LoadFromJSON } from "~/lib/ludo/requests/load";
+import { LoadFromJSON } from "~/lib/ludo/client-api/load";
 import { useRouter } from "next/navigation";
 import LudoErrorPage from "~/components/games/ludo/pages/error-page";
 import LudoLoadingPage from "~/components/games/ludo/pages/loading-page";

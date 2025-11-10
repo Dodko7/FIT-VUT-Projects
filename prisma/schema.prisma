@@ -26,7 +26,7 @@ model Game {
     lastPlayed DateTime
     players   Player[]
     // This can be used as a turn tracker
-    turn Color
+    turn Color  @default(RED)
     // Has to be false by default (because web api...)
     musicOn   Boolean   @default(false)
     currentGame CurrentGame?
@@ -42,7 +42,7 @@ model Player {
     game      Game      @relation(fields: [gameId], references: [id])
     gameId    Int
     pawns     Pawn[]
-    isBot     Boolean   @default(false)
+    isBot     Boolean
     finished  Boolean   @default(false)
 }
 

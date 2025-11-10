@@ -13,7 +13,7 @@ export default function CircularButton({
 }: CircularButtonProps) {
 	return (
 		<button
-            className={`rounded-full items-center justify-center size-23 text-4xl ${className} ${isActive ? `${className}-active` : ""}`}
+            className={`rounded-full items-center justify-center size-23 text-4xl cursor-pointer ${className} ${isActive ? `${className}-active` : ""}`}
             onClick={onClick}
             type="button"
         >
