@@ -42,8 +42,12 @@ export async function CreateNewGame(
 				success: false,
 				error: `No name specified for Player ${i + 1}!`,
 			};
-		}
-		
+		} else if (playerNames.includes(playerName.trim())) {
+			return {
+				success: false,
+				error: `${playerName.trim()} has already been used as a name!`,
+			};
+		}	
 		playerNames.push(playerName);
 	}
 

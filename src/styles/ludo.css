@@ -10,6 +10,15 @@
   font-family: var(--font-russo);
 }
 
+.ludo-board-navbar {
+  background: #841889;
+  color: #2ddada;
+}
+
+.ludo-board-font {
+  font-family: var(--font-luckiest-guy);
+}
+
 .ludo-button {
   background: #841889;
   color: #2ddada;

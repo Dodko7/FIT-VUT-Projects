@@ -1,3 +1,5 @@
+import type { Prisma } from "@prisma/client";
+
 /**
  * General purpose type for a promise which may or may not succeed.
  */
@@ -28,7 +30,7 @@ export type TypedResult<T> =
  */
 export type MenuGame = {
 	id: number;
-    name: string;
+	name: string;
 	lastPlayed: Date;
 	players: number;
 	bots: number;
@@ -42,3 +44,17 @@ export type NewGameRequest = {
 	playerNames: string[];
 	bots: boolean;
 };
+
+/**
+ * Full game model.
+ */
+export type FullGame = Prisma.GameGetPayload<{
+	include: {
+		players: {
+			include: {
+				pawns: true;
+			};
+		};
+		currentGame: true;
+	};
+}>;

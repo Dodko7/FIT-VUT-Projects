@@ -1,4 +1,5 @@
-import type { MenuGame, Result, TypedResult } from "~/lib/ludo/types";
+import { th } from "zod/v4/locales";
+import type { FullGame, MenuGame, Result, TypedResult } from "~/lib/ludo/types";
 
 /**
  * Reacts to the user loading a game from a JSON file.
@@ -27,6 +28,26 @@ export async function LoadAllGames(): Promise<MenuGame[]> {
 			return data.value;
 		} else {
 			throw new Error(data.error);
+		}
+	});
+}
+
+/**
+ * Makes an API call to load the current active game.
+ * @returns A promise resolving to a TypedResult containing the FullGame object.
+ */
+export async function LoadCurrentGame(): Promise<FullGame> {
+	return await fetch("/api/ludo/roll", {
+		method: "GET",
+		headers: {
+			"Content-Type": "application/json",
+		},
+	}).then(async (res) => {
+		if (!res.ok) {
+			const data = await res.json();
+			throw new Error(data.error || "Failed to load current game.");
+		} else {
+			return (await res.json()).value;
 		}
 	});
 }

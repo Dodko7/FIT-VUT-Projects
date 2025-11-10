@@ -15,6 +15,7 @@ import {
 import { useRouter } from "next/navigation";
 import LudoMenuButton from "~/components/games/ludo/buttons/menu-button";
 import ErrorDiv from "~/components/games/ludo/other/error-div";
+import { CreateNewGame } from "~/lib/ludo/client-api/new-game";
 
 export default function LudoSetupPage() {
 	// State vars that can't be represented by a form
@@ -89,12 +90,18 @@ export default function LudoSetupPage() {
 			{/** Rest of the page */}
 			<form 
 				className="flex w-full flex-grow flex-col items-center justify-between px-25 py-15"
-				onSubmit={(e) => {
+				onSubmit={async (e) => {
 					// Form stuff
 					e.preventDefault();
 					const formData = new FormData(e.currentTarget);
 
 					// Pass to handler
+					const res = await CreateNewGame(formData, numberOfPlayers, botsOn);
+					if (res.success) {
+						router.push("/games/ludo/gameplay");
+					} else {
+						setError(res.error);
+					}
 				}}
 			>
 				{/** Game name input */}
@@ -147,8 +154,8 @@ export default function LudoSetupPage() {
 						{...props}
 					/>
 				))}
-				{/** Potential error */}
-				<ErrorDiv message={error} onClose={() => setError(undefined)} isVisible={!!error} />
+				{/** Potential error todo */}
+				{error && <ErrorDiv message={error} onClose={() => setError(undefined)} isVisible={error !== undefined} />}
 
 				{/** Submit and back buttons */}
 				<div className="flex w-full items-center justify-center gap-25">

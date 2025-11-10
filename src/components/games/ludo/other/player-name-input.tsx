@@ -45,6 +45,7 @@ export default function PlayerNameInput({
 				<input
 					type="text"
 					id={inputId}
+					name={inputId}
 					className="text-3xl focus:outline-none focus:ring-0"
 				/>
 			</div>
