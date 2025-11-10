@@ -144,3 +144,12 @@
   color: #fff;
   font-family: var(--font-russo);
 }
+
+/* Almost like ludo secondary but not circular */
+.ludo-icon:hover {
+  color: #1fb6c1;
+}
+
+.ludo-icon:active {
+  color: #0b6ea6;
+}

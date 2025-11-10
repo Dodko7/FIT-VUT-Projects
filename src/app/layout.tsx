@@ -1,7 +1,10 @@
+"use client";
+
 import "~/styles/globals.css";
 
 // Fonts
 import { Press_Start_2P, Russo_One, Luckiest_Guy } from "next/font/google";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 const pressStart2P = Press_Start_2P({
 	subsets: ["latin"],
@@ -19,6 +22,9 @@ const luckiestGuy = Luckiest_Guy({
 	variable: "--font-luckiest-guy",
 });
 
+// React query setup
+const queryClient = new QueryClient();
+
 export default function RootLayout({
 	children,
 }: Readonly<{ children: React.ReactNode }>) {
@@ -27,7 +33,9 @@ export default function RootLayout({
 			<body
 				className={`${pressStart2P.variable} ${russoOne.variable} ${luckiestGuy.variable}`}
 			>
-				{children}
+				<QueryClientProvider client={queryClient}>
+					{children}
+				</QueryClientProvider>
 			</body>
 		</html>
 	);

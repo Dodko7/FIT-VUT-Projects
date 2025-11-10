@@ -22,6 +22,7 @@ model CurrentGame {
 // Game model
 model Game {
     id        Int       @id @default(autoincrement())
+    name      String
     lastPlayed DateTime
     players   Player[]
     // This can be used as a turn tracker
