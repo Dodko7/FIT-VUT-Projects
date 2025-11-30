@@ -1,8 +1,8 @@
 "use client";
-import PacmanGame from "../../../components/games/pacman/pacmanView";
+import PacmanGame from "../../../../components/games/pacman/pacmanView";
 import Link from "next/link";
 import { useRef } from "react";
-import { GameController } from "../../../components/games/pacman/pacmanControl";
+import { GameController } from "../../../../components/games/pacman/pacmanControl";
 
 export default function PacmanGamePage() {
 	const pauseControll = useRef<GameController | null>(null);
