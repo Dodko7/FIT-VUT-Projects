@@ -47,5 +47,7 @@ src/examples/*
 
 src/main/*
 !src/main/*.cc
+!src/main/*.cpp
 !src/main/*.h
+!src/main/*.hpp
 !src/main/README.md
