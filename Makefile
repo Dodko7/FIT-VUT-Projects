@@ -76,9 +76,10 @@ main:
 	@echo "Compiling all main project files..."
 	@cd docker && docker compose run --rm dev /bin/bash -c '\
 		mkdir -p build/main && \
-		for file in src/main/*.cc; do \
+		for file in src/main/*.cc src/main/*.cpp; do \
 			if [ -f "$$file" ]; then \
 				name=$$(basename $$file .cc); \
+				name=$$(basename $$name .cpp); \
 				echo "Compiling $$name..."; \
 				g++ -o build/main/$$name $$file -lsimlib -lm || exit 1; \
 			fi; \
@@ -90,7 +91,14 @@ main/%:
 	@echo "Compiling main file: $*..."
 	@cd docker && docker compose run --rm dev /bin/bash -c '\
 		mkdir -p build/main && \
-		g++ -o build/main/$* src/main/$*.cc -lsimlib -lm'
+		if [ -f "src/main/$*.cpp" ]; then \
+			g++ -o build/main/$* src/main/$*.cpp -lsimlib -lm; \
+		elif [ -f "src/main/$*.cc" ]; then \
+			g++ -o build/main/$* src/main/$*.cc -lsimlib -lm; \
+		else \
+			echo "Error: src/main/$*.cpp or src/main/$*.cc not found"; \
+			exit 1; \
+		fi'
 	@echo "Compiled: build/main/$*"
 
 # Compile and run specific main file
