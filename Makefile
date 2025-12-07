@@ -277,7 +277,7 @@ pack:
 	@rm -f 05_xondre16_xhashm00.zip
 	@zip -r 05_xondre16_xhashm00.zip \
 		Makefile \
-		ims_doc.pdf \
+		documentation.pdf \
 		src/ \
 		-x "*.o" "*.zip" "*build/*" "*output/*" "*.git*"
 	@echo "Archive created: 05_xondre16_xhashm00.zip"
