@@ -2,15 +2,28 @@
 # IMS Project Makefile
 # ============================================================================
 # This Makefile provides convenient commands for building and running
-# your SIMLIB simulation models in Docker.
+# your SIMLIB simulation models in Docker or natively.
 # ============================================================================
 
 # Detect if running inside Docker container
 INSIDE_DOCKER := $(shell test -f /.dockerenv && echo 1 || echo 0)
 
-.PHONY: help build shell run clean clean-all test examples compile-main compile-simulation
+# Detect if Docker is available
+HAS_DOCKER := $(shell command -v docker >/dev/null 2>&1 && echo 1 || echo 0)
 
-# Default target - show help
+# Detect if SIMLIB is available locally (check for simlib library)
+HAS_SIMLIB := $(shell command -v simlib-config >/dev/null 2>&1 && echo 1 || echo 0)
+ifeq ($(HAS_SIMLIB),0)
+	# Try alternative check - look for libsimlib
+	HAS_SIMLIB := $(shell ldconfig -p 2>/dev/null | grep -q libsimlib && echo 1 || echo 0)
+endif
+
+.PHONY: help build shell run clean clean-all test examples compile-main compile-simulation pack
+
+# Default target - compile the simulation
+all: main/simulation
+
+# Show help
 help:
 	@echo "IMS Project - Available Commands:"
 	@echo "=================================="
@@ -29,6 +42,7 @@ help:
 	@echo ""
 	@echo "  make clean        - Remove compiled binaries"
 	@echo "  make clean-all    - Remove binaries and output files"
+	@echo "  make pack         - Create submission archive (05_xondre16_xhashm00.zip)"
 	@echo "  make test         - Run all examples and check outputs"
 	@echo ""
 
@@ -76,7 +90,7 @@ run-example/%: example/%
 
 # Compile all main project files (modular structure)
 ifeq ($(INSIDE_DOCKER),1)
-# Inside Docker: compile directly
+# Inside Docker or native environment: compile directly
 main: compile-simulation
 	@echo "Main files compiled successfully!"
 
@@ -101,8 +115,8 @@ compile-simulation:
 
 main/simulation: compile-simulation
 
-else
-# Outside Docker: use docker compose
+else ifeq ($(HAS_DOCKER),1)
+# Outside Docker but Docker is available: use docker compose
 main:
 	@echo "Compiling main project files..."
 	@cd docker && docker compose run --rm dev /bin/bash -c '\
@@ -156,15 +170,70 @@ main/%:
 			exit 1; \
 		fi'
 	@echo "Compiled: build/main/$*"
+
+else
+# No Docker available: compile natively (for servers like merlin with SIMLIB installed)
+main: compile-simulation
+	@echo "Main files compiled successfully!"
+
+compile-simulation:
+	@echo "Compiling modular simulation project (native mode)..."
+	@mkdir -p build/main output
+	@g++ -std=c++17 -I./src \
+		src/models/SupplyTypes.cpp \
+		src/models/TownSupplies.cpp \
+		src/services/SimulationState.cpp \
+		src/services/GraphGenerator.cpp \
+		src/services/ExperimentRunner.cpp \
+		src/simulation/WeatherEvents.cpp \
+		src/simulation/Convoy.cpp \
+		src/simulation/ConvoyGenerators.cpp \
+		src/simulation/ConsumptionProcess.cpp \
+		src/utils/Initialization.cpp \
+		src/utils/Statistics.cpp \
+		src/main/simulation.cpp \
+		-lsimlib -lm -o build/main/simulation
+	@echo "Build complete: build/main/simulation"
+
+main/simulation: compile-simulation
 endif
 
 # Compile and run specific main file
+ifeq ($(HAS_DOCKER),1)
 run-main/%: main/%
 	@echo "Running main file: $*..."
 	@cd docker && docker compose run --rm dev /bin/bash -c '\
 		mkdir -p output && \
 		cd output && ../build/main/$*'
 	@echo "Output saved in output/"
+else
+run-main/%: main/%
+	@echo "Running main file: $*..."
+	@mkdir -p output
+	@cd output && ../build/main/$*
+	@echo "Output saved in output/"
+endif
+
+# Run simulation with optional arguments
+# Usage: make run ARGS="--no-weather --no-robbers"
+ifeq ($(HAS_DOCKER),1)
+run: main/simulation
+	@echo "Running simulation..."
+	@cd docker && docker compose run --rm dev /bin/bash -c '\
+		mkdir -p output && \
+		cd output && ../build/main/simulation $(ARGS)'
+	@echo "Output saved in output/"
+else
+run: main/simulation
+	@echo "Running simulation..."
+	@mkdir -p output
+	@echo "Executing: ./build/main/simulation"
+	@./build/main/simulation $(ARGS) || (echo "Simulation failed with exit code $$?"; exit 1)
+	@echo ""
+	@echo "Simulation complete! Generated files:"
+	@ls -lh output/ 2>/dev/null || echo "No output files generated"
+	@echo ""
+endif
 
 # Utility commands
 # ============================================================================
@@ -196,17 +265,19 @@ test: examples
 		done'
 	@echo "Test results in output/test/"
 
-# Run simulation with optional arguments
-# Usage: make run ARGS="--no-weather --no-robbers"
-run: main/simulation
-	@echo "Running simulation..."
-	@cd docker && docker compose run --rm dev /bin/bash -c '\
-		mkdir -p output && \
-		cd output && ../build/main/simulation $(ARGS)'
-	@echo "Output saved in output/"
-
 # Create necessary directories
 init:
 	@echo "Creating project directories..."
 	@mkdir -p build/examples build/main output
 	@echo "Directories created!"
+
+# Create submission archive
+pack:
+	@echo "Creating submission archive..."
+	@rm -f 05_xondre16_xhashm00.zip
+	@zip -r 05_xondre16_xhashm00.zip \
+		Makefile \
+		ims_doc.pdf \
+		src/ \
+		-x "*.o" "*.zip" "*build/*" "*output/*" "*.git*"
+	@echo "Archive created: 05_xondre16_xhashm00.zip"
