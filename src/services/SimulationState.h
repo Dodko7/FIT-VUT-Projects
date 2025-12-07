@@ -32,6 +32,9 @@ public:
     
     // Graph data
     std::vector<double> town5SuppliesHistory;
+    std::vector<double> town5DeliveriesHistory;  // Track daily deliveries to Town 5
+    std::vector<double> town5TotalDeliveredHistory;  // Track cumulative deliveries to Town 5
+    double dailyDeliveryCounter;  // Accumulator for deliveries within current day
     std::ofstream graphFile;
     
     // Economics tracking

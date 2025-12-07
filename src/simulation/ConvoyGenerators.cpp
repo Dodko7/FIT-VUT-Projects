@@ -8,7 +8,6 @@ void Town1ConvoyGenerator::Behavior() {
     auto* state = SimulationState::GetInstance();
     
     state->globalConvoyId++;
-    Print("\n========== GENERATING CONVOY #%d FROM TOWN 1 TO TOWN 2 ==========\n", state->globalConvoyId);
     
     // Prepare cargo from Town 1
     TownSupplies cargo;
@@ -21,9 +20,6 @@ void Town1ConvoyGenerator::Behavior() {
     double muleCapacity = mules * Config::MULE_CARRY_CAPACITY;
     double totalCapacity = wagonCapacity + muleCapacity;
     
-    Print("  Preparing convoy: %d wagons (%.1f tons) + %d mules (%.1f tons) = %.1f tons capacity\n",
-          wagons, wagonCapacity, mules, muleCapacity, totalCapacity);
-    
     // Load supplies with specified ranges
     cargo.supplies[GRAIN] = Uniform(40, 50);
     cargo.supplies[FODDER] = Uniform(10, 15);
@@ -33,10 +29,6 @@ void Town1ConvoyGenerator::Behavior() {
     cargo.wagons = wagons;
     cargo.mules = mules;
     
-    Print("  Cargo prepared: %.1f tons (G:%.1f F:%.1f SM:%.1f WO:%.1f Eq:%.1f)\n",
-          cargo.getTotal(), cargo.supplies[GRAIN], cargo.supplies[FODDER], 
-          cargo.supplies[SALTED_MEAT], cargo.supplies[WINE_OIL], cargo.supplies[EQUIPMENT]);
-    
     // Start convoy from Town 1 to Town 2
     (new Convoy(state->globalConvoyId, 0, 1, cargo))->Activate();
     
@@ -45,10 +37,8 @@ void Town1ConvoyGenerator::Behavior() {
     double nextInterval;
     
     if (town5Supplies < 500.0) {
-        // Critical supply level - increase frequency (5 convoys per week)
-        nextInterval = (7.0 * 24.0) / 5.0;  // ~33.6 hours
-        Print("  [URGENT] Town 5 supplies LOW (%.1f tons) - Increasing convoy frequency to 5/week (next in %.1f hours)\n", 
-              town5Supplies, nextInterval);
+        // Critical supply level - increase frequency (4 convoys per week)
+        nextInterval = (7.0 * 24.0) / 4.0;  // ~42 hours
     } else {
         // Normal supply level - standard frequency (3 convoys per week)
         nextInterval = Config::CONVOY_INTERVAL_T1;  // ~56 hours
@@ -62,7 +52,6 @@ void Town4ConvoyGenerator::Behavior() {
     auto* state = SimulationState::GetInstance();
     
     state->globalConvoyId++;
-    Print("\n========== GENERATING CONVOY #%d FROM TOWN 4 TO TOWN 5 ==========\n", state->globalConvoyId);
     
     // Prepare cargo from Town 4
     TownSupplies cargo;
@@ -76,7 +65,6 @@ void Town4ConvoyGenerator::Behavior() {
     }
     
     if (targetCargo <= 0) {
-        Print("  No supplies available in Town 4, convoy cancelled\n");
         // Schedule next convoy anyway
         double nextInterval = Uniform(Config::CONVOY_INTERVAL_T4_MIN, Config::CONVOY_INTERVAL_T4_MAX);
         Activate(Time + nextInterval);
@@ -100,9 +88,6 @@ void Town4ConvoyGenerator::Behavior() {
     cargo.wagons = neededWagons;
     cargo.mules = neededMules;
     
-    Print("  Preparing convoy: Target %.1f tons, Using %d wagons + %d mules (%.1f tons capacity)\n",
-          targetCargo, neededWagons, neededMules, actualCapacity);
-    
     // Load supplies proportionally
     double ratio = actualCapacity / availableSupplies;
     if (ratio > 1.0) ratio = 1.0;
@@ -110,10 +95,6 @@ void Town4ConvoyGenerator::Behavior() {
     for (int i = 0; i < NUM_SUPPLY_TYPES; i++) {
         cargo.supplies[i] = state->townStorage[3].supplies[i] * ratio;
     }
-    
-    Print("  Cargo prepared: %.1f tons (G:%.1f F:%.1f SM:%.1f WO:%.1f Eq:%.1f)\n",
-          cargo.getTotal(), cargo.supplies[GRAIN], cargo.supplies[FODDER],
-          cargo.supplies[SALTED_MEAT], cargo.supplies[WINE_OIL], cargo.supplies[EQUIPMENT]);
     
     // Start convoy from Town 4 to Town 5
     (new Convoy(state->globalConvoyId, 3, 4, cargo))->Activate();

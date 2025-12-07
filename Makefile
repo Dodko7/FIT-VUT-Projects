@@ -5,7 +5,10 @@
 # your SIMLIB simulation models in Docker.
 # ============================================================================
 
-.PHONY: help build shell run clean clean-all test examples
+# Detect if running inside Docker container
+INSIDE_DOCKER := $(shell test -f /.dockerenv && echo 1 || echo 0)
+
+.PHONY: help build shell run clean clean-all test examples compile-main compile-simulation
 
 # Default target - show help
 help:
@@ -72,6 +75,34 @@ run-example/%: example/%
 	@echo "Output saved in output/"
 
 # Compile all main project files (modular structure)
+ifeq ($(INSIDE_DOCKER),1)
+# Inside Docker: compile directly
+main: compile-simulation
+	@echo "Main files compiled successfully!"
+
+compile-simulation:
+	@echo "Compiling modular simulation project..."
+	@mkdir -p build/main
+	@g++ -std=c++17 -I./simlib/src -I./src \
+		src/models/SupplyTypes.cpp \
+		src/models/TownSupplies.cpp \
+		src/services/SimulationState.cpp \
+		src/services/GraphGenerator.cpp \
+		src/services/ExperimentRunner.cpp \
+		src/simulation/WeatherEvents.cpp \
+		src/simulation/Convoy.cpp \
+		src/simulation/ConvoyGenerators.cpp \
+		src/simulation/ConsumptionProcess.cpp \
+		src/utils/Initialization.cpp \
+		src/utils/Statistics.cpp \
+		src/main/simulation.cpp \
+		-L./simlib/src -lsimlib -lm -o build/main/simulation
+	@echo "Build complete: build/main/simulation"
+
+main/simulation: compile-simulation
+
+else
+# Outside Docker: use docker compose
 main:
 	@echo "Compiling main project files..."
 	@cd docker && docker compose run --rm dev /bin/bash -c '\
@@ -125,6 +156,7 @@ main/%:
 			exit 1; \
 		fi'
 	@echo "Compiled: build/main/$*"
+endif
 
 # Compile and run specific main file
 run-main/%: main/%
@@ -164,16 +196,14 @@ test: examples
 		done'
 	@echo "Test results in output/test/"
 
-# Run compiled programs
-run:
-	@echo "Available programs:"
-	@echo "Examples:"
-	@cd docker && docker compose run --rm dev /bin/bash -c 'ls -1 build/examples/ 2>/dev/null || echo "  No examples compiled"'
-	@echo ""
-	@echo "Main:"
-	@cd docker && docker compose run --rm dev /bin/bash -c 'ls -1 build/main/ 2>/dev/null || echo "  No main files compiled"'
-	@echo ""
-	@echo "Use 'make run-example/<name>' or 'make run-main/<name>' to run specific programs"
+# Run simulation with optional arguments
+# Usage: make run ARGS="--no-weather --no-robbers"
+run: main/simulation
+	@echo "Running simulation..."
+	@cd docker && docker compose run --rm dev /bin/bash -c '\
+		mkdir -p output && \
+		cd output && ../build/main/simulation $(ARGS)'
+	@echo "Output saved in output/"
 
 # Create necessary directories
 init:

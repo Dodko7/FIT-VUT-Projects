@@ -8,6 +8,7 @@ SimulationState::SimulationState()
       TotalDeliveredToTown5("Total delivered to Town 5 (tons)"),
       globalConvoyId(0),
       campaignCost(0.0),
+      dailyDeliveryCounter(0.0),
       weatherDelayMultiplier(1.0),
       currentWeatherDelayPercentage(0.0),
       isWeatherActive(false),
@@ -15,6 +16,8 @@ SimulationState::SimulationState()
       totalSuppliesStolen(0.0)
 {
     dailyCosts.push_back(0.0);  // Day 0 starts with 0 cost
+    town5DeliveriesHistory.push_back(0.0);  // Day 0 starts with 0 deliveries
+    town5TotalDeliveredHistory.push_back(0.0);  // Day 0 starts with 0 total delivered
     weeklyCostsTown1.push_back(0.0);  // Week 0 starts with 0 cost for Town 1
     
     // Initialize weekly costs for all routes
@@ -46,7 +49,12 @@ void SimulationState::DestroyInstance() {
 void SimulationState::Reset() {
     campaignCost = 0.0;
     globalConvoyId = 0;
+    dailyDeliveryCounter = 0.0;
     town5SuppliesHistory.clear();
+    town5DeliveriesHistory.clear();
+    town5DeliveriesHistory.push_back(0.0);  // Day 0 starts with 0 deliveries
+    town5TotalDeliveredHistory.clear();
+    town5TotalDeliveredHistory.push_back(0.0);  // Day 0 starts with 0 total delivered
     campaignCostHistory.clear();
     dailyCosts.clear();
     dailyCosts.push_back(0.0);  // Day 0 starts with 0 cost

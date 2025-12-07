@@ -70,16 +70,6 @@ int main(int argc, char* argv[]) {
     // Parse command-line arguments
     parseArguments(argc, argv);
     
-    // Print configuration
-    std::cout << "\n==============================================\n";
-    std::cout << "SIMULATION CONFIGURATION\n";
-    std::cout << "==============================================\n";
-    std::cout << "Simulation Days: " << Config::runtime.simulationDays << "\n";
-    std::cout << "Random Seed: " << Config::runtime.randomSeed << "\n";
-    std::cout << "Weather Events: " << (Config::runtime.weatherEnabled ? "ENABLED" : "DISABLED") << "\n";
-    std::cout << "Robber Attacks: " << (Config::runtime.robbersEnabled ? "ENABLED" : "DISABLED") << "\n";
-    std::cout << "Experiment Mode: " << (Config::runtime.experimentMode ? "ENABLED" : "DISABLED") << "\n";
-    std::cout << "==============================================\n\n";
     // Get singleton instance of simulation state
     auto* state = SimulationState::GetInstance();
     

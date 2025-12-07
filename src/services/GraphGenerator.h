@@ -8,8 +8,8 @@ public:
     static void GenerateSupplyGraph(int currentDay);
     static void GenerateCostGraph(int currentDay);
     static void GenerateDailyCostGraph(int dayNumber);
-    static void GenerateTown1WeeklyCostGraph(int dayNumber);
     static void GenerateAllTownsWeeklyCostGraph(int dayNumber);
+    static void GenerateTown5DeliveriesGraph(int dayNumber);
     static void GenerateExperimentGraph(const std::string& experimentType);
 };
 

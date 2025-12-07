@@ -10,7 +10,7 @@
 void Statistics::OutputFinalStatistics() {
     auto* state = SimulationState::GetInstance();
     
-    std::ofstream outputFile("phase2_output.txt");
+    std::ofstream outputFile("output/simulation_output.txt");
     
     outputFile << "\n==============================================\n";
     outputFile << "SUPPLY CHAIN CAMPAIGN - FINAL REPORT\n";
@@ -64,31 +64,10 @@ void Statistics::OutputFinalStatistics() {
     outputFile << "==============================================\n";
     
     outputFile.close();
-    
-    std::cout << "\n==============================================\n";
-    std::cout << "SIMULATION COMPLETE\n";
-    std::cout << "==============================================\n";
-    std::cout << "Final Town 5 Supplies: " << state->townStorage[4].getTotal() << " tons\n";
-    std::cout << "Total Campaign Cost: " << state->campaignCost << " money units\n";
-    std::cout << "Total Convoys: " << (state->ConvoyCountTown1.Number() + state->ConvoyCountTown4.Number()) << "\n";
-    if (Config::runtime.robbersEnabled) {
-        std::cout << "Total Robber Attacks: " << state->totalRobberAttacks << "\n";
-    }
-    std::cout << "\nDetailed report written to: phase2_output.txt\n";
-    std::cout << "Graphs written to: town5_supply_graph.txt, campaign_cost_graph.txt\n";
-    std::cout << "==============================================\n\n";
 }
 
 void Statistics::OutputRobberStatistics() {
     auto* state = SimulationState::GetInstance();
     
     if (!Config::runtime.robbersEnabled) return;
-    
-    std::cout << "\n--- Robber Attack Statistics ---\n";
-    std::cout << "Total attacks: " << state->totalRobberAttacks << "\n";
-    std::cout << "Attacks by route:\n";
-    for (int route = 0; route < 4; route++) {
-        std::cout << "  Route " << (route + 1) << ": " << (int)state->RobberAttacksPerRoute[route].Number() << " attacks\n";
-    }
-    std::cout << "Total stolen: " << state->totalSuppliesStolen << " tons\n";
 }

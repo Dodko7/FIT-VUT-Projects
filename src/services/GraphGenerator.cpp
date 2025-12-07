@@ -99,11 +99,11 @@ void GraphGenerator::GenerateSupplyGraph(int currentDay) {
     const int GRAPH_WIDTH = Config::SUPPLY_GRAPH_WIDTH;
     const double MAX_SUPPLY = Config::SUPPLY_GRAPH_MAX;
     
-    state->graphFile.open("output/town5_supply_graph.txt");
+    state->graphFile.open("output/army_supply_graph.txt");
     
     state->graphFile << "\n";
     state->graphFile << "========================================\n";
-    state->graphFile << "  TOWN 5 SUPPLY GRAPH\n";
+    state->graphFile << "  ARMY SUPPLY GRAPH\n";
     state->graphFile << "  Day " << currentDay << " of " << Config::runtime.simulationDays << "\n";
     state->graphFile << "========================================\n\n";
     
@@ -252,92 +252,6 @@ void GraphGenerator::GenerateDailyCostGraph(int dayNumber) {
     dailyCostFile.close();
 }
 
-void GraphGenerator::GenerateTown1WeeklyCostGraph(int dayNumber) {
-    auto* state = SimulationState::GetInstance();
-    
-    // Only generate the final graph at the end of simulation
-    if (dayNumber != Config::runtime.simulationDays - 1) {
-        return;
-    }
-    
-    const int GRAPH_HEIGHT = Config::TOWN1_WEEKLY_COST_GRAPH_HEIGHT;
-    const int GRAPH_WIDTH = Config::TOWN1_WEEKLY_COST_GRAPH_WIDTH;
-    
-    // Find max weekly cost for Town 1 for scaling
-    double maxWeeklyCost = 0.0;
-    for (double cost : state->weeklyCostsTown1) {
-        if (cost > maxWeeklyCost) maxWeeklyCost = cost;
-    }
-    if (maxWeeklyCost == 0.0) maxWeeklyCost = 1.0;
-    
-    std::ofstream weeklyCostFile("output/town1_weekly_cost_graph.txt");
-    
-    weeklyCostFile << "\n";
-    weeklyCostFile << "========================================\n";
-    weeklyCostFile << "  TOWN 1 WEEKLY COST\n";
-    weeklyCostFile << "  (Money spent on Town 1 convoys each week)\n";
-    weeklyCostFile << "========================================\n\n";
-    
-    // Calculate total Town 1 cost
-    double totalTown1Cost = 0.0;
-    for (double cost : state->weeklyCostsTown1) {
-        totalTown1Cost += cost;
-    }
-    
-    weeklyCostFile << "Total weeks: " << state->weeklyCostsTown1.size() << "\n";
-    weeklyCostFile << "Max weekly cost: " << (int)maxWeeklyCost << " money\n";
-    weeklyCostFile << "Total Town 1 cost: " << (int)totalTown1Cost << " money\n\n";
-    
-    // Create graph
-    std::vector<std::string> graph(GRAPH_HEIGHT + 1, std::string(GRAPH_WIDTH + 5, ' '));
-    
-    int totalWeeks = state->weeklyCostsTown1.size();
-    int displayWeeks = std::min(totalWeeks, GRAPH_WIDTH);
-    
-    for (int week = 0; week < displayWeeks; week++) {
-        double cost = state->weeklyCostsTown1[week];
-        int y = GRAPH_HEIGHT - (int)((cost / maxWeeklyCost) * GRAPH_HEIGHT);
-        if (y < 0) y = 0;
-        if (y > GRAPH_HEIGHT) y = GRAPH_HEIGHT;
-        
-        graph[y][week] = '.';
-    }
-    
-    // Print graph
-    for (int y = 0; y <= GRAPH_HEIGHT; y++) {
-        double cost = maxWeeklyCost - (y * maxWeeklyCost / GRAPH_HEIGHT);
-        std::string costStr = std::to_string((int)cost);
-        weeklyCostFile << costStr;
-        
-        for (int i = costStr.length(); i < 7; i++) {
-            weeklyCostFile << " ";
-        }
-        
-        weeklyCostFile << "| ";
-        
-        for (int x = 0; x < displayWeeks; x++) {
-            weeklyCostFile << graph[y][x];
-        }
-        weeklyCostFile << "\n";
-    }
-    
-    weeklyCostFile << "       +";
-    for (int i = 0; i < displayWeeks; i++) {
-        weeklyCostFile << "-";
-    }
-    weeklyCostFile << "\n";
-    
-    weeklyCostFile << "        Week 0 to " << (displayWeeks - 1) << "\n\n";
-    
-    // Print weekly cost list for Town 1
-    weeklyCostFile << "Town 1 weekly costs breakdown:\n";
-    for (int week = 0; week < (int)state->weeklyCostsTown1.size(); week++) {
-        weeklyCostFile << "  Week " << week << ": " << (int)state->weeklyCostsTown1[week] << " money\n";
-    }
-    
-    weeklyCostFile.close();
-}
-
 void GraphGenerator::GenerateAllTownsWeeklyCostGraph(int dayNumber) {
     auto* state = SimulationState::GetInstance();
     
@@ -349,7 +263,7 @@ void GraphGenerator::GenerateAllTownsWeeklyCostGraph(int dayNumber) {
     const int GRAPH_HEIGHT = Config::ALL_TOWNS_WEEKLY_COST_GRAPH_HEIGHT;
     const int GRAPH_WIDTH = Config::ALL_TOWNS_WEEKLY_COST_GRAPH_WIDTH;
     
-    std::ofstream allTownsFile("output/all_towns_weekly_cost_graph.txt");
+    std::ofstream allTownsFile("output/weekly_cost_graph.txt");
     
     allTownsFile << "\n";
     allTownsFile << "========================================\n";
@@ -546,4 +460,86 @@ void GraphGenerator::GenerateExperimentGraph(const std::string& experimentType) 
     expFile << "Maximum cost: " << (int)state->experimentResults[state->experimentResults.size()-1].totalCost << " money (Run " << state->experimentResults.size() << ")\n";
     
     expFile.close();
+}
+
+void GraphGenerator::GenerateTown5DeliveriesGraph(int dayNumber) {
+    auto* state = SimulationState::GetInstance();
+    
+    // Only generate the final graph at the end of simulation
+    if (dayNumber != Config::runtime.simulationDays - 1) {
+        return;
+    }
+    
+    const int GRAPH_HEIGHT = Config::DELIVERIES_GRAPH_HEIGHT;
+    const int GRAPH_WIDTH = Config::DELIVERIES_GRAPH_WIDTH;
+    
+    // Find max cumulative delivery for scaling
+    double maxTotalDelivered = 0.0;
+    for (double total : state->town5TotalDeliveredHistory) {
+        if (total > maxTotalDelivered) maxTotalDelivered = total;
+    }
+    if (maxTotalDelivered == 0.0) maxTotalDelivered = 1.0;
+    
+    std::ofstream deliveriesFile("output/army_deliveries_graph.txt");
+    
+    deliveriesFile << "\n";
+    deliveriesFile << "========================================\n";
+    deliveriesFile << "  ARMY TOTAL DELIVERIES (CUMULATIVE)\n";
+    deliveriesFile << "  (Total supplies delivered over time)\n";
+    deliveriesFile << "========================================\n\n";
+    
+    deliveriesFile << "Total days: " << state->town5TotalDeliveredHistory.size() << "\n";
+    deliveriesFile << "Final total delivered: " << (int)maxTotalDelivered << " tons\n\n";
+    
+    // Create graph
+    std::vector<std::string> graph(GRAPH_HEIGHT + 1, std::string(GRAPH_WIDTH + 5, ' '));
+    
+    int totalDays = state->town5TotalDeliveredHistory.size();
+    
+    for (int day = 0; day < totalDays; day++) {
+        int x = (day * GRAPH_WIDTH) / totalDays;
+        if (x >= GRAPH_WIDTH) x = GRAPH_WIDTH - 1;
+        
+        double totalDelivered = state->town5TotalDeliveredHistory[day];
+        int y = GRAPH_HEIGHT - (int)((totalDelivered / maxTotalDelivered) * GRAPH_HEIGHT);
+        if (y < 0) y = 0;
+        if (y > GRAPH_HEIGHT) y = GRAPH_HEIGHT;
+        
+        graph[y][x] = '.';
+    }
+    
+    // Print graph
+    for (int y = 0; y <= GRAPH_HEIGHT; y++) {
+        double totalDelivered = maxTotalDelivered - (y * maxTotalDelivered / GRAPH_HEIGHT);
+        std::string deliveryStr = std::to_string((int)totalDelivered);
+        deliveriesFile << deliveryStr;
+        
+        for (int i = deliveryStr.length(); i < 7; i++) {
+            deliveriesFile << " ";
+        }
+        
+        deliveriesFile << "| ";
+        
+        for (int x = 0; x < GRAPH_WIDTH; x++) {
+            deliveriesFile << graph[y][x];
+        }
+        deliveriesFile << "\n";
+    }
+    
+    deliveriesFile << "       +";
+    for (int i = 0; i < GRAPH_WIDTH; i++) {
+        deliveriesFile << "-";
+    }
+    deliveriesFile << "\n";
+    
+    deliveriesFile << "        Day 0 to " << (totalDays - 1) << "\n\n";
+    
+    // Print cumulative deliveries list
+    deliveriesFile << "Cumulative deliveries by day:\n";
+    for (int day = 0; day < (int)state->town5TotalDeliveredHistory.size(); day++) {
+        deliveriesFile << "  Day " << day << ": " << std::fixed << std::setprecision(1) 
+                       << state->town5TotalDeliveredHistory[day] << " tons total delivered\n";
+    }
+    
+    deliveriesFile.close();
 }
