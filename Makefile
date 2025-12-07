@@ -71,27 +71,52 @@ run-example/%: example/%
 		cd output && ../build/examples/$*'
 	@echo "Output saved in output/"
 
-# Compile all main project files
+# Compile all main project files (modular structure)
 main:
-	@echo "Compiling all main project files..."
+	@echo "Compiling main project files..."
 	@cd docker && docker compose run --rm dev /bin/bash -c '\
 		mkdir -p build/main && \
-		for file in src/main/*.cc src/main/*.cpp; do \
-			if [ -f "$$file" ]; then \
-				name=$$(basename $$file .cc); \
-				name=$$(basename $$name .cpp); \
-				echo "Compiling $$name..."; \
-				g++ -o build/main/$$name $$file -lsimlib -lm || exit 1; \
-			fi; \
-		done'
+		echo "Compiling modular simulation project..."; \
+		g++ -std=c++17 -I./simlib/src -I./src \
+			src/models/SupplyTypes.cpp \
+			src/models/TownSupplies.cpp \
+			src/services/SimulationState.cpp \
+			src/services/GraphGenerator.cpp \
+			src/services/ExperimentRunner.cpp \
+			src/simulation/WeatherEvents.cpp \
+			src/simulation/Convoy.cpp \
+			src/simulation/ConvoyGenerators.cpp \
+			src/simulation/ConsumptionProcess.cpp \
+			src/utils/Initialization.cpp \
+			src/utils/Statistics.cpp \
+			src/main/simulation.cpp \
+			-L./simlib/src -lsimlib -lm -o build/main/simulation || exit 1; \
+		echo "Build complete: build/main/simulation"; \
+	'
 	@echo "Main files compiled successfully!"
 
-# Compile specific main file
+# Compile specific main file (with special handling for modular simulation)
 main/%:
 	@echo "Compiling main file: $*..."
 	@cd docker && docker compose run --rm dev /bin/bash -c '\
 		mkdir -p build/main && \
-		if [ -f "src/main/$*.cpp" ]; then \
+		if [ "$*" = "simulation" ]; then \
+			echo "Compiling modular simulation project..."; \
+			g++ -std=c++17 -I./simlib/src -I./src \
+				src/models/SupplyTypes.cpp \
+				src/models/TownSupplies.cpp \
+				src/services/SimulationState.cpp \
+				src/services/GraphGenerator.cpp \
+				src/services/ExperimentRunner.cpp \
+				src/simulation/WeatherEvents.cpp \
+				src/simulation/Convoy.cpp \
+				src/simulation/ConvoyGenerators.cpp \
+				src/simulation/ConsumptionProcess.cpp \
+				src/utils/Initialization.cpp \
+				src/utils/Statistics.cpp \
+				src/main/simulation.cpp \
+				-L./simlib/src -lsimlib -lm -o build/main/simulation; \
+		elif [ -f "src/main/$*.cpp" ]; then \
 			g++ -o build/main/$* src/main/$*.cpp -lsimlib -lm; \
 		elif [ -f "src/main/$*.cc" ]; then \
 			g++ -o build/main/$* src/main/$*.cc -lsimlib -lm; \
