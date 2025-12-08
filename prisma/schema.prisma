@@ -63,3 +63,19 @@ enum Color {
 }
 
 // END OF LUDO MODELS
+
+// PACMAN MODELS
+model PacmanLevel {
+    id  Int @id @default(autoincrement())
+    name String
+    map Json
+    createdAt DateTime @default(now()) 
+}
+
+model PacmanScore {
+    id  Int @id @default(autoincrement())
+    playerName String
+    score Int
+    levelId Int
+    createdAt DateTime @default(now()) 
+}

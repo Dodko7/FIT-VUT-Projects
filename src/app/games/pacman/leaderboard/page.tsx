@@ -1,20 +1,19 @@
-import LeaderboardTable from "~/components/games/pacman/leaderboard/leaderboard"
+import LeaderboardTable from "~/components/games/pacman/leaderboard/leaderboard";
+import ControlButtons from "~/components/games/pacman/buttons/controlButtons";
 
-async function getScores() 
-{
-    return [
-        {name: "jano", points: 500},
-        {name: "jano", points: 500},
-    ];
-} 
-
-export default async function PacmanLeaderboard() 
-{
-    const scores = await getScores();
-
+export default function PacmanLeaderboardPage() {
     return (
-        <div className="flex justify-center items-center min-h-screen bg-black">
-            <LeaderboardTable scores={scores} />
+        <div className="relative min-h-screen bg-black">
+            <div className="absolute top-10 left-1/20 z-10 flex -translate-x-1/2 transform gap-4">
+                <ControlButtons 
+                    text="Back"
+                    link="/games/pacman/menu"
+                />
+            </div>
+
+            <div className="flex items-center justify-center min-h-screen pt-20">
+                <LeaderboardTable />
+            </div>
         </div>
     )
 }

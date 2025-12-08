@@ -1,7 +1,22 @@
 "use client";
-import { forwardRef, useEffect, useRef, useState, useImperativeHandle } from "react";
+import {
+	forwardRef,
+	useEffect,
+	useRef,
+	useState,
+	useImperativeHandle,
+} from "react";
 import { GameController } from "./pacmanControl";
 import { GameModel } from "./pacmanModel";
+import {
+	getLevels,
+	submitLeaderboardScore,
+	type Level,
+} from "~/lib/pacman/requests";
+
+interface PacmanGameProps {
+	onGameStart?: () => void;
+}
 
 export class GameView {
 	context: CanvasRenderingContext2D;
@@ -68,16 +83,24 @@ export class GameView {
 			ctx.fillStyle = "yellow";
 			ctx.font = "48px 'Press Start 2P'";
 			ctx.textAlign = "center";
-			ctx.fillText("PAUSED", this.canvas.width / 2, this.canvas.height / 2);
+			ctx.fillText(
+				"PAUSED",
+				this.canvas.width / 2,
+				this.canvas.height / 2,
+			);
 			ctx.restore();
 		}
 	}
 }
 
-const PacmanGame = forwardRef((props, ref) => {
+const PacmanGame = forwardRef((props: PacmanGameProps, ref) => {
 	const canvasRef = useRef<HTMLCanvasElement>(null);
 	const controllerRef = useRef<GameController | null>(null);
-	
+
+	const [levels, setLevels] = useState<Level[]>([]);
+	const [selectedLevel, setSelectedLevel] = useState<Level | null>(null);
+	const [isLoading, setIsLoading] = useState(true);
+
 	const [gameState, setGameState] = useState({
 		score: 0,
 		lives: 3,
@@ -89,18 +112,67 @@ const PacmanGame = forwardRef((props, ref) => {
 	});
 	const [resetTrigger, setResetTrigger] = useState(0);
 
+	const [playerName, setPlayerName] = useState("");
+	const [isSubmitting, setIsSubmitting] = useState(false);
+	const [scoreSaved, setScoreSaved] = useState(false);
+
+	const submitScore = async () => {
+		if (!playerName.trim() || !selectedLevel) return;
+		setIsSubmitting(true);
+		try {
+			await submitLeaderboardScore({
+				levelId: selectedLevel.id,
+				playerName: playerName,
+				score: gameState.score,
+			});
+			setScoreSaved(true);
+		} catch (e) {
+			console.error("Failed to save score", e);
+		} finally {
+			setIsSubmitting(false);
+		}
+	};
+
 	useImperativeHandle(ref, () => controllerRef.current);
 
 	useEffect(() => {
+		const fetchLevels = async () => {
+			try {
+				const data = await getLevels();
+				setLevels(data);
+			} catch (error) {
+				console.error("Failed to load levels", error);
+			} finally {
+				setIsLoading(false);
+			}
+		};
+		fetchLevels();
+	}, []);
+
+	useEffect(() => {
+		if (!selectedLevel || !canvasRef.current) return;
+		const mapDataToLoad = selectedLevel.map || selectedLevel.mapData || [];
+
 		const canvas = canvasRef.current!;
-		const controller = new GameController(canvas, setGameState);
+		const controller = new GameController(
+			canvas,
+			setGameState,
+			mapDataToLoad,
+		);
 		controllerRef.current = controller;
 
 		controller.init();
 		const interval = setInterval(() => controller.update(), 50);
 
 		const movePacman = (e: KeyboardEvent) => {
+			if ((controller.model.gameOver || controller.model.win) &&!scoreSaved) {
+				return;
+			}
+
 			if (controller.model.gameOver || controller.model.win) {
+				setScoreSaved(false);
+				setPlayerName("");
+
 				controller.model.isRestarting = true;
 				controller.model.gameOver = false;
 				controller.model.win = false;
@@ -119,53 +191,105 @@ const PacmanGame = forwardRef((props, ref) => {
 			clearInterval(interval);
 			document.removeEventListener("keyup", movePacman);
 		};
-	}, [resetTrigger]);
+	}, [selectedLevel, resetTrigger, scoreSaved]);
 
 	return (
 		<div className="relative flex min-h-screen items-center justify-center bg-black">
-			<canvas
-				ref={canvasRef}
-				className="border-2 border-[#0f1aa6]"
-			/>
+			{!selectedLevel && (
+				<div className="z-10 flex min-h-[500px] max-w-lg flex-col items-center justify-center rounded-lg border-2 border-blue-900 bg-gray-900 p-4">
+					<h1 className="mb-10 font-['Press_Start_2P'] text-3xl text-yellow-400">
+						SELECT LEVEL
+					</h1>
 
-			{/*Game statistics*/}
-			<div className="absolute top-4 left-1/2 -translate-x-1/2 transform font-['Press_Start_2P'] text-xl text-white">
-				❤️ x{gameState.lives} | Score: {gameState.score}
-			</div>
+					{isLoading ?
+						<p className="font-['Press_Start_2P'] text-yellow-400">
+							Loading levels...
+						</p>
+					:	<div className="flex min-w-[300px] flex-col gap-10">
+							{levels.map((level) => (
+								<button
+									key={level.id}
+									onClick={() => {
+										setSelectedLevel(level);
+										if (props.onGameStart) {
+											props.onGameStart();
+										}
+									}}
+									className="\ cursor-pointer font-['Press_Start_2P'] text-xl text-yellow-400 transition-all duration-200 ease-in-out hover:text-amber-200 hover:underline"
+								>
+									{level.name}
+								</button>
+							))}
+							{levels.length === 0 && (
+								<p className="font-['Press_Start_2P'] text-sm text-red-400">
+									No levels found
+								</p>
+							)}
+						</div>
+					}
+				</div>
+			)}
+			{selectedLevel && (
+				<>
+					<canvas
+						ref={canvasRef}
+						className="border-2 border-[#0f1aa6]"
+					/>
 
-			{/*Blinking text game over*/}
-			{!gameState.isCountingDown &&
-				!gameState.isRestarting &&
-				gameState.gameOver && (
-					<div className="absolute inset-0 z-[99] flex flex-col items-center justify-center">
-						<p className="blink font-['Press_Start_2P'] text-6xl text-red-400 drop-shadow-[0_0_6px_black]">
-							GAME OVER
-						</p>
-						<p className="mt-4 font-['Press_Start_2P'] text-2xl text-yellow-400">
-							Score: {gameState.score}
-						</p>
-						<p className="mt-2 font-['Press_Start_2P'] text-xl text-yellow-400">
-							Press any key to restart
-						</p>
+					<div className="absolute top-4 left-1/2 -translate-x-1/2 transform font-['Press_Start_2P'] text-xl text-white">
+						❤️ x{gameState.lives} | Score: {gameState.score}
 					</div>
-				)}
 
-			{/*Blinking text win*/}
-			{!gameState.isCountingDown &&
-				!gameState.isRestarting &&
-				gameState.win && (
-					<div className="absolute inset-0 z-[99] flex flex-col items-center justify-center">
-						<p className="blink font-['Press_Start_2P'] text-4xl text-yellow-400 drop-shadow-[0_0_6px_black]">
-							YOU WIN!
-						</p>
-						<p className="mt-4 font-['Press_Start_2P'] text-2xl text-yellow-400">
-							Score: {gameState.score}
-						</p>
-						<p className="mt-2 font-['Press_Start_2P'] text-xl text-yellow-400">
-							Press any key to restart
-						</p>
-					</div>
-				)}
+					{!gameState.isCountingDown &&
+						!gameState.isRestarting &&
+						(gameState.gameOver || gameState.win) && (
+							<div className="absolute inset-0 z-[99] flex flex-col items-center justify-center bg-black/70">
+								<p
+									className="blink font-['Press_Start_2P'] text-4xl text-yellow-400 drop-shadow-[0_0_6px_black]"
+									style={{
+										color:
+											gameState.win ? "#facc15" : (
+												"#f87171"
+											),
+									}}
+								>
+									{gameState.win ? "YOU WIN!" : "GAME OVER"}
+								</p>
+								<p className="mt-4 font-['Press_Start_2P'] text-2xl text-yellow-400">
+									Score: {gameState.score}
+								</p>
+								{!scoreSaved && (
+									<div className="flex flex-col items-center gap-4">
+										<p className="mb-2 font-['Press_Start_2P'] text-xs text-yellow-400">
+											Enter your name to save score
+										</p>
+										<input
+											autoFocus
+											maxLength={15}
+											value={playerName}
+											onChange={(e) =>
+												setPlayerName(e.target.value)
+											}
+											className="w-85 border-2 border-yellow-400 p-3 text-center font-['Press_Start_2P'] text-xl text-yellow-400"
+											placeholder="Player"
+										/>
+										<button
+											onClick={submitScore}
+											disabled={
+												isSubmitting || !playerName
+											}
+											className="mt-2 cursor-pointer bg-yellow-400 px-6 py-3 font-['Press_Start_2P'] text-white transition-colors disabled:cursor-not-allowed"
+										>
+											{isSubmitting ?
+												"Saving..."
+											:	"Save score"}
+										</button>
+									</div>
+								)}
+							</div>
+						)}
+				</>
+			)}
 		</div>
 	);
 });

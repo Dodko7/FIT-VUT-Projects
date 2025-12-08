@@ -80,8 +80,8 @@ export function collision(a: Block, b: Block) {
 }
 
 export class GameModel {
-	rows = 21;
-	cols = 19;
+	rows: number;
+	cols: number;
 	block = 32;
 	boardWidth: number;
 	boardHeight: number;
@@ -102,29 +102,7 @@ export class GameModel {
 		this.isPaused = !this.isPaused;
 	}
 
-	Map = [
-		"1111111111111111111",
-		"1        1        1",
-		"1 11 111 1 111 11 1",
-		"1                 1",
-		"1 11 1 11111 1 11 1",
-		"1    1       1    1",
-		"1111 1111 1111 1111",
-		"OOO1 1       1 1OOO",
-		"1111 1 11r11 1 1111",
-		"1       bpo       1",
-		"1111 1 11111 1 1111",
-		"OOO1 1       1 1OOO",
-		"1111 1 11111 1 1111",
-		"1        1        1",
-		"1 11 111 1 111 11 1",
-		"1  1     P     1  1",
-		"11 1 1 11111 1 1 11",
-		"1    1   1   1    1",
-		"1 111111 1 111111 1",
-		"1                 1",
-		"1111111111111111111",
-	];
+	mapData: string[];
 
 	wallImg: HTMLImageElement;
 	blueGhostImg: HTMLImageElement;
@@ -136,7 +114,10 @@ export class GameModel {
 	pacManLeftImg: HTMLImageElement;
 	pacManRightImg: HTMLImageElement;
 
-	constructor() {
+	constructor(mapData: string[]) {
+		this.mapData = mapData;
+		this.rows = this.mapData.length;
+        this.cols = this.mapData[0].length;
 		this.boardWidth = this.cols * this.block;
 		this.boardHeight = this.rows * this.block;
 
@@ -161,14 +142,22 @@ export class GameModel {
 		this.pacManRightImg.src = "/pacman/pacmanRight.png";
 	}
 
-	loadMap() {
-		this.walls.clear();
-		this.foods.clear();
-		this.ghosts.clear();
+	loadMap(newMapData?: string[]) {
+		if (newMapData) {
+            this.mapData = newMapData;
+            this.rows = this.mapData.length;
+            this.cols = this.mapData[0].length;
+            this.boardWidth = this.cols * this.block;
+            this.boardHeight = this.rows * this.block;
+        }
+
+        this.walls.clear();
+        this.foods.clear();
+        this.ghosts.clear();
 
 		for (let r = 0; r < this.rows; r++) {
 			for (let c = 0; c < this.cols; c++) {
-				const row = this.Map[r];
+				const row = this.mapData[r];
 				const mapChar = row[c];
 
 				const x = c * this.block;

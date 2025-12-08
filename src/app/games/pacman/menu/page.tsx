@@ -4,12 +4,11 @@ export default function PacmanMenuPage()
 {
     return (
             <div
-                className="flex flex-col items-center justify-start w-screen h-screen \
+                className="flex flex-col items-center justify-center w-screen h-screen \
                 bg-black py-10 gap-10"
             >
-                {/** Menu */}
                 <div
-                    className="flex flex-col flex-grow justify-center items-center w-full h-full my-15"
+                    className="max-w-lg flex flex-col justify-center items-center min-h-[300px] bg-gray-900 rounded-lg border-2 border-blue-900 p-4"
                 >
                     <PacmanMenuButtons
                         text = "Start"

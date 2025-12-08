@@ -9,8 +9,9 @@ export class GameController {
 	constructor(
 		canvas: HTMLCanvasElement,
 		onStateChange: (state: any) => void,
+		mapData: string[],
 	) {
-		this.model = new GameModel();
+		this.model = new GameModel(mapData);
 		this.view = new GameView(canvas);
 		this.onStateChange = onStateChange;
 
@@ -19,9 +20,9 @@ export class GameController {
 	}
 
 	init() {
-		this.model.startCountdown();
 		this.model.loadMap();
-
+		this.model.startCountdown();
+		
 		for (let ghost of this.model.ghosts.values()) {
 			const newDir = this.model.directions[Math.floor(Math.random() * 4)];
 			ghost.updateDirection(newDir, this.model.walls, this.model.block);

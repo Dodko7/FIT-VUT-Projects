@@ -1,27 +1,34 @@
 "use client";
-import PacmanGame from "../../../../components/games/pacman/pacmanView";
+import PacmanGame from "~/components/games/pacman/pacmanView";
 import Link from "next/link";
-import { useRef } from "react";
-import { GameController } from "../../../../components/games/pacman/pacmanControl";
+import { useRef, useState } from "react";
+import { GameController } from "~/components/games/pacman/pacmanControl";
+import ControlButtons from "~/components/games/pacman/buttons/controlButtons";
 
 export default function PacmanGamePage() {
 	const pauseControll = useRef<GameController | null>(null);
+	const [isGameRunning, setIsGameRunning] = useState(false);
 
 	return (
 		<div className="relative min-h-screen bg-black">
-			<div className="absolute top-15 left-1/2 z-999 flex -translate-x-1/2 transform gap-4">
-				<Link href="/">
-					<button className="cursor-pointer bg-yellow-400 px-5 py-2 font-['Press_Start_2P'] text-white">
-						Back
-					</button>
-				</Link>
-				<button
-					onClick={() => pauseControll.current?.model.togglePause()}
-					className="cursor-pointer bg-yellow-400 px-5 py-2 font-['Press_Start_2P'] text-white">
-					Pause / Resume
-				</button>
-			</div>
-			<PacmanGame ref={pauseControll} />
+			{isGameRunning && (
+				<div className="absolute top-15 left-1/2 z-999 flex -translate-x-1/2 transform gap-4">
+					<ControlButtons 
+						text = "Back"
+                    	link = "/games/pacman/menu"
+					/>
+					<ControlButtons 
+						text = "Pause / Resume"
+                    	onClick={() => pauseControll.current?.model.togglePause()}
+					/>
+				</div>
+			)}	
+			<PacmanGame 
+				ref={pauseControll} 
+				onGameStart={() => setIsGameRunning(true)} 
+			/>
 		</div>
 	);
 }
+
+
