@@ -233,3 +233,18 @@
 .ludo-player-green-text {
   color: #064e38;
 }
+
+.board-middle {
+  border: 5px solid;
+}
+@keyframes dice-roll {
+  0% { transform: rotate(0deg); }
+  25% { transform: rotate(90deg); }
+  50% { transform: rotate(180deg); }
+  75% { transform: rotate(270deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.dice-rolling {
+  animation: dice-roll 0.5s linear infinite;
+}

@@ -73,7 +73,8 @@ export type FullPlayer = Prisma.PlayerGetPayload<{
  */
 export type BoardPartProps = {
 	pawnSpotProps: PawnSpotProps[];
-}
+	extraClassNames?: string;
+};
 
 /**
  * For computing pawn spot props for board parts.
@@ -81,4 +82,17 @@ export type BoardPartProps = {
 export type PawnPosition = {
 	position: number;
 	color: Color;
-}
+};
+
+/**
+ * Valid dice roll values.
+ */
+type DiceRoll = 1 | 2 | 3 | 4 | 5 | 6;
+
+/**
+ * For rolling the dice component.
+ */
+export type DiceProps = {
+	lastRoll: DiceRoll | null;
+	isRolling: boolean;
+};
