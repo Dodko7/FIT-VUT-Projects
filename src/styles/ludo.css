@@ -162,3 +162,74 @@
 .ludo-icon:active {
   color: #0b6ea6;
 }
+
+/* PLAYER STATUS */
+.ludo-red-area {
+  background: #fca5a5;
+  color: #c62828;
+}
+
+.ludo-yellow-area {
+  background: #facc15;
+  color: #78350f;
+}
+
+.ludo-blue-area {
+  background: #60a5fa;
+  color: #1e3a8a;
+}
+
+.ludo-green-area {
+  background: #4ade80;
+  color: #14532d;
+}
+
+/* PAWN SPOTS */
+.ludo-red-circle {
+  background: #fca5a5;
+  border: 2px solid #7f1d1d;
+}
+
+.ludo-yellow-circle {
+  background: #fde68a;
+  border: 2px solid #78350f;
+}
+
+.ludo-blue-circle {
+  background: #93c5fd;
+  border: 2px solid #1e3a8a;
+}
+
+.ludo-green-circle {
+  background: #86efac;
+  border: 2px solid #064e38;
+}
+
+.ludo-empty-circle {
+  background: #ffffff;
+  border: 2px solid #000000;
+}
+
+.ludo-board {
+  background: radial-gradient(circle at center,
+      #f87171 25%,
+      #4ade80 50%,
+      #facc15 75%,
+      #60a5fa 100%);
+}
+
+.ludo-player-red-text {
+  color: #c62828;
+}
+
+.ludo-player-yellow-text {
+  color: #78350f;
+}
+
+.ludo-player-blue-text {
+  color: #1e3a8a;
+}
+
+.ludo-player-green-text {
+  color: #064e38;
+}

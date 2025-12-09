@@ -8,6 +8,7 @@ export type LudoMenuButtonProps = {
 	link?: string;
 	type?: "submit";
 	onClick?: () => void;
+	padding?: string;
 };
 
 /**
@@ -18,9 +19,11 @@ export default function LudoMenuButton({
 	link,
 	onClick,
 	type,
+	padding = "p-5"
 }: LudoMenuButtonProps) {
 	const cn =
-		"ludo-button text-3xl items-center justify-center transition-all duration-200 ease-in-out p-5 w-lg text-center cursor-pointer";
+		"ludo-button text-3xl items-center justify-center transition-all duration-200 ease-in-out w-lg text-center cursor-pointer "
+			+ padding;
 
 	if (link) {
 		return (

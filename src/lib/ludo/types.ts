@@ -1,4 +1,5 @@
-import type { Prisma } from "@prisma/client";
+import type { Color, Prisma } from "@prisma/client";
+import type { PawnSpotProps } from "~/components/games/ludo/board/pawn-spot";
 
 /**
  * General purpose type for a promise which may or may not succeed.
@@ -55,6 +56,29 @@ export type FullGame = Prisma.GameGetPayload<{
 				pawns: true;
 			};
 		};
-		currentGame: true;
 	};
 }>;
+
+/**
+ * Full player model.
+ */
+export type FullPlayer = Prisma.PlayerGetPayload<{
+	include: {
+		pawns: true;
+	};
+}>;
+
+/**
+ * Board part props. This is here, because it is shared between two components.
+ */
+export type BoardPartProps = {
+	pawnSpotProps: PawnSpotProps[];
+}
+
+/**
+ * For computing pawn spot props for board parts.
+ */
+export type PawnPosition = {
+	position: number;
+	color: Color;
+}

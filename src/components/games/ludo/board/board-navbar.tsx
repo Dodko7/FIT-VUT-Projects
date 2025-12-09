@@ -8,7 +8,7 @@ export type BoardNavbarProps = {
 export default function BoardNavbar({ gameName, onPause }: BoardNavbarProps) {
     return (
         <div
-            className="ludo-board-navbar flex items-center justify-between px-10 py-4 w-full"
+            className="ludo-board-navbar flex items-center justify-between px-10 py-4 w-full border-b-5 border-black"
         >
             {/** Game name */}
             <h1 className="text-3xl">
