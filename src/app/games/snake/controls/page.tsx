@@ -69,8 +69,8 @@ export default function SnakeControlsPage() {
 			: "w-32 h-24 bg-gradient-to-b from-[#fef3c7] via-[#fde047] to-[#fde047] rounded-2xl border-4 border-black shadow-lg flex items-center justify-center transition-all duration-100";
 	};
 
-	const getArrowColor = (isPressed: boolean) => (isPressed ? "white" : "black");
-	const getTextColor = (isPressed: boolean) => (isPressed ? "white" : "black");
+	const getArrowColor = (isPressed: boolean) => (isPressed ? "#ffffff" : "#000000");
+	const getTextColor = (isPressed: boolean) => (isPressed ? "#000000" : "#ffffff");
 
 	return (
 		<div className="flex min-h-screen flex-col items-center justify-start bg-black text-white pt-16">
@@ -92,70 +92,78 @@ export default function SnakeControlsPage() {
 				{/* Up Arrow */}
 				<div className="flex items-center justify-center">
 					<div className={getButtonClass(pressedKeys.up)}>
-						<div
-							className="w-0 h-0 border-l-[20px] border-l-transparent border-r-[20px] border-r-transparent border-b-[30px]"
-							style={{ borderBottomColor: getArrowColor(pressedKeys.up) }}
-						></div>
-						<span
-							className={`absolute font-['Press_Start_2P'] text-xl mt-1 text-${getTextColor(pressedKeys.up)}`}
-							style={{ color: getTextColor(pressedKeys.up) }}
-						>
-							w
-						</span>
+						<div className="relative w-full h-full flex items-center justify-center">
+							<div
+								className="w-0 h-0 border-l-[25px] border-l-transparent border-r-[25px] border-r-transparent border-b-[40px] -translate-y-[5px]"
+								style={{ borderBottomColor: getArrowColor(pressedKeys.up) }}
+							></div>
+							<span
+								className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 font-['Press_Start_2P'] text-lg z-10"
+								style={{ color: getTextColor(pressedKeys.up), textShadow: pressedKeys.up ? '0 0 2px rgba(255,255,255,0.5)' : '0 0 2px rgba(0,0,0,0.5)' }}
+							>
+								w
+							</span>
+						</div>
 					</div>
 				</div>
 
-				{/* Left, Down, Right Arrows */}
-				<div className="flex items-center gap-6">
-					{/* Left Arrow */}
+			{/* Left, Down, Right Arrows */}
+			<div className="flex items-center gap-6 -translate-y-[40px]">
+				{/* Left Arrow */}
 					<div className={getButtonClass(pressedKeys.left)}>
-						<div
-							className="w-0 h-0 border-t-[20px] border-t-transparent border-b-[20px] border-b-transparent border-r-[30px]"
-							style={{ borderRightColor: getArrowColor(pressedKeys.left) }}
-						></div>
-						<span
-							className={`absolute font-['Press_Start_2P'] text-xl ml-1`}
-							style={{ color: getTextColor(pressedKeys.left) }}
-						>
-							a
-						</span>
+						<div className="relative w-full h-full flex items-center justify-center">
+							<div
+								className="w-0 h-0 border-t-[25px] border-t-transparent border-b-[25px] border-b-transparent border-r-[40px] -translate-x-[5px]"
+								style={{ borderRightColor: getArrowColor(pressedKeys.left) }}
+							></div>
+							<span
+								className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 font-['Press_Start_2P'] text-lg z-10"
+								style={{ color: getTextColor(pressedKeys.left), textShadow: pressedKeys.left ? '0 0 2px rgba(255,255,255,0.5)' : '0 0 2px rgba(0,0,0,0.5)' }}
+							>
+								a
+							</span>
+						</div>
 					</div>
 
 					{/* Down Arrow */}
 					<div className={getButtonClass(pressedKeys.down)}>
-						<div
-							className="w-0 h-0 border-l-[20px] border-l-transparent border-r-[20px] border-r-transparent border-t-[30px]"
-							style={{ borderTopColor: getArrowColor(pressedKeys.down) }}
-						></div>
-						<span
-							className={`absolute font-['Press_Start_2P'] text-xl mb-1`}
-							style={{ color: getTextColor(pressedKeys.down) }}
-						>
-							s
-						</span>
+						<div className="relative w-full h-full flex items-center justify-center">
+							<div
+								className="w-0 h-0 border-l-[25px] border-l-transparent border-r-[25px] border-r-transparent border-t-[40px] translate-y-[5px]"
+								style={{ borderTopColor: getArrowColor(pressedKeys.down) }}
+							></div>
+							<span
+								className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 font-['Press_Start_2P'] text-lg z-10"
+								style={{ color: getTextColor(pressedKeys.down), textShadow: pressedKeys.down ? '0 0 2px rgba(255,255,255,0.5)' : '0 0 2px rgba(0,0,0,0.5)' }}
+							>
+								s
+							</span>
+						</div>
 					</div>
 
 					{/* Right Arrow */}
 					<div className={getButtonClass(pressedKeys.right)}>
-						<div
-							className="w-0 h-0 border-t-[20px] border-t-transparent border-b-[20px] border-b-transparent border-l-[30px]"
-							style={{ borderLeftColor: getArrowColor(pressedKeys.right) }}
-						></div>
-						<span
-							className={`absolute font-['Press_Start_2P'] text-xl mr-1`}
-							style={{ color: getTextColor(pressedKeys.right) }}
-						>
-							d
-						</span>
+						<div className="relative w-full h-full flex items-center justify-center">
+							<div
+								className="w-0 h-0 border-t-[25px] border-t-transparent border-b-[25px] border-b-transparent border-l-[40px] translate-x-[5px]"
+								style={{ borderLeftColor: getArrowColor(pressedKeys.right) }}
+							></div>
+							<span
+								className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 font-['Press_Start_2P'] text-lg z-10"
+								style={{ color: getTextColor(pressedKeys.right), textShadow: pressedKeys.right ? '0 0 2px rgba(255,255,255,0.5)' : '0 0 2px rgba(0,0,0,0.5)' }}
+							>
+								d
+							</span>
+						</div>
 					</div>
 				</div>
 
 				{/* ESC Key */}
-				<div className="flex items-center gap-8 mt-8">
+				<div className="flex items-center gap-6 -translate-y-[30px]">
 					<div className={getEscButtonClass(pressedKeys.esc)}>
-						<span
-							className={`font-['Press_Start_2P'] text-xl`}
-							style={{ color: getTextColor(pressedKeys.esc) }}
+						<span 
+							className="font-['Press_Start_2P'] text-xl"
+							style={{ color: pressedKeys.esc ? '#ffffff' : '#000000' }}
 						>
 							esc
 						</span>
