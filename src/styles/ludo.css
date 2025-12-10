@@ -211,11 +211,12 @@
 }
 
 .ludo-board {
-  background: radial-gradient(circle at center,
-      #f87171 25%,
-      #4ade80 50%,
-      #facc15 75%,
-      #60a5fa 100%);
+  background: conic-gradient(from 0deg,
+      #4ade80,
+      #facc15,
+      #60a5fa,
+      #f87171,
+      #4ade80);
 }
 
 .ludo-player-red-text {

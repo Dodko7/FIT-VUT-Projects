@@ -187,9 +187,13 @@ export function GetPawnSpotPropsForBoardPart(
 				searchedPos >= TOTAL_BOARD_POSITIONS ? homeClass : (
 					"ludo-empty-circle"
 				);
-			console.log(
-				`chosen className for position ${searchedPos}: ${className}`,
-			);
+			
+            let arrow: "up" | "down" | "left" | "right" | undefined = undefined;
+            if (part === BOARD_TOP_PART && i === 1) arrow = "down";
+            else if (part === BOARD_RIGHT_PART && i === 9) arrow = "left";
+            else if (part === BOARD_BOTTOM_PART && i === 13) arrow = "up";
+            else if (part === BOARD_LEFT_PART && i === 5) arrow = "right";
+
 			if (position) {
 				const color = ColorEnumToPawnColor(position.color);
 				return {
@@ -201,12 +205,14 @@ export function GetPawnSpotPropsForBoardPart(
 						width: PAWN_SPOT_BOARD_SIZE - 10,
 						height: PAWN_SPOT_BOARD_SIZE - 10,
 					},
+                    arrow,
 				};
 			} else {
 				return {
 					className,
 					size: PAWN_SPOT_BOARD_SIZE,
 					hasPawn: false,
+                    arrow,
 				};
 			}
 		},
