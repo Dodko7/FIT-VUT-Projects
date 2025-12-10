@@ -1,68 +1,69 @@
-import { PrismaClient } from '@prisma/client'
-const prisma = new PrismaClient()
+/**
+ * @brief Seed levels into db
+ */
 
-async function main() {
-    await prisma.pacmanLevel.upsert({
+import { db } from "~/server/db";
+
+async function seedLevels() {
+    await db.pacmanLevel.upsert({
         where: { id: 1 },
         update: {},
         create: {
             name: "Easy",
             map: [
                 "1111111111111111111",
-                "1       111       1",
-                "1                 1",
-                "1   b    r    p   1",
-                "1                 1",
-                "11   1111 1111   11",
-                "1                 1",
-                "1    1   1   1    1",
-                "1    1   1   1    1",
-                "1                 1",
-                "1    1   1   1    1",
-                "1    1   1   1    1",
-                "1                 1",
-                "1    1   1   1    1",
-                "1    1   1   1    1",
+                "1        1        1",
+                "1        1        1",
+                "1  b    111    p  1",
+                "1        1        1",
+                "11  111  1  111  11",
+                "1     1     1     1",
+                "1 1 1 1     1 1 1 1",
+                "1     1     1     1",
+                "1 1 1 1     1 1 1 1",
+                "1     1     1     1",
+                "1 1 1 1     1 1 1 1",
+                "1     1     1     1",
+                "1 1 1 1     1 1 1 1",
+                "1     1     1     1",
                 "1        P        1",
+                "1        1        1",
+                "11  111  1  111  11",
                 "1                 1",
-                "11   1111 1111   11",
-                "1                 1",
-                "1       111       1",
                 "1111111111111111111"
             ]
         }
     })
-    await prisma.pacmanLevel.upsert({
+    await db.pacmanLevel.upsert({
         where: { id: 2 },
         update: {},
         create: {
             name: "Medium",
             map: [
-                "1111111111111111111",
-                "1     1111111     1",
-                "1       111       1",
-                "1 1 111 111 111 1 1",
-                "1        bp       1",
-                "1 111  111111 111 1",
-                "1        ro       1",
-                "11 111  111  111 11",
-                "1   1         1   1",
-                "1       111       1",
-                "11 1111  1  1111 11",
-                "1                 1",
-                "1 111  111111 111 1",
-                "1                 1",
-                "11  111 111 111  11",
-                "1        P        1",
-                "1   11111111111   1",
-                "1                 1",
-                "1 1 111  1  111 1 1",
-                "1                 1",
-                "1111111111111111111"
+                "1111111111111111111", 
+                "1        1        1",
+                "1 111111 1 111111 1", 
+                "1 1    1 1 1    1 1", 
+                "1 1 11 1 1 1 11 1 1",
+                "1      1   1      1",
+                "1 1111 1 1 1 1111 1",
+                "1      br po      1",
+                "1 111 1     1 111 1",
+                "      1     1      ",
+                "11111 1111111 11111",
+                "1        1        1",
+                "1 1111 1 1 1 1111 1", 
+                "1    1 1 P 1 1    1", 
+                "1 11 1       1 11 1", 
+                "1 11 11 111 11 11 1", 
+                "1 11           11 1", 
+                "1    111111111    1", 
+                "1                 1", 
+                "1111111111111111111" 
             ]
         }
     })
-    await prisma.pacmanLevel.upsert({
+    await db.pacmanLevel.upsert({
         where: { id: 3 },
         update: {},
         create: {
@@ -75,11 +76,11 @@ async function main() {
                 "1 11 1 11111 1 11 1",
                 "1    1       1    1",
                 "1111 1111 1111 1111",
-                "OOO1 1       1 1OOO",
+                "1    1       1    1",
                 "1111 1 11r11 1 1111",
-                "1       bpo       1",
+                "        bpo        ",
                 "1111 1 11111 1 1111",
-                "OOO1 1       1 1OOO",
+                "1    1       1    1",
                 "1111 1 11111 1 1111",
                 "1        1        1",
                 "1 11 111 1 111 11 1",
@@ -94,6 +95,12 @@ async function main() {
     })
 }
 
-main()
-  .then(async () => { await prisma.$disconnect() })
-  .catch(async (e) => { console.error(e); await prisma.$disconnect(); process.exit(1) })
+seedLevels()
+  .then(async () => { 
+        await db.$disconnect() 
+    })
+  .catch(async (error) => { 
+        console.error(error); 
+        await db.$disconnect(); 
+        process.exit(1) 
+    })

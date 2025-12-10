@@ -1,22 +1,14 @@
-export type Level = {
-    id: number;
-    name: string;
-    mapData: string[];
-};
+/**
+ * @brief API client functions for fetching game data and submitting scores
+ */
 
-export type ScoreSubmission = {
-    levelId: number;
-    playerName: string;
-    score: number;
-};
+import type { Level, ScoreSubmission, ScoreItem} from "~/lib/types/pacman";
 
-export type ScoreItem = {
-    id: number;
-    playerName: string;
-    score: number;
-    levelId: number;
-};
-
+/**
+ * @brief Fetch all available game levels from the API
+ * @returns Promise resolving to an array of Level objects
+ * @throws Error if the fetch fails
+ */
 export const getLevels = async (): Promise<Level[]> => {
     const res = await fetch("/api/pacman/level");
     
@@ -27,6 +19,11 @@ export const getLevels = async (): Promise<Level[]> => {
     return await res.json();
 };
 
+/**
+ * @brief Submits a players score to the db
+ * @param data The score submission object containing player name, score, level ID
+ * @throws Error if the submission fails
+ */
 export const submitLeaderboardScore = async (data: ScoreSubmission): Promise<void> => {
     const res = await fetch("/api/pacman/leaderboard", {
         method: "POST",
@@ -41,6 +38,11 @@ export const submitLeaderboardScore = async (data: ScoreSubmission): Promise<voi
     }
 };
 
+/**
+ * @brief Retrieves the leaderboard scores for a specific level
+ * @param levelId ID of the level to filter by
+ * @returns Promise resolving to an array of ScoreItem objects (or empty array on error)
+ */
 export const getLeaderboard = async (levelId: number): Promise<ScoreItem[]> => {
     const res = await fetch(`/api/pacman/leaderboard?levelId=${levelId}`, {
         method: "GET",

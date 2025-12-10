@@ -1,5 +1,13 @@
+/**
+ * @brief pacman menu page
+ */
+
 import PacmanMenuButtons from "~/components/games/pacman/buttons/pacmanMenuButtons"
 
+/**
+ * @brief display pacman menu 
+ * @returns pacman menu buttons
+ */
 export default function PacmanMenuPage() 
 {
     return (
@@ -8,7 +16,7 @@ export default function PacmanMenuPage()
                 bg-black py-10 gap-10"
             >
                 <div
-                    className="max-w-lg flex flex-col justify-center items-center min-h-[300px] bg-gray-900 rounded-lg border-2 border-blue-900 p-4"
+                    className="max-w-md flex flex-col justify-center items-center min-h-[300px] bg-gray-900 rounded-lg border-2 border-blue-900 p-4"
                 >
                     <PacmanMenuButtons
                         text = "Start"
@@ -19,10 +27,14 @@ export default function PacmanMenuPage()
                         link = "/games/pacman/leaderboard"
                     />
                     <PacmanMenuButtons
+                        text = "Controls"
+                        link = "/games/pacman/controls"
+                    />
+                    <PacmanMenuButtons
                         text = "Quit"
                         link = "/"
                     />
                 </div>
             </div>
-        )
+        )   
 } 

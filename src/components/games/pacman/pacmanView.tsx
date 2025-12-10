@@ -1,35 +1,41 @@
+/**
+ * @brief Pacman game rendering (view) 
+ */
+
 "use client";
-import {
-	forwardRef,
-	useEffect,
-	useRef,
-	useState,
-	useImperativeHandle,
-} from "react";
+import { forwardRef, useEffect, useRef,	useState, useImperativeHandle,} from "react";
 import { GameController } from "./pacmanControl";
 import { GameModel } from "./pacmanModel";
-import {
-	getLevels,
-	submitLeaderboardScore,
-	type Level,
-} from "~/lib/pacman/requests";
+import { getLevels, submitLeaderboardScore, type Level} from "~/lib/pacman/requests";
 
 interface PacmanGameProps {
 	onGameStart?: () => void;
 }
 
+/**
+ * @brief Rendering the game state to canvas
+ */
 export class GameView {
 	context: CanvasRenderingContext2D;
 	canvas: HTMLCanvasElement;
 
+	/**
+	 * @brief Init game view with canvas element
+	 * @param canvas html canvas element to draw on
+	 */
 	constructor(canvas: HTMLCanvasElement) {
 		this.canvas = canvas;
 		this.context = canvas.getContext("2d")!;
 	}
 
+	/**
+	 * @brief Draw entire game scene based on current state 
+	 * @param model current game model
+	 */
 	draw(model: GameModel) {
 		this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
+		// Pacman
 		this.context.drawImage(
 			model.pacman.image!,
 			model.pacman.x,
@@ -38,6 +44,7 @@ export class GameView {
 			model.pacman.height,
 		);
 
+		// Ghosts
 		for (let ghost of model.ghosts.values()) {
 			this.context.drawImage(
 				ghost.image!,
@@ -48,6 +55,7 @@ export class GameView {
 			);
 		}
 
+		// Walls
 		for (let wall of model.walls.values()) {
 			this.context.drawImage(
 				wall.image!,
@@ -58,11 +66,13 @@ export class GameView {
 			);
 		}
 
+		// Food
 		this.context.fillStyle = "white";
 		for (let food of model.foods.values()) {
 			this.context.fillRect(food.x, food.y, food.width, food.height);
 		}
 
+		// Countdown overlay
 		if (model.isCountingDown) {
 			const countdown = this.context;
 			countdown.save();
@@ -77,30 +87,33 @@ export class GameView {
 			countdown.restore();
 		}
 
+		// Pause Overlay
 		if (model.isPaused) {
-			const ctx = this.context;
-			ctx.save();
-			ctx.fillStyle = "yellow";
-			ctx.font = "48px 'Press Start 2P'";
-			ctx.textAlign = "center";
-			ctx.fillText(
-				"PAUSED",
-				this.canvas.width / 2,
-				this.canvas.height / 2,
-			);
-			ctx.restore();
+			const pause = this.context;
+			pause.save();
+			pause.fillStyle = "yellow";
+			pause.font = "48px 'Press Start 2P'";
+			pause.textAlign = "center";
+			pause.fillText("PAUSED", this.canvas.width / 2,this.canvas.height / 2);
+			pause.restore();
 		}
 	}
 }
 
+/**
+ * @brief Main pacman game React component
+ * Game loop, user input, level selectioon, score submit 
+ */
 const PacmanGame = forwardRef((props: PacmanGameProps, ref) => {
 	const canvasRef = useRef<HTMLCanvasElement>(null);
 	const controllerRef = useRef<GameController | null>(null);
 
+	// Game states
 	const [levels, setLevels] = useState<Level[]>([]);
 	const [selectedLevel, setSelectedLevel] = useState<Level | null>(null);
 	const [isLoading, setIsLoading] = useState(true);
 
+	// State reflecting model 
 	const [gameState, setGameState] = useState({
 		score: 0,
 		lives: 3,
@@ -112,13 +125,21 @@ const PacmanGame = forwardRef((props: PacmanGameProps, ref) => {
 	});
 	const [resetTrigger, setResetTrigger] = useState(0);
 
+	// Leaderboard states
 	const [playerName, setPlayerName] = useState("");
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [scoreSaved, setScoreSaved] = useState(false);
 
+	/**
+	 * @brief Submit player score to the leaderboard
+	 */
 	const submitScore = async () => {
-		if (!playerName.trim() || !selectedLevel) return;
+		if (!playerName.trim() || !selectedLevel) {
+			return;
+		}
+
 		setIsSubmitting(true);
+
 		try {
 			await submitLeaderboardScore({
 				levelId: selectedLevel.id,
@@ -126,20 +147,24 @@ const PacmanGame = forwardRef((props: PacmanGameProps, ref) => {
 				score: gameState.score,
 			});
 			setScoreSaved(true);
-		} catch (e) {
-			console.error("Failed to save score", e);
+		} catch (error) {
+			console.error("Failed to save a score", error);
 		} finally {
 			setIsSubmitting(false);
 		}
 	};
 
+	// Expose controller to parent component (for pause button)
 	useImperativeHandle(ref, () => controllerRef.current);
 
-	useEffect(() => {
+	/**
+	 * @brief Fetch levels on game startup
+	 */	
+	useEffect(() => {	
 		const fetchLevels = async () => {
 			try {
-				const data = await getLevels();
-				setLevels(data);
+				const levels = await getLevels();
+				setLevels(levels);
 			} catch (error) {
 				console.error("Failed to load levels", error);
 			} finally {
@@ -149,9 +174,17 @@ const PacmanGame = forwardRef((props: PacmanGameProps, ref) => {
 		fetchLevels();
 	}, []);
 
+	/**
+	 * @brief Init game logic when level is selected or reset triggered
+	 */
 	useEffect(() => {
-		if (!selectedLevel || !canvasRef.current) return;
-		const mapDataToLoad = selectedLevel.map || selectedLevel.mapData || [];
+		if (!selectedLevel || !canvasRef.current) {
+			return;
+		}	
+		const mapDataToLoad = selectedLevel.map || selectedLevel.mapData;
+
+		setScoreSaved(false);
+		setPlayerName("");
 
 		const canvas = canvasRef.current!;
 		const controller = new GameController(
@@ -195,9 +228,10 @@ const PacmanGame = forwardRef((props: PacmanGameProps, ref) => {
 
 	return (
 		<div className="relative flex min-h-screen items-center justify-center bg-black">
+			{/* Level Selection Screen */}
 			{!selectedLevel && (
-				<div className="z-10 flex min-h-[500px] max-w-lg flex-col items-center justify-center rounded-lg border-2 border-blue-900 bg-gray-900 p-4">
-					<h1 className="mb-10 font-['Press_Start_2P'] text-3xl text-yellow-400">
+				<div className="z-10 min-w-md flex max-w-lg flex-col items-center justify-start rounded-lg border-2 border-blue-900 bg-gray-900 p-10">
+					<h1 className="mb-10 font-['Press_Start_2P'] text-2xl text-yellow-400">
 						SELECT LEVEL
 					</h1>
 
@@ -205,7 +239,7 @@ const PacmanGame = forwardRef((props: PacmanGameProps, ref) => {
 						<p className="font-['Press_Start_2P'] text-yellow-400">
 							Loading levels...
 						</p>
-					:	<div className="flex min-w-[300px] flex-col gap-10">
+					:	<div className="flex flex-col gap-10">
 							{levels.map((level) => (
 								<button
 									key={level.id}
@@ -215,13 +249,13 @@ const PacmanGame = forwardRef((props: PacmanGameProps, ref) => {
 											props.onGameStart();
 										}
 									}}
-									className="\ cursor-pointer font-['Press_Start_2P'] text-xl text-yellow-400 transition-all duration-200 ease-in-out hover:text-amber-200 hover:underline"
+									className="cursor-pointer font-['Press_Start_2P'] text-xl text-yellow-400 transition-all duration-200 ease-in-out hover:text-amber-200 hover:underline"
 								>
 									{level.name}
 								</button>
 							))}
 							{levels.length === 0 && (
-								<p className="font-['Press_Start_2P'] text-sm text-red-400">
+								<p className="font-['Press_Start_2P'] text-sm text-yellow-400">
 									No levels found
 								</p>
 							)}
@@ -229,6 +263,7 @@ const PacmanGame = forwardRef((props: PacmanGameProps, ref) => {
 					}
 				</div>
 			)}
+			{/* Game Screen */}
 			{selectedLevel && (
 				<>
 					<canvas
