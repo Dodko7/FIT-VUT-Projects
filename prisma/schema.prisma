@@ -7,16 +7,10 @@ generator client {
 
 datasource db {
     provider = "sqlite"
+    url      = "file:./db.sqlite"
 }
 
 // LUDO MODELS
-
-// Current game model (basically set when a match starts, cleared upon exiting or when it ends since then the entire match data is deleted)
-model CurrentGame {
-    id      Int   @id @default(autoincrement())
-    game    Game  @relation(fields: [gameId], references: [id])
-    gameId  Int   @unique
-}
 
 // Game model
 model Game {
@@ -28,9 +22,10 @@ model Game {
     turn Color  @default(RED)
     // Has to be false by default (because web api...)
     musicOn   Boolean   @default(false)
-    currentGame CurrentGame?
     // JSON loaded games - can be saved though on pause
     isTemp    Boolean   @default(false)
+    // Since everyone needs to see this
+    diceRoll  Int?
 }
 
 // Player model

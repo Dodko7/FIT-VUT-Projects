@@ -25,6 +25,7 @@ export default function LudoMenuPage() {
     // Button props
     const buttonProps = [
         { text: "New Game", link: "/games/ludo/menu/setup" },
+        { text: "Join Game", link: "/games/ludo/menu/join" },
         { text: "Load Game", link: "/games/ludo/menu/load" },
         { text: "Load from JSON", onClick: () => fileInputRef.current?.click() },
         { text: "Back to Arcade", link: "/" },

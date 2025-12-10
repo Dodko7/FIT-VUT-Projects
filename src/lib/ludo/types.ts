@@ -96,3 +96,20 @@ export type DiceProps = {
 	lastRoll: DiceRoll | null;
 	isRolling: boolean;
 };
+
+/**
+ * This is precisely what it is called.
+ */
+type LinkWithText = {
+	text: string;
+	link: string;
+};
+
+/**
+ * Props for the error page. At least one redirect link or a close handler should be provided.
+ */
+export type ErrorPageProps = {
+	message: string;
+	links?: LinkWithText[];
+	onClose?: () => void;
+};

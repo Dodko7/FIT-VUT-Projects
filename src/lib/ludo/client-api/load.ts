@@ -37,35 +37,23 @@ export async function LoadAllGames(): Promise<MenuGame[]> {
  * @returns A promise resolving to a TypedResult containing the FullGame object.
  */
 export async function LoadCurrentGame(): Promise<FullGame> {
-	return await fetch("/api/ludo/roll", {
-		method: "GET",
-		headers: {
-			"Content-Type": "application/json",
-		},
-	}).then(async (res) => {
-		if (!res.ok) {
-			const data = await res.json();
-			throw new Error(data.error || "Failed to load current game.");
-		} else {
-			return (await res.json()).value;
-		}
-	});
+	const response = await fetch("/api/ludo/load/current");
+	const result = (await response.json()) as TypedResult<FullGame>;
+
+	if (!result.success) {
+		throw new Error(result.error);
+	}
+
+	return result.value;
 }
 
-/**
- * Loads a Ludo game by its ID.
- * @param gameId The ID of the game to load.
- * @returns A promise resolving to a Result containing the game data.
- */
-export async function LoadGameById(gameId: string): Promise<Result> {
-	console.log("Loading game with ID:", gameId);
-	return await fetch(`/api/ludo/load-by-id/${gameId}`, {
-		method: "GET",
-		headers: {
-			"Content-Type": "application/json",
-		},
-	}).then(async (res) => {
-		const data: Result = await res.json();
-		return data;
-	});
+export async function LoadGameById(gameId: number): Promise<FullGame> {
+	const response = await fetch(`/api/ludo/load-by-id/${gameId}`);
+	const result = (await response.json()) as TypedResult<FullGame>;
+
+	if (!result.success) {
+		throw new Error(result.error);
+	}
+
+	return result.value;
 }
