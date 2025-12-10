@@ -48,7 +48,7 @@ export async function LoadCurrentGame(): Promise<FullGame> {
 }
 
 export async function LoadGameById(gameId: number): Promise<FullGame> {
-	const response = await fetch(`/api/ludo/load-by-id/${gameId}`);
+	const response = await fetch(`/api/ludo/${gameId}/load`);
 	const result = (await response.json()) as TypedResult<FullGame>;
 
 	if (!result.success) {

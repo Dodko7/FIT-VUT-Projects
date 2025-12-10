@@ -3,7 +3,7 @@
  * @param gameId The ID of the game to delete.
  */
 export async function DeleteGame(gameId: string): Promise<void> {
-    await fetch(`/api/ludo/delete/${gameId}`, {
+    await fetch(`/api/ludo/${gameId}/delete`, {
         method: "DELETE"
     }).then((res) => { // todo
         if (!res.ok) {

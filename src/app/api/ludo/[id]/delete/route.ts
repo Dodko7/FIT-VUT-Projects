@@ -8,6 +8,7 @@ import { db as prisma } from "~/server/db";
  * @returns A response indicating the result of the delete operation.
  */
 export async function DELETE(
+    request: NextRequest,
 	{ params }: { params: Promise<{ id: string }> },
 ) {
 	const id = parseInt((await params).id, 10);

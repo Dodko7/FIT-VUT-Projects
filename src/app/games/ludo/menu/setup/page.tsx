@@ -88,7 +88,7 @@ export default function LudoSetupPage() {
 				className="h-1/11"
 			/>
 			{/** Rest of the page */}
-			<form 
+			<form
 				className="flex w-full flex-grow flex-col items-center justify-between px-25 py-15"
 				onSubmit={async (e) => {
 					// Form stuff
@@ -96,11 +96,17 @@ export default function LudoSetupPage() {
 					const formData = new FormData(e.currentTarget);
 
 					// Pass to handler
-					const res = await CreateNewGame(formData, numberOfPlayers, botsOn);
+					const res = await CreateNewGame(
+						formData,
+						numberOfPlayers,
+						botsOn,
+					);
 					if (res.success) {
-						router.push("/games/ludo/gameplay");
+						console.log("New game created with ID:", res); // Debug log
+						const newGameId = res.value;
+						router.push(`/games/ludo/gameplay/${newGameId}`);
 					} else {
-						setError(res.error);
+						setError(res.error!);
 					}
 				}}
 			>
@@ -155,7 +161,13 @@ export default function LudoSetupPage() {
 					/>
 				))}
 				{/** Potential error todo */}
-				{error && <ErrorDiv message={error} onClose={() => setError(undefined)} isVisible={error !== undefined} />}
+				{error && (
+					<ErrorDiv
+						message={error}
+						onClose={() => setError(undefined)}
+						isVisible={error !== undefined}
+					/>
+				)}
 
 				{/** Submit and back buttons */}
 				<div className="flex w-full items-center justify-center gap-25">

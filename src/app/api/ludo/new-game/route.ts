@@ -118,18 +118,11 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 			await CreatePawnsForPlayer(player.id, ColorFromIndex(i));
 		}
 
-        // Set as current game
-        await prisma.currentGame.create({
-            data: {
-                gameId: newGame.id,
-            },
-        });
-
-        console.log("New game created:", newGame.name);
 
 		// Return OK
 		return NextResponse.json({
 			success: true,
+			value: newGame.id
 		});
 	} catch (error) {
 		return NextResponse.json(

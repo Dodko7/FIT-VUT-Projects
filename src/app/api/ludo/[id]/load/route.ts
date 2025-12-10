@@ -7,6 +7,7 @@ import { db as prisma } from "~/server/db";
  * @returns The game data if found.
  */
 export async function GET(
+    request: Request,
 	{ params }: { params: Promise<{ id: string }> }
 ): Promise<NextResponse> {
 	try {
