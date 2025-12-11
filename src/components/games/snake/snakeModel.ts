@@ -41,11 +41,13 @@ export class SnakeGameModel {
 	private gameType: SnakeGameType;
 	private level: number;
 	private hasWalls: boolean;
+	private campaignBarrier: Position[]; // Positions of the "+" barrier for CAMPAIGN mode
 
 	constructor(gameType: SnakeGameType, level: number, gridSize = 20) {
 		this.gameType = gameType;
 		this.level = level;
-		this.hasWalls = gameType === "BOX"; // BOX má steny
+		this.hasWalls = gameType === "BOX" || gameType === "CAMPAIGN"; // BOX and CAMPAIGN have walls
+		this.campaignBarrier = this.generateCampaignBarrier(gridSize);
 		
 		// Inicializácia stavu
 		this.state = {
@@ -62,16 +64,38 @@ export class SnakeGameModel {
 
 		this.generateFood();
 	}
+	
+	/**
+	 * Generate "+" barrier positions for CAMPAIGN mode
+	 */
+	private generateCampaignBarrier(gridSize: number): Position[] {
+		if (this.gameType !== "CAMPAIGN") return [];
+		
+		const barrier: Position[] = [];
+		const mid = Math.floor(gridSize / 2);
+		
+		// Vertical line (from 6 to 14)
+		for (let i = 6; i < gridSize - 5; i++) {
+			barrier.push({ x: mid, y: i });
+		}
+		
+		// Horizontal line (from 6 to 14)
+		for (let i = 6; i < gridSize - 5; i++) {
+			barrier.push({ x: i, y: mid });
+		}
+		
+		return barrier;
+	}
 
 	/**
-	 * Vytvorí počiatočnú pozíciu hada (3 segmenty v strede)
+	 * Vytvorí počiatočnú pozíciu hada (3 segmenty v ľavom hornom rohu)
 	 */
 	private initializeSnake(gridSize: number): Position[] {
-		const center = Math.floor(gridSize / 2);
+		// Start in top-left area to avoid barriers in CAMPAIGN mode
 		return [
-			{ x: center, y: center }, // Hlava
-			{ x: center - 1, y: center },
-			{ x: center - 2, y: center },
+			{ x: 3, y: 3 }, // Hlava
+			{ x: 2, y: 3 },
+			{ x: 1, y: 3 },
 		];
 	}
 
@@ -100,7 +124,7 @@ export class SnakeGameModel {
 			};
 			attempts++;
 		} while (
-			this.isPositionOnSnake(newFood) &&
+			(this.isPositionOnSnake(newFood) || this.isPositionOnBarrier(newFood)) &&
 			attempts < maxAttempts
 		);
 
@@ -113,6 +137,16 @@ export class SnakeGameModel {
 	private isPositionOnSnake(pos: Position): boolean {
 		return this.state.snake.some(
 			(segment) => segment.x === pos.x && segment.y === pos.y
+		);
+	}
+	
+	/**
+	 * Kontrola či je pozícia na CAMPAIGN barrier
+	 */
+	private isPositionOnBarrier(pos: Position): boolean {
+		if (this.gameType !== "CAMPAIGN") return false;
+		return this.campaignBarrier.some(
+			(barrier) => barrier.x === pos.x && barrier.y === pos.y
 		);
 	}
 
@@ -209,7 +243,7 @@ export class SnakeGameModel {
 	 * Kontrola kolízií
 	 */
 	private checkCollision(position: Position): boolean {
-		// Kolízia so stenou (len pre BOX mode)
+		// Kolízia so stenou (len pre BOX a CAMPAIGN mode)
 		if (this.hasWalls) {
 			if (
 				position.x < 0 ||
@@ -217,6 +251,13 @@ export class SnakeGameModel {
 				position.y < 0 ||
 				position.y >= this.state.gridSize
 			) {
+				return true;
+			}
+		}
+		
+		// Kolízia s CAMPAIGN barrier
+		if (this.gameType === "CAMPAIGN") {
+			if (this.campaignBarrier.some(b => b.x === position.x && b.y === position.y)) {
 				return true;
 			}
 		}
@@ -243,6 +284,10 @@ export class SnakeGameModel {
 	 */
 	public getState(): Readonly<GameState> {
 		return { ...this.state };
+	}
+	
+	public getCampaignBarrier(): ReadonlyArray<Position> {
+		return this.campaignBarrier;
 	}
 
 	public getScore(): number {

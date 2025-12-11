@@ -90,19 +90,24 @@ export default function SnakeLevelPage() {
 		setIsCreatingGame(true);
 		setError(null);
 
-		try {
+			try {
+			// Try to get gameType from localStorage as fallback
+			const storedGameType = typeof window !== 'undefined' 
+				? localStorage.getItem('snake_gameType') as SnakeGameType | null
+				: null;
+			const finalGameType = storedGameType || gameType;
+			
+			console.log('[Level] Creating game with gameType from context:', gameType, 'localStorage:', storedGameType, 'using:', finalGameType, 'level:', level);
 			// Vytvoríme novú hru v databáze
 			const response = await fetch("/api/snake/game", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({
 					playerName: name,
-					gameType,
+					gameType: finalGameType,
 					level,
 				}),
-			});
-
-			const result = await response.json();
+			});			const result = await response.json();
 
 			if (result.success) {
 				// Uložíme gameId do contextu

@@ -113,13 +113,18 @@ export class SnakeGameView {
 	/**
 	 * Hlavná render funkcia
 	 */
-	public render(state: GameState, playerName: string, level: number): void {
+	public render(state: GameState, playerName: string, level: number, campaignBarrier?: ReadonlyArray<Position>): void {
 		this.clearCanvas();
 		this.drawGrid(state.gridSize);
 		
 		// Steny len pre BOX mode
 		if (this.gameType === "BOX") {
 			this.drawWalls(state.gridSize);
+		}
+		
+		// CAMPAIGN barrier
+		if (this.gameType === "CAMPAIGN" && campaignBarrier) {
+			this.drawCampaignBarrier(campaignBarrier);
 		}
 
 		this.drawFood(state.food);
@@ -193,9 +198,30 @@ export class SnakeGameView {
 	 * Nakreslí steny (BOX mode)
 	 */
 	private drawWalls(gridSize: number): void {
+		// Draw visible walls as a thick border
 		this.ctx.strokeStyle = this.config.colors.wall;
+		this.ctx.lineWidth = 8; // Thicker wall (was 4)
+		this.ctx.strokeRect(4, 4, this.canvas.width - 8, this.canvas.height - 8);
+		
+		// Add inner shadow for better visibility
+		this.ctx.strokeStyle = "rgba(255, 215, 0, 0.5)";
 		this.ctx.lineWidth = 4;
-		this.ctx.strokeRect(2, 2, this.canvas.width - 4, this.canvas.height - 4);
+		this.ctx.strokeRect(8, 8, this.canvas.width - 16, this.canvas.height - 16);
+	}
+	
+	/**
+	 * Nakreslí CAMPAIGN barrier
+	 */
+	private drawCampaignBarrier(barrier: ReadonlyArray<Position>): void {
+		this.ctx.fillStyle = "#facc15"; // Yellow matching the preview
+		
+		barrier.forEach((pos) => {
+			const x = pos.x * this.config.cellSize;
+			const y = pos.y * this.config.cellSize;
+			const size = this.config.cellSize;
+			
+			this.ctx.fillRect(x, y, size, size);
+		});
 	}
 
 	/**

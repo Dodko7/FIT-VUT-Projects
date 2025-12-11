@@ -31,23 +31,44 @@ export default function SnakeGameTypePage() {
 	const [selectedIndex, setSelectedIndex] = useState(
 		initialIndex !== -1 ? initialIndex : 0,
 	);
+	
+	// Sync selectedIndex with arrow key selection in real-time
+	const handleIndexChange = (newIndex: number) => {
+		setSelectedIndex(newIndex);
+		const selectedType = gameTypes[newIndex];
+		if (selectedType) {
+			console.log('[GameType] Arrow key selected:', selectedType);
+			setGameType(selectedType);
+			// Also save to localStorage
+			if (typeof window !== 'undefined') {
+				localStorage.setItem('snake_gameType', selectedType);
+			}
+		}
+	};
 
 	/**
 	 * Handler pre výber game type
 	 */
 	const handleSelect = (type: SnakeGameType) => {
+		console.log('[GameType] Setting gameType in context to:', type);
 		setGameType(type);
-		console.log(`Game type changed to: ${type}`);
+		// Also save to localStorage as backup
+		if (typeof window !== 'undefined') {
+			localStorage.setItem('snake_gameType', type);
+		}
+		console.log(`[GameType] Game type changed to: ${type}`);
 		router.push("/games/snake");
 	};
 
 	const handleKeyDown = (e: React.KeyboardEvent) => {
 		if (e.key === "ArrowUp" || e.key === "w" || e.key === "W") {
 			e.preventDefault();
-			setSelectedIndex((prev) => (prev > 0 ? prev - 1 : gameTypes.length - 1));
+			const newIndex = selectedIndex > 0 ? selectedIndex - 1 : gameTypes.length - 1;
+			handleIndexChange(newIndex);
 		} else if (e.key === "ArrowDown" || e.key === "s" || e.key === "S") {
 			e.preventDefault();
-			setSelectedIndex((prev) => (prev < gameTypes.length - 1 ? prev + 1 : 0));
+			const newIndex = selectedIndex < gameTypes.length - 1 ? selectedIndex + 1 : 0;
+			handleIndexChange(newIndex);
 		} else if (e.key === "Enter" || e.key === " ") {
 			e.preventDefault();
 			handleSelect(gameTypes[selectedIndex]!);
@@ -80,7 +101,7 @@ export default function SnakeGameTypePage() {
 					<button
 						key={type}
 						onClick={() => handleSelect(type)}
-						onMouseEnter={() => setSelectedIndex(index)}
+						onMouseEnter={() => handleIndexChange(index)}
 						className="group flex items-center justify-center gap-4 transition-all duration-200 min-w-[400px]"
 					>
 						{/* Arrow indicator */}

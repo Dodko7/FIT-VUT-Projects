@@ -21,6 +21,7 @@ export default function SnakeGameplayPage() {
 	
 	const canvasRef = useRef<HTMLCanvasElement>(null);
 	const controllerRef = useRef<SnakeGameController | null>(null);
+	const isInitializedRef = useRef(false);
 	const soundManager = getSoundManager();
 	
 	const [score, setScore] = useState(0);
@@ -29,6 +30,7 @@ export default function SnakeGameplayPage() {
 	const [isLoading, setIsLoading] = useState(true);
 	const [isMuted, setIsMuted] = useState(soundManager.isSoundMuted());
 	const [isMobile, setIsMobile] = useState(false);
+	const [actualGameType, setActualGameType] = useState<string>(gameType);
 
 	// Detekuj mobilné zariadenie
 	useEffect(() => {
@@ -51,55 +53,112 @@ export default function SnakeGameplayPage() {
 	// Inicializácia hry
 	useEffect(() => {
 		if (!currentGameId || !canvasRef.current) return;
+		
+		// Prevent double initialization in development (React Strict Mode)
+		// Check both the ref flag AND if controller already exists
+		if (isInitializedRef.current || controllerRef.current) {
+			console.log('[Gameplay] Already initialized, skipping...', {
+				refFlag: isInitializedRef.current,
+				hasController: !!controllerRef.current
+			});
+			return;
+		}
+
+		// SET FLAG IMMEDIATELY to prevent race condition with async initialization
+		isInitializedRef.current = true;
+		console.log('[Gameplay] Starting initialization, flag set to true');
 
 		const canvas = canvasRef.current;
+		let controller: SnakeGameController | null = null;
 		
-		// Vytvor controller
-		const controller = new SnakeGameController(
-			canvas,
-			{
-				gameId: currentGameId,
-				gameType,
-				level,
-				playerName: playerName || "Anonymous",
-				gridSize: 20,
-				cellSize: 25,
-				autoSaveInterval: 5000,
-			},
-			{
-				onGameOver: (finalScore) => {
-					setScore(finalScore);
-					setIsGameOver(true);
-				},
-				onScoreChange: (newScore) => {
-					setScore(newScore);
-				},
-				onError: (error) => {
-					console.error("Game error:", error);
-				},
-			}
-		);
+		// Fetch game from database to get the correct gameType
+		const initializeGame = async () => {
+			try {
+				console.log('[Gameplay] Fetching game from database, gameId:', currentGameId);
+				const response = await fetch(`/api/snake/game?gameId=${currentGameId}`);
+				const result = await response.json() as {
+					success: boolean;
+					data?: {
+						gameType: string;
+						level: number;
+						playerName: string;
+					};
+					error?: string;
+				};
+				
+				console.log('[Gameplay] API response:', result);
+				
+				if (!result.success || !result.data) {
+					console.error("Failed to load game from database:", result.error);
+					setIsLoading(false);
+					return;
+				}
+				
+				const { gameType: dbGameType, level: dbLevel, playerName: dbPlayerName } = result.data;
+				console.log('[Gameplay] Game data from DB - gameType:', dbGameType, 'level:', dbLevel, 'playerName:', dbPlayerName);
+				setActualGameType(dbGameType);
+				
+				controller = new SnakeGameController(
+					canvas,
+					{
+						gameId: currentGameId,
+						gameType: dbGameType as "CLASSIC" | "BOX" | "CAMPAIGN",
+						level: dbLevel,
+						playerName: dbPlayerName,
+						gridSize: 20,
+						cellSize: 25,
+						autoSaveInterval: 5000,
+					},
+					{
+						onGameOver: (finalScore) => {
+							setScore(finalScore);
+							setIsGameOver(true);
+						},
+						onScoreChange: (newScore) => {
+							setScore(newScore);
+						},
+						onError: (error) => {
+							console.error("Game error:", error);
+						},
+					}
+				);
 
-		controllerRef.current = controller;
+				controllerRef.current = controller;
 
-		// Pokús sa načítať uložený stav
-		void controller.loadSavedState().then((loaded) => {
+			// Pokús sa načítať uložený stav
+			const loaded = await controller.loadSavedState();
 			console.log(loaded ? "Loaded saved state" : "Starting new game");
+			
+			// Start the game
 			controller.start();
 			setIsLoading(false);
+		} catch (error) {
+			console.error("Error initializing game:", error);
+			setIsLoading(false);
+		}
+	};
+	
+	void initializeGame();	// Cleanup - DO NOT reset isInitializedRef here as it causes double init in Strict Mode
+	return () => {
+		console.log('[Gameplay] Cleanup running, stopping controller', {
+			hasController: !!controller,
+			refController: !!controllerRef.current
 		});
-
-		// Cleanup
-		return () => {
+		if (controller) {
 			controller.stop();
-		};
-	}, [currentGameId, gameType, level, playerName]);
-
-	// Handle back to menu
+		}
+		if (controllerRef.current) {
+			controllerRef.current.stop();
+			controllerRef.current = null;
+		}
+	};
+}, [currentGameId]);	// Handle back to menu
 	const handleBackToMenu = () => {
 		if (controllerRef.current) {
 			controllerRef.current.stop();
+			controllerRef.current = null;
 		}
+		isInitializedRef.current = false;
 		resetAll();
 		router.push("/games/snake");
 	};
@@ -108,7 +167,9 @@ export default function SnakeGameplayPage() {
 	const handlePlayAgain = () => {
 		if (controllerRef.current) {
 			controllerRef.current.stop();
+			controllerRef.current = null;
 		}
+		isInitializedRef.current = false;
 		resetAll();
 		router.push("/games/snake/level");
 	};
@@ -200,7 +261,7 @@ export default function SnakeGameplayPage() {
 		<div className="flex flex-col lg:flex-row items-center gap-8">
 			<div className="flex flex-col items-center gap-4">
 				<h1 className="font-['Press_Start_2P'] text-3xl snake-gradient-text mb-4">
-					{gameType} Mode
+					{actualGameType.charAt(0) + actualGameType.slice(1).toLowerCase()} Mode
 				</h1>
 
 				<div className="relative">

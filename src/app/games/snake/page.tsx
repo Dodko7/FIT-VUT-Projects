@@ -25,6 +25,8 @@ const GAME_TYPE_LABELS = {
 export default function SnakeMenuPage() {
 	const { gameType, level } = useSnakeGame();
 	const [selectedIndex, setSelectedIndex] = useState(0);
+	
+	console.log('[Menu] Current gameType from context:', gameType, 'level:', level);
 
 	const menuOptions: MenuOption[] = [
 		{

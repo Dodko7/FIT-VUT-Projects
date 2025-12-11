@@ -256,7 +256,8 @@ export class SnakeGameController {
 	 */
 	private render(): void {
 		const state = this.model.getState();
-		this.view.render(state, this.config.playerName, this.config.level);
+		const barrier = this.model.getCampaignBarrier();
+		this.view.render(state, this.config.playerName, this.config.level, barrier);
 	}
 
 	/**
