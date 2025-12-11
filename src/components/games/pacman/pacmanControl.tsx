@@ -1,5 +1,6 @@
 /**
  * @brief Pacman game controller
+ * @author Róbert Páleš
  * Connects game model and view
  */
 

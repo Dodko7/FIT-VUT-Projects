@@ -1,5 +1,6 @@
 /**
  * @brief Main logic for pacman game  
+ * @author Róbert Páleš
  */
 
 /**

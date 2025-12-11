@@ -1,5 +1,6 @@
 /**
  * @brief Pacman game rendering (view) 
+ * @author Róbert Páleš
  */
 
 "use client";

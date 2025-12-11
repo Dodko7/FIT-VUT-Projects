@@ -1,5 +1,6 @@
 /**
  * @brief Represents a game level
+ * @author Róbert Páleš
  */
 export type Level = {
     id: number;

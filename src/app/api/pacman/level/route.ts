@@ -1,5 +1,6 @@
 /**
  * @brief API for pacman levels 
+ * @author Róbert Páleš
  */
 
 import { db } from "~/server/db";

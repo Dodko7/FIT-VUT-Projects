@@ -1,3 +1,8 @@
+/**
+ * @brief Control buttons component
+ * @author Róbert Páleš
+ */
+
 import Link from "next/link";
 import React from "react";
 

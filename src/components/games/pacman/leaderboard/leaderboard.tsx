@@ -1,5 +1,6 @@
 /**
  * @brief Pacman leaderboard component
+ * @author Róbert Páleš
  * Displays scores filtered by difficulty level
  */
 

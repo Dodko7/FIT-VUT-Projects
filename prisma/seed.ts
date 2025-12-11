@@ -1,5 +1,6 @@
 /**
  * @brief Seed levels into db
+ * @author Róbert Páleš
  */
 
 import { db } from "~/server/db";

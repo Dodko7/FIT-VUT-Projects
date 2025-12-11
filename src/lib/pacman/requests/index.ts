@@ -1,5 +1,6 @@
 /**
  * @brief API client functions for fetching game data and submitting scores
+ * @author Róbert Páleš
  */
 
 import type { Level, ScoreSubmission, ScoreItem} from "~/lib/types/pacman";
