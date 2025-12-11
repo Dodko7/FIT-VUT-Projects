@@ -16,6 +16,8 @@ import { useRouter } from "next/navigation";
 import LudoMenuButton from "~/components/games/ludo/buttons/menu-button";
 import ErrorDiv from "~/components/games/ludo/other/error-div";
 import { CreateNewGame } from "~/lib/ludo/client-api/new-game";
+import { Color } from "@prisma/client";
+import ColorPicker from "~/components/games/ludo/other/color-picker";
 
 export default function LudoSetupPage() {
 	// State vars that can't be represented by a form
@@ -23,6 +25,7 @@ export default function LudoSetupPage() {
 		1 | 2 | 3 | 4 | null
 	>(null);
 	const [botsOn, setBotsOn] = useState<boolean>(false);
+	const [selectedColor, setSelectedColor] = useState<Color>(Color.RED);
 	const [error, setError] = useState<string | undefined>(undefined);
 
 	// Router to go back/load game
@@ -57,28 +60,40 @@ export default function LudoSetupPage() {
 	];
 
 	// Props for player name inputs
-	const playerNameInputs: PlayerNameInputProps[] = [
-		{
-			pawnColor: MENU_RED_PAWN_COLOR,
-			inputDivClassName: "ludo-player-input-red",
-			isVisible: numberOfPlayers !== null && numberOfPlayers >= 1,
-		},
-		{
-			pawnColor: MENU_YELLOW_PAWN_COLOR,
-			inputDivClassName: "ludo-player-input-yellow",
-			isVisible: numberOfPlayers !== null && numberOfPlayers >= 2,
-		},
-		{
-			pawnColor: MENU_BLUE_PAWN_COLOR,
-			inputDivClassName: "ludo-player-input-blue",
-			isVisible: numberOfPlayers !== null && numberOfPlayers >= 3,
-		},
-		{
-			pawnColor: MENU_GREEN_PAWN_COLOR,
-			inputDivClassName: "ludo-player-input-green",
-			isVisible: numberOfPlayers !== null && numberOfPlayers >= 4,
-		},
-	];
+	const playerNameInputs: Map<Color, PlayerNameInputProps> = new Map([
+		[
+			Color.RED,
+			{
+				pawnColor: MENU_RED_PAWN_COLOR,
+				inputDivClassName: "ludo-player-input-red",
+				isVisible: true,
+			},
+		],
+		[
+			Color.YELLOW,
+			{
+				pawnColor: MENU_YELLOW_PAWN_COLOR,
+				inputDivClassName: "ludo-player-input-yellow",
+				isVisible: true,
+			},
+		],
+		[
+			Color.BLUE,
+			{
+				pawnColor: MENU_BLUE_PAWN_COLOR,
+				inputDivClassName: "ludo-player-input-blue",
+				isVisible: true,
+			},
+		],
+		[
+			Color.GREEN,
+			{
+				pawnColor: MENU_GREEN_PAWN_COLOR,
+				inputDivClassName: "ludo-player-input-green",
+				isVisible: true,
+			},
+		],
+	]);
 
 	return (
 		<div className="flex min-h-full w-full flex-col items-center justify-start overflow-y-auto">
@@ -100,11 +115,15 @@ export default function LudoSetupPage() {
 						formData,
 						numberOfPlayers,
 						botsOn,
+						selectedColor,
 					);
 					if (res.success) {
 						console.log("New game created with ID:", res); // Debug log
 						const newGameId = res.value;
-						router.push(`/games/ludo/gameplay/${newGameId}`);
+						// Auto-join as selected color
+						router.push(
+							`/games/ludo/gameplay/${newGameId}?color=${selectedColor}`,
+						);
 					} else {
 						setError(res.error!);
 					}
@@ -153,13 +172,15 @@ export default function LudoSetupPage() {
 						/>
 					</div>
 				</div>
-				{/** Player name inputs */}
-				{playerNameInputs.map((props, index) => (
-					<PlayerNameInput
-						key={index}
-						{...props}
-					/>
-				))}
+				{/** Player color picker */}
+				<ColorPicker
+					currentColor={selectedColor}
+					onColorChange={(newColor) => setSelectedColor(newColor)}
+				/>
+				{/** Player name input */}
+				<PlayerNameInput
+					{...playerNameInputs.get(selectedColor)!}
+				/>
 				{/** Potential error todo */}
 				{error && (
 					<ErrorDiv

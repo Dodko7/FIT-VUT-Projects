@@ -15,6 +15,7 @@ export default function CircularButton({
 		<button
             className={`rounded-full items-center justify-center size-23 text-4xl cursor-pointer ${className} ${isActive ? `${className}-active` : ""}`}
             onClick={onClick}
+			disabled={isActive}
             type="button"
         >
             {text}

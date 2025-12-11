@@ -42,8 +42,10 @@ export type MenuGame = {
  */
 export type NewGameRequest = {
 	name: string;
-	playerNames: string[];
+	nofPlayers: number;
+	hostName: string;
 	bots: boolean;
+	hostColor: Color;
 };
 
 /**
@@ -112,4 +114,11 @@ export type ErrorPageProps = {
 	message: string;
 	links?: LinkWithText[];
 	onClose?: () => void;
+};
+
+/** Props for the color picker component.
+ */
+export type ColorPickerProps = {
+	currentColor: Color;
+	onColorChange: (newColor: Color) => void;
 };

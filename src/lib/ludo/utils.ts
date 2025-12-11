@@ -35,24 +35,6 @@ import type { BoardPartProps, FullPlayer, PawnPosition } from "./types";
 import { Color } from "@prisma/client";
 
 /**
- * Maps a color to the player number and returns a string "Player X".
- */
-export function PlayerNameFromColor(color: string): string {
-	switch (color) {
-		case MENU_RED_PAWN_COLOR:
-			return "Player 1";
-		case MENU_YELLOW_PAWN_COLOR:
-			return "Player 2";
-		case MENU_BLUE_PAWN_COLOR:
-			return "Player 3";
-		case MENU_GREEN_PAWN_COLOR:
-			return "Player 4";
-		default:
-			return "Unknown Player";
-	}
-}
-
-/**
  * Returns the number of completed pawns for a given player.
  */
 export function CompletedPawnsFromColor(player: FullPlayer): number {

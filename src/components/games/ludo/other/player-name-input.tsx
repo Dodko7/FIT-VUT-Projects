@@ -1,4 +1,3 @@
-import { PlayerNameFromColor } from "~/lib/ludo/utils";
 import Pawn from "./pawn";
 
 export type PlayerNameInputProps = {
@@ -12,9 +11,6 @@ export default function PlayerNameInput({
 	inputDivClassName,
 	isVisible
 }: PlayerNameInputProps) {
-	const player = PlayerNameFromColor(pawnColor);
-	const inputId = `ludo-input-${player.toLowerCase().replace(" ", "-")}`;
-
 	return (
 		<div 
 			className={"flex w-full items-center justify-between " + (isVisible ? "" : "invisible pointer-events-none")}
@@ -22,7 +18,7 @@ export default function PlayerNameInput({
 		>
 			{/** Title */}
 			<h2 className="ludo-form-text text-5xl">
-				{player}
+				Your name
 			</h2>
 			{/** Input div */}
 			<div
@@ -36,16 +32,16 @@ export default function PlayerNameInput({
 				/>
 				{/** Label */}
 				<label
-					htmlFor={inputId}
+					htmlFor="player-name-input"
 					className="mx-5 text-3xl"
 				>
-					{player} name:
+					Enter here:
 				</label>
 				{/** Input */}
 				<input
 					type="text"
-					id={inputId}
-					name={inputId}
+					id="player-name-input"
+					name="player-name-input"
 					className="text-3xl focus:outline-none focus:ring-0"
 				/>
 			</div>

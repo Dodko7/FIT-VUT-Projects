@@ -1,16 +1,19 @@
-import type { NewGameRequest, Result, TypedResult } from "../types";
+import type { Color } from "@prisma/client";
+import type { NewGameRequest, TypedResult } from "../types";
 
 /**
  * New game page submit handler.
  * @param data Inputs from the form.
  * @param numberOfPlayers The selected number of players.
  * @param botsOn Whether bots are enabled.
+ * @param hostColor The color selected by the host.
  * @returns A promise resolving to a Result indicating success or failure.
  */
 export async function CreateNewGame(
 	data: FormData,
 	numberOfPlayers: 1 | 2 | 3 | 4 | null,
 	botsOn: boolean,
+	hostColor: Color,
 ): Promise<TypedResult<number>> {
 	// Validate numbers
 	if (numberOfPlayers === null) {
@@ -34,31 +37,20 @@ export async function CreateNewGame(
 		};
 	}
 
-	let playerNames: string[] = [];
-	for (let i = 0; i < numberOfPlayers; i++) {
-		const playerName = data.get(`ludo-input-player-${i + 1}`);
-		if (
-			!playerName ||
-			typeof playerName !== "string" ||
-			playerName.trim() === ""
-		) {
-			return {
-				success: false,
-				error: `No name specified for Player ${i + 1}!`,
-			};
-		} else if (playerNames.includes(playerName.trim())) {
-			return {
-				success: false,
-				error: `${playerName.trim()} has already been used as a name!`,
-			};
-		}
-		playerNames.push(playerName);
+	const playerName = data.get("player-name-input");
+	if (!playerName) {
+		return {
+			success: false,
+			error: "Player name missing!",
+		};
 	}
 
 	const request: NewGameRequest = {
 		name: gameName.toString(),
-		playerNames: playerNames,
+		hostName: playerName.toString(),
+		nofPlayers: numberOfPlayers,
 		bots: botsOn,
+		hostColor: hostColor,
 	};
 
 	// POST to API

@@ -1,4 +1,4 @@
-import type { Color, Player } from "@prisma/client";
+import { Color, type Player } from "@prisma/client";
 import { isBot } from "next/dist/server/web/spec-extension/user-agent";
 import { NextResponse, type NextRequest } from "next/server";
 import type { NewGameRequest } from "~/lib/ludo/types";
@@ -35,16 +35,16 @@ async function CreatePlayer(
 	name: string,
 	isBot: boolean,
 	color: Color,
-    gameId: number,
+	gameId: number,
 ): Promise<Player> {
-    return await prisma.player.create({
-        data: {
-            name: name,
-            isBot: isBot,
-            color: color,
-            gameId: gameId,
-        }
-    });
+	return await prisma.player.create({
+		data: {
+			name: name,
+			isBot: isBot,
+			color: color,
+			gameId: gameId,
+		},
+	});
 }
 
 /**
@@ -52,23 +52,26 @@ async function CreatePlayer(
  * @param playerId The ID of the player.
  * @param color The color (for starting position).
  */
-async function CreatePawnsForPlayer(playerId: number, color: Color): Promise<void> {
-    const startingPositions: Record<Color, number[]> = {
-        RED: [-1, -2, -3, -4],
-        YELLOW: [-5, -6, -7, -8],
-        GREEN: [-9, -10, -11, -12],
-        BLUE: [-13, -14, -15, -16],
-    };
+async function CreatePawnsForPlayer(
+	playerId: number,
+	color: Color,
+): Promise<void> {
+	const startingPositions: Record<Color, number[]> = {
+		RED: [-1, -2, -3, -4],
+		YELLOW: [-5, -6, -7, -8],
+		GREEN: [-9, -10, -11, -12],
+		BLUE: [-13, -14, -15, -16],
+	};
 
-    const positions = startingPositions[color];
-    for (const pos of positions) {
-        await prisma.pawn.create({
-            data: {
-                position: pos,
-                playerId: playerId
-            }
-        });
-    }
+	const positions = startingPositions[color];
+	for (const pos of positions) {
+		await prisma.pawn.create({
+			data: {
+				position: pos,
+				playerId: playerId,
+			},
+		});
+	}
 }
 
 /**
@@ -77,7 +80,7 @@ async function CreatePawnsForPlayer(playerId: number, color: Color): Promise<voi
 export async function POST(request: NextRequest): Promise<NextResponse> {
 	try {
 		const reqData: NewGameRequest = await request.json();
-		const { name, playerNames, bots } = reqData;
+		const { name, hostName, bots, nofPlayers, hostColor } = reqData;
 
 		// Check if game with the same name exists
 		if (
@@ -102,27 +105,56 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 			},
 		});
 
-		// Create players
-		for (let i = 0; i < (bots ? 4 : playerNames.length); i++) {
-			const isBotPlayer = bots && i >= playerNames.length;
-			const player = await CreatePlayer(
-				isBotPlayer ?
-					`Bot ${i - playerNames.length + 1}`
-				:	playerNames[i]!,
-				isBotPlayer,
-				ColorFromIndex(i),
-                newGame.id
-			);
+		// Create host
+		const hostPlayer = await CreatePlayer(
+			hostName,
+			false,
+			hostColor,
+			newGame.id,
+		);
+		await CreatePawnsForPlayer(hostPlayer.id, hostPlayer.color);
 
-			// Create pawns for player
-			await CreatePawnsForPlayer(player.id, ColorFromIndex(i));
+		// Determine other colors
+		const allColors: Color[] = [
+			Color.RED,
+			Color.YELLOW,
+			Color.GREEN,
+			Color.BLUE,
+		];
+		const remainingColors = allColors.filter((c) => c !== hostColor);
+
+		// Create other players
+		for (let i = 1; i < nofPlayers; i++) {
+			const color = remainingColors[i - 1];
+			const playerName = "Waiting...";
+			const player = await CreatePlayer(
+				playerName,
+				false,
+				color!,
+				newGame.id,
+			);
+			await CreatePawnsForPlayer(player.id, player.color);
 		}
 
+		// Create bots
+		if (bots) {
+			const botCount = 4 - nofPlayers;
+			for (let i = 0; i < botCount; i++) {
+				const color = remainingColors[nofPlayers - 1 + i];
+				const botPlayer = await CreatePlayer(
+					`Bot ${i + 1}`,
+					true,
+					color!,
+					newGame.id,
+				);
+				await CreatePawnsForPlayer(botPlayer.id, botPlayer.color);
+			}
+		}
 
 		// Return OK
 		return NextResponse.json({
 			success: true,
-			value: newGame.id
+			value: newGame.id,
 		});
 	} catch (error) {
 		return NextResponse.json(
