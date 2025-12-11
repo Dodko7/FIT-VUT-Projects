@@ -259,7 +259,7 @@ export async function getAllPlayers(limit = 50) {
 // ============================================================================
 
 /**
- * Získa leaderboard (top hry)
+ * Získa leaderboard (top hry) - len najlepšie skóre pre každého hráča
  * 
  * @param gameType - Filter podľa typu hry (voliteľné)
  * @param limit - Maximálny počet výsledkov
@@ -269,14 +269,29 @@ export async function getLeaderboard(
 	gameType?: SnakeGameType,
 	limit = 10,
 ) {
-	return await db.snakeGame.findMany({
+	// Get all finished games with the filter
+	const games = await db.snakeGame.findMany({
 		where: {
 			status: "FINISHED",
 			...(gameType && { gameType }),
 		},
 		orderBy: { score: "desc" },
-		take: limit,
 	});
+
+	// Group by player and keep only the best score per player
+	const bestScores = new Map<string, any>();
+	
+	for (const game of games) {
+		const existing = bestScores.get(game.playerName);
+		if (!existing || game.score > existing.score) {
+			bestScores.set(game.playerName, game);
+		}
+	}
+
+	// Convert back to array, sort by score, and limit
+	return Array.from(bestScores.values())
+		.sort((a, b) => b.score - a.score)
+		.slice(0, limit);
 }
 
 /**

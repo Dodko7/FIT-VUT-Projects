@@ -126,37 +126,55 @@ export async function PATCH(request: Request) {
 
 		let updatedGame;
 
-		// Ak je status FINISHED, dokončíme hru
-		if (body.status === "FINISHED" && body.score !== undefined) {
-			updatedGame = await finishGame(body.gameId, body.score);
-
-			// Aktualizujeme štatistiky hráča
-			if (body.playerName && body.gameType) {
-				await updatePlayerStats(
-					body.playerName,
-					body.score,
-					body.gameType as any,
-				);
-			}
-
-			// Zmažeme uložený stav hry
-			await deleteGameState(body.gameId);
-		}
-		// Ak je status PAUSED
-		else if (body.status === "PAUSED") {
-			updatedGame = await pauseGame(body.gameId);
-		}
-		// Inak len aktualizujeme skóre
-		else if (body.score !== undefined) {
-			updatedGame = await updateGameScore(body.gameId, body.score);
-		} else {
+	// Ak aktualizujeme len meno hráča
+	if (body.playerName && !body.status && body.score === undefined) {
+		const game = await getGame(body.gameId);
+		if (!game) {
 			return NextResponse.json(
-				{ success: false, error: "Nothing to update" },
-				{ status: 400 },
+				{ success: false, error: "Game not found" },
+				{ status: 404 },
+			);
+		}
+		
+		// Aktualizujeme meno hráča v databáze
+		updatedGame = await updatePlayerStats(body.playerName, game.score, game.gameType as any);
+		
+		// Aktualizujeme aj meno v zázname hry
+		const { db } = await import("~/server/db");
+		updatedGame = await db.snakeGame.update({
+			where: { id: body.gameId },
+			data: { playerName: body.playerName },
+		});
+	}
+	// Ak je status FINISHED, dokončíme hru
+	else if (body.status === "FINISHED" && body.score !== undefined) {
+		updatedGame = await finishGame(body.gameId, body.score);
+
+		// Aktualizujeme štatistiky hráča
+		if (body.playerName && body.gameType) {
+			await updatePlayerStats(
+				body.playerName,
+				body.score,
+				body.gameType as any,
 			);
 		}
 
-		return NextResponse.json({
+		// Zmažeme uložený stav hry
+		await deleteGameState(body.gameId);
+	}
+	// Ak je status PAUSED
+	else if (body.status === "PAUSED") {
+		updatedGame = await pauseGame(body.gameId);
+	}
+	// Inak len aktualizujeme skóre
+	else if (body.score !== undefined) {
+		updatedGame = await updateGameScore(body.gameId, body.score);
+	} else {
+		return NextResponse.json(
+			{ success: false, error: "Nothing to update" },
+			{ status: 400 },
+		);
+	}		return NextResponse.json({
 			success: true,
 			data: updatedGame,
 		});

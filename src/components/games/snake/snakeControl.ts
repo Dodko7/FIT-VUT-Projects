@@ -424,8 +424,10 @@ export class SnakeGameController {
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({
 					gameId: this.config.gameId,
-					action: "finish",
+					status: "FINISHED",
 					score: finalScore,
+					playerName: this.config.playerName,
+					gameType: this.config.gameType,
 				}),
 			});
 

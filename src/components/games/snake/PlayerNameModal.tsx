@@ -108,14 +108,12 @@ export default function PlayerNameModal({
 					</div>
 
 					<div className="flex flex-col gap-3">
-						<button
-							type="submit"
-							className="w-full px-6 py-4 bg-gradient-to-b from-yellow-400 to-yellow-600 text-black font-['Press_Start_2P'] text-sm rounded-lg hover:from-yellow-500 hover:to-yellow-700 transition-all"
-						>
-							Start Game
-						</button>
-
-						<button
+					<button
+						type="submit"
+						className="w-full px-6 py-4 bg-gradient-to-b from-yellow-400 to-yellow-600 text-black font-['Press_Start_2P'] text-sm rounded-lg hover:from-yellow-500 hover:to-yellow-700 transition-all"
+					>
+						Continue
+					</button>						<button
 							type="button"
 							onClick={handleSkip}
 							className="w-full px-6 py-4 bg-gradient-to-b from-gray-600 to-gray-800 text-white font-['Press_Start_2P'] text-xs rounded-lg hover:from-gray-700 hover:to-gray-900 transition-all"
