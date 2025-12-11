@@ -297,6 +297,7 @@ export class SnakeGameController {
 			case " ": // Space = pauza
 			case "p":
 			case "P":
+			case "Escape":
 				this.togglePause();
 				break;
 

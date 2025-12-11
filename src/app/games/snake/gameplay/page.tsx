@@ -13,10 +13,11 @@ import { useSnakeGame } from "~/contexts/SnakeGameContext";
 import { SnakeGameController } from "~/components/games/snake/snakeControl";
 import { getSoundManager } from "~/components/games/snake/snakeSound";
 import TouchControls from "~/components/games/snake/TouchControls";
+import PlayerNameModal from "~/components/games/snake/PlayerNameModal";
 import type { Direction } from "~/components/games/snake/snakeModel";
 
 export default function SnakeGameplayPage() {
-	const { currentGameId, gameType, level, playerName, resetAll } = useSnakeGame();
+	const { currentGameId, setCurrentGameId, gameType, level, playerName, setPlayerName, resetAll } = useSnakeGame();
 	const router = useRouter();
 	
 	const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -31,6 +32,7 @@ export default function SnakeGameplayPage() {
 	const [isMuted, setIsMuted] = useState(soundManager.isSoundMuted());
 	const [isMobile, setIsMobile] = useState(false);
 	const [actualGameType, setActualGameType] = useState<string>(gameType);
+	const [showNameModal, setShowNameModal] = useState(false);
 
 	// Detekuj mobilné zariadenie
 	useEffect(() => {
@@ -109,23 +111,25 @@ export default function SnakeGameplayPage() {
 						cellSize: 25,
 						autoSaveInterval: 5000,
 					},
-					{
-						onGameOver: (finalScore) => {
-							setScore(finalScore);
-							setIsGameOver(true);
-						},
-						onScoreChange: (newScore) => {
-							setScore(newScore);
-						},
-						onError: (error) => {
-							console.error("Game error:", error);
-						},
-					}
-				);
+				{
+					onGameOver: (finalScore) => {
+						setScore(finalScore);
+						setIsGameOver(true);
+						// Show name modal if player is still Anonymous
+						if (!playerName || playerName === "Anonymous") {
+							setShowNameModal(true);
+						}
+					},
+					onScoreChange: (newScore) => {
+						setScore(newScore);
+					},
+					onError: (error) => {
+						console.error("Game error:", error);
+					},
+				}
+			);
 
-				controllerRef.current = controller;
-
-			// Pokús sa načítať uložený stav
+			controllerRef.current = controller;			// Pokús sa načítať uložený stav
 			const loaded = await controller.loadSavedState();
 			console.log(loaded ? "Loaded saved state" : "Starting new game");
 			
@@ -152,7 +156,33 @@ export default function SnakeGameplayPage() {
 			controllerRef.current = null;
 		}
 	};
-}, [currentGameId]);	// Handle back to menu
+}, [currentGameId]);	// Handle name submission after game over
+	const handleNameSubmit = async (name: string) => {
+		setPlayerName(name);
+		setShowNameModal(false);
+		
+		// Update player name in database
+		if (currentGameId) {
+			try {
+				await fetch("/api/snake/game", {
+					method: "PATCH",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify({
+						gameId: currentGameId,
+						playerName: name,
+					}),
+				});
+			} catch (error) {
+				console.error("Failed to update player name:", error);
+			}
+		}
+	};
+
+	const handleNameSkip = () => {
+		setShowNameModal(false);
+	};
+
+	// Handle back to menu
 	const handleBackToMenu = () => {
 		if (controllerRef.current) {
 			controllerRef.current.stop();
@@ -163,23 +193,74 @@ export default function SnakeGameplayPage() {
 		router.push("/games/snake");
 	};
 
-	// Handle play again
-	const handlePlayAgain = () => {
-		if (controllerRef.current) {
-			controllerRef.current.stop();
-			controllerRef.current = null;
+	// Handle play again - restart game with same settings
+	const handlePlayAgain = async () => {
+		try {
+			// Stop current controller
+			if (controllerRef.current) {
+				controllerRef.current.stop();
+				controllerRef.current = null;
+			}
+			
+			// Get current game settings
+			const response = await fetch(`/api/snake/game?gameId=${currentGameId}`);
+			const result = await response.json() as {
+				success: boolean;
+				data?: {
+					gameType: string;
+					level: number;
+					playerName: string;
+				};
+			};
+			
+			if (!result.success || !result.data) {
+				console.error("Failed to load game settings");
+				return;
+			}
+			
+			const { gameType: dbGameType, level: dbLevel, playerName: dbPlayerName } = result.data;
+			
+			// Create new game with same settings
+			const createResponse = await fetch("/api/snake/game", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({
+					playerName: dbPlayerName,
+					gameType: dbGameType,
+					level: dbLevel,
+				}),
+			});
+			
+			const createResult = await createResponse.json();
+			
+			if (createResult.success) {
+				// Update game ID in context
+				setCurrentGameId(createResult.data.id);
+				
+				// Reset local state
+				setScore(0);
+				setIsGameOver(false);
+				setIsPaused(false);
+				setIsLoading(true);
+				isInitializedRef.current = false;
+				
+				// The useEffect will reinitialize the game with the new ID
+			} else {
+				console.error("Failed to create new game:", createResult.error);
+			}
+		} catch (error) {
+			console.error("Error restarting game:", error);
 		}
-		isInitializedRef.current = false;
-		resetAll();
-		router.push("/games/snake/level");
 	};
 
 	// Handle view leaderboard
 	const handleViewLeaderboard = () => {
 		if (controllerRef.current) {
 			controllerRef.current.stop();
+			controllerRef.current = null;
 		}
-		resetAll();
+		isInitializedRef.current = false;
+		// Don't call resetAll() here - keep game context for potential return
 		router.push("/games/snake/leaderboard");
 	};
 
@@ -280,11 +361,11 @@ export default function SnakeGameplayPage() {
 					)}
 				</div>
 
-				{/* Controls Info */}
-				<div className="mt-4 font-['Press_Start_2P'] text-xs text-gray-400 text-center">
-					<p>Arrow Keys / WASD - Move</p>
-					<p>Space / P - Pause</p>
-				</div>
+			{/* Controls Info */}
+			<div className="mt-4 font-['Press_Start_2P'] text-xs text-gray-400 text-center">
+				<p>Arrow Keys / WASD - Move</p>
+				<p>Space / P / ESC - Pause</p>
+			</div>
 			</div>
 
 			{/* Mobile Touch Controls */}
@@ -299,8 +380,8 @@ export default function SnakeGameplayPage() {
 			)}
 		</div>
 
-		{/* Game Over Modal */}
-		{isGameOver && (
+		{/* Game Over Modal - only show if name modal is not open */}
+		{isGameOver && !showNameModal && (
 				<div className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50">
 					<div className="bg-gray-900 border-4 border-red-600 rounded-lg p-8 max-w-md w-full mx-4">
 						<h2 className="font-['Press_Start_2P'] text-3xl text-red-500 text-center mb-6">
@@ -331,16 +412,23 @@ export default function SnakeGameplayPage() {
 								Leaderboard
 							</button>
 
-							<button
-								onClick={handleBackToMenu}
-								className="w-full px-6 py-4 bg-gradient-to-b from-gray-400 to-gray-600 text-white font-['Press_Start_2P'] text-sm rounded-lg hover:from-gray-500 hover:to-gray-700 transition-all"
-							>
-								Main Menu
-							</button>
-						</div>
+						<button
+							onClick={handleBackToMenu}
+							className="w-full px-6 py-4 bg-gradient-to-b from-gray-400 to-gray-600 text-white font-['Press_Start_2P'] text-sm rounded-lg hover:from-gray-500 hover:to-gray-700 transition-all"
+						>
+							Main Menu
+						</button>
 					</div>
 				</div>
+			</div>
 			)}
+
+			{/* Player Name Modal - shown after game over */}
+			<PlayerNameModal
+				isOpen={showNameModal}
+				onSubmit={handleNameSubmit}
+				onSkip={handleNameSkip}
+			/>
 		</div>
 	);
 }

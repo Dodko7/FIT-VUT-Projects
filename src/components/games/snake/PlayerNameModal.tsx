@@ -2,7 +2,7 @@
  * Player Name Modal Component
  * 
  * @author Igor Lacko
- * @description Modal pre zadanie mena hráča pred začatím hry
+ * @description Modal pre zadanie mena hráča po skončení hry
  */
 
 "use client";

@@ -12,17 +12,15 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useSnakeGame } from "~/contexts/SnakeGameContext";
-import PlayerNameModal from "~/components/games/snake/PlayerNameModal";
 
 export default function SnakeLevelPage() {
-	const { level: contextLevel, setLevel: setContextLevel, gameType, playerName, setPlayerName, setCurrentGameId } = useSnakeGame();
+	const { level: contextLevel, setLevel: setContextLevel, gameType, setCurrentGameId } = useSnakeGame();
 	const router = useRouter();
 	
 	// Local state pre slider (synchronizovaný s context)
 	const [level, setLevel] = useState(contextLevel);
 	const [isCreatingGame, setIsCreatingGame] = useState(false);
 	const [error, setError] = useState<string | null>(null);
-	const [showNameModal, setShowNameModal] = useState(false);
 	
 	const minLevel = 1;
 	const maxLevel = 10;
@@ -53,40 +51,16 @@ export default function SnakeLevelPage() {
 
 	/**
 	 * Handler pre Play button
-	 * Zobrazí modal pre zadanie mena ak nie je nastavené
+	 * Vytvorí hru s Anonymous - meno sa zadá po skončení hry
 	 */
 	const handlePlayClick = () => {
-		// Ak už máme meno, vytvor hru rovno
-		if (playerName) {
-			void createGame(playerName);
-		} else {
-			// Inak zobraz modal
-			setShowNameModal(true);
-		}
-	};
-
-	/**
-	 * Handler pre submit mena z modalu
-	 */
-	const handleNameSubmit = (name: string) => {
-		setPlayerName(name);
-		setShowNameModal(false);
-		void createGame(name);
-	};
-
-	/**
-	 * Handler pre skip (Anonymous)
-	 */
-	const handleNameSkip = () => {
-		setPlayerName("Anonymous");
-		setShowNameModal(false);
-		void createGame("Anonymous");
+		void createGame();
 	};
 
 	/**
 	 * Vytvorenie hry v databáze
 	 */
-	const createGame = async (name: string) => {
+	const createGame = async () => {
 		setIsCreatingGame(true);
 		setError(null);
 
@@ -98,12 +72,12 @@ export default function SnakeLevelPage() {
 			const finalGameType = storedGameType || gameType;
 			
 			console.log('[Level] Creating game with gameType from context:', gameType, 'localStorage:', storedGameType, 'using:', finalGameType, 'level:', level);
-			// Vytvoríme novú hru v databáze
+			// Vytvoríme novú hru v databáze (s Anonymous - meno sa zadá po hre)
 			const response = await fetch("/api/snake/game", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({
-					playerName: name,
+					playerName: "Anonymous",
 					gameType: finalGameType,
 					level,
 				}),
@@ -224,13 +198,6 @@ export default function SnakeLevelPage() {
 					Use ←→ or drag slider • Click +/- buttons
 				</p>
 			</div>
-
-			{/* Player Name Modal */}
-			<PlayerNameModal
-				isOpen={showNameModal}
-				onSubmit={handleNameSubmit}
-				onSkip={handleNameSkip}
-			/>
 		</div>
 	);
 }
