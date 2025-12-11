@@ -1,5 +1,6 @@
 import type { Color, Prisma } from "@prisma/client";
 import type { PawnSpotProps } from "~/components/games/ludo/board/pawn-spot";
+import type LudoClientState from "./client-state";
 
 /**
  * General purpose type for a promise which may or may not succeed.
@@ -89,7 +90,7 @@ export type PawnPosition = {
 /**
  * Valid dice roll values.
  */
-type DiceRoll = 1 | 2 | 3 | 4 | 5 | 6;
+export type DiceRoll = 1 | 2 | 3 | 4 | 5 | 6;
 
 /**
  * For rolling the dice component.
@@ -116,9 +117,48 @@ export type ErrorPageProps = {
 	onClose?: () => void;
 };
 
-/** Props for the color picker component.
+/**
+ * Props for the color picker component.
  */
 export type ColorPickerProps = {
 	currentColor: Color;
 	onColorChange: (newColor: Color) => void;
+};
+
+/**
+ * Props for the paused page.
+ */
+export type PausedPageProps = {
+	onResume: () => void;
+	onQuit: () => Promise<Result>;
+	onExport: () => Promise<Result>;
+};
+
+/**
+ * For LudoGameState.
+ */
+export type PlayerGameState = {
+	color: Color;
+	name: string;
+	pawns: PawnPosition[];
+};
+
+/**
+ * Represents the state of a Ludo game for a concrete player.
+ */
+export type LudoGameState = {
+	state: LudoClientState;
+	diceNumber: DiceRoll | null;
+	players: PlayerGameState[];
+	currentTurn: Color;
+
+	// Optional, depending on the state (else -1/empty)
+	selectedPawnId: number;
+	avaliablePawns: number[];
+	avaliableMoves: number[];
+
+	// Actions
+	onRollDice: () => Promise<void>;
+	onSelectPawn: (pawnId: number) => void;
+	onMovePawn: (pawnId: number, moveBy: number) => Promise<void>;
 };

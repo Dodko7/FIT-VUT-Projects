@@ -1,4 +1,3 @@
-import { th } from "zod/v4/locales";
 import type { FullGame, MenuGame, Result, TypedResult } from "~/lib/ludo/types";
 
 /**
@@ -47,6 +46,11 @@ export async function LoadCurrentGame(): Promise<FullGame> {
 	return result.value;
 }
 
+/**
+ * Loads a Ludo game by its ID.
+ * @param gameId The, well, id of the game to load.
+ * @returns A promise resolving to a Game/Full
+ */
 export async function LoadGameById(gameId: number): Promise<FullGame> {
 	const response = await fetch(`/api/ludo/${gameId}/load`);
 	const result = (await response.json()) as TypedResult<FullGame>;

@@ -1,17 +1,12 @@
 -- CreateTable
-CREATE TABLE "CurrentGame" (
-    "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-    "gameId" INTEGER NOT NULL,
-    CONSTRAINT "CurrentGame_gameId_fkey" FOREIGN KEY ("gameId") REFERENCES "Game" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
-);
-
--- CreateTable
 CREATE TABLE "Game" (
     "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    "name" TEXT NOT NULL,
     "lastPlayed" DATETIME NOT NULL,
-    "turn" TEXT NOT NULL,
+    "turn" TEXT NOT NULL DEFAULT 'RED',
     "musicOn" BOOLEAN NOT NULL DEFAULT false,
-    "isTemp" BOOLEAN NOT NULL DEFAULT false
+    "diceRoll" INTEGER,
+    "hostColor" TEXT NOT NULL
 );
 
 -- CreateTable
@@ -20,7 +15,7 @@ CREATE TABLE "Player" (
     "name" TEXT NOT NULL,
     "color" TEXT NOT NULL,
     "gameId" INTEGER NOT NULL,
-    "isBot" BOOLEAN NOT NULL DEFAULT false,
+    "isBot" BOOLEAN NOT NULL,
     "finished" BOOLEAN NOT NULL DEFAULT false,
     CONSTRAINT "Player_gameId_fkey" FOREIGN KEY ("gameId") REFERENCES "Game" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
 );
@@ -47,9 +42,6 @@ CREATE TABLE "PacmanScore" (
     "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
     "playerName" TEXT NOT NULL,
     "score" INTEGER NOT NULL,
-    "levelId" INTEGER,
+    "levelId" INTEGER NOT NULL,
     "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
-
--- CreateIndex
-CREATE UNIQUE INDEX "CurrentGame_gameId_key" ON "CurrentGame"("gameId");

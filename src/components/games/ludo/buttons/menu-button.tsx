@@ -7,7 +7,7 @@ export type LudoMenuButtonProps = {
 	text: string;
 	link?: string;
 	type?: "submit";
-	onClick?: () => void;
+	onClick?: () => void | Promise<void>;
 	padding?: string;
 };
 

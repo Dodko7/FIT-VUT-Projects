@@ -22,10 +22,10 @@ model Game {
     turn Color  @default(RED)
     // Has to be false by default (because web api...)
     musicOn   Boolean   @default(false)
-    // JSON loaded games - can be saved though on pause
-    isTemp    Boolean   @default(false)
-    // Since everyone needs to see this
+    // Last dice roll
     diceRoll  Int?
+    // Host color
+    hostColor Color
 }
 
 // Player model

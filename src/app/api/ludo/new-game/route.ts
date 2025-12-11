@@ -101,7 +101,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 		const newGame = await prisma.game.create({
 			data: {
 				name: name,
+				hostColor: hostColor,
 				lastPlayed: new Date(),
+				turn: hostColor
 			},
 		});
 

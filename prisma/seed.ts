@@ -3,7 +3,7 @@
  * @author Róbert Páleš
  */
 
-import { db } from "~/server/db";
+import { db } from "../src/server/db.ts";
 
 async function seedLevels() {
     await db.pacmanLevel.upsert({
