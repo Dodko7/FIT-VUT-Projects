@@ -18,6 +18,7 @@ import { RollDice } from "../client-api/roll";
 import { GetPawnIdAtPosition } from "../utils";
 import MovePawn from "../client-api/move";
 import { DeleteGame } from "../client-api/delete";
+import UpdateDate from "../client-api/update-date";
 
 const isClient = typeof window !== "undefined";
 
@@ -45,7 +46,7 @@ export default function useGame(): LudoGameState {
 		queryKey: ["ludo", "game", gameName],
 		queryFn: () => LoadGameByName(gameName),
 		enabled: isClient && !!params.gameName,
-		retryDelay: 1000,
+		retryDelay: 2000,
 		retry: 3,
 	});
 
@@ -154,7 +155,7 @@ export default function useGame(): LudoGameState {
 						}
 
 						// Avoid race conditions
-						await new Promise((r) => setTimeout(r, 500));
+						await new Promise((r) => setTimeout(r, 350));
 
 						invalidate();
 						setSelectedPawnId(null);
@@ -201,7 +202,8 @@ export default function useGame(): LudoGameState {
 			);
 			return;
 		}
-		await new Promise((r) => setTimeout(r, 500));
+		// Because prisma + sqllite = locking issues
+		await new Promise((r) => setTimeout(r, 350));
 		invalidate();
 		setTimeout(() => {
 			// Set state to awaiting pawn selection, but only if there are any pawns to select
@@ -230,7 +232,8 @@ export default function useGame(): LudoGameState {
 	};
 
 	// Quit game handler
-	const onQuitGame = (): void => {
+	const onQuitGame = async (): Promise<void> => {
+		await UpdateDate(name);
 		router.push("/games/ludo/menu");
 	};
 
