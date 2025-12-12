@@ -13,9 +13,13 @@ import { type MenuGame, type Result } from "~/lib/ludo/types";
 
 export default function LudoLoadPage() {
 	const queryClient = useQueryClient();
-    const { data: games, isLoading, error } = useQuery<MenuGame[]>({
+	const {
+		data: games,
+		isLoading,
+		error,
+	} = useQuery<MenuGame[]>({
 		queryKey: ["ludo-saved-games"],
-		queryFn: LoadAllGames
+		queryFn: LoadAllGames,
 	});
 
 	const router = useRouter();
@@ -32,30 +36,33 @@ export default function LudoLoadPage() {
 				className="h-1/11"
 			/>
 			{/** Content */}
-			<div
-				className="flex w-full flex-grow flex-col items-center justify-start px-25 my-15 gap-10"
-			>
+			<div className="my-15 flex w-full flex-grow flex-col items-center justify-start gap-10 px-25">
 				{(games || []).map((game) => (
 					<LudoSavedGame
 						key={game.id}
 						game={game}
 						onPlay={async (gameId) => {
-							const res: Result = await LoadGameById(gameId);
-							if (res.success) {
-								router.push("/games/ludo/gameplay");
+							try {
+								const game = await LoadGameById(gameId);
+								router.push(
+									`/games/ludo/gameplay/${game.id}?color=${game.hostColor}`,
+								);
+							} catch (e) {
+								console.error("Failed to load game:", e);
+								alert("Failed to load game. Please try again."); // todo remove beran ma zajebe
 							}
 						}}
 						onDelete={async (gameId) => {
 							await DeleteGame(gameId.toString());
-							queryClient.invalidateQueries({ queryKey: ["ludo-saved-games"] });
+							queryClient.invalidateQueries({
+								queryKey: ["ludo-saved-games"],
+							});
 						}}
 					/>
 				))}
 			</div>
 			{/** Go back button */}
-			<div
-				className="w-full flex items-center justify-center mb-10"
-			>
+			<div className="mb-10 flex w-full items-center justify-center">
 				<LudoMenuButton
 					text="Go back"
 					link="/games/ludo/menu"

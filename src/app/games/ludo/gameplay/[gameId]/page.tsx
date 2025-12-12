@@ -64,7 +64,7 @@ export default function LudoGameplayPage() {
 		return (
 			<LudoPausePage
 				onResume={game.onResumeGame}
-				onQuit={async () => {await Promise.resolve(); console.log("Quit game"); return { success: true };} }
+				onQuit={game.onQuitGame}
 				onExport={async () => {await Promise.resolve(); console.log("Export game"); return { success: true };} }
 			/>
 		)

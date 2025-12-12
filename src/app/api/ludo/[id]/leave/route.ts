@@ -1,6 +1,7 @@
 import type { Color } from "@prisma/client";
 import { NextResponse, type NextRequest } from "next/server";
 import { db as prisma } from "~/server/db";
+import { GetSocketServer } from "~/lib/ludo/socket";
 
 /**
  * Called when a player leaves a game.
@@ -57,6 +58,10 @@ export async function POST(
 				name: "Waiting...",
 			},
 		});
+
+		// Notify via WebSocket
+		const io = GetSocketServer();
+		io.to(`game_${id}`).emit("game-update");
 
 		return NextResponse.json({ success: true });
 	} catch (error) {

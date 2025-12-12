@@ -130,7 +130,7 @@ export type ColorPickerProps = {
  */
 export type PausedPageProps = {
 	onResume: () => void;
-	onQuit: () => Promise<Result>;
+	onQuit: () => Promise<void>;
 	onExport: () => Promise<Result>;
 };
 
@@ -184,4 +184,5 @@ export type LudoGameState = {
 	onMovePawn: (pawnId: number, moveBy: number) => Promise<void>;
 	onPauseGame: () => void;
 	onResumeGame: () => void;
+	onQuitGame: () => Promise<void>;
 };
