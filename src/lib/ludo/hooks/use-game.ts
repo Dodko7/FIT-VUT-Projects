@@ -1,19 +1,15 @@
 import { useParams, useRouter, useSearchParams } from "next/navigation";
-import { useEffect } from "react";
 import type {
 	DiceRoll,
 	FullGame,
 	LudoGameState,
 	PlayerGameState,
-	Result,
 } from "../types";
 import { Color } from "@prisma/client";
-import useSocket from "./use-socket";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { LoadGameByName } from "../client-api/load";
 import { useMemo, useState } from "react";
-import { LudoClientState } from "../client-state";
-import { LeaveGame } from "../client-api/leave";
+import LudoClientState from "../client-state";
 
 /**
  * Custom hook to access the current Ludo game state.
@@ -25,8 +21,6 @@ export default function useGame(): LudoGameState {
 	const searchParams = useSearchParams();
 
 	const gameName = params.gameName as string;
-	const color = searchParams.get("color") as Color | null;
-	const preferredColor = searchParams.get("preferredColor") as Color | null;
 
 	// For redirects
 	const router = useRouter();
@@ -52,9 +46,6 @@ export default function useGame(): LudoGameState {
 
 	const name = game?.name || "";
 
-	// Websockets connection
-	const { socket, connectionError } = useSocket(name);
-
 	// Is game paused?
 	const [isPaused, setIsPaused] = useState(false);
 
@@ -64,25 +55,8 @@ export default function useGame(): LudoGameState {
 	// Avaliable moves
 	const [avaliableMoves, setAvaliableMoves] = useState<number[]>([]);
 
-	// Game "visual" state
-	const [clientState, setClientState] = useState<LudoClientState>(
-		game?.turn === searchParams.get("color") ?
-			LudoClientState.TURN_ROLL
-		:	LudoClientState.WAITING,
-	);
-
-	// On socket game update
-	useEffect(() => {
-		if (!socket) return;
-		socket.emit("join", `game_${gameName}`);
-
-		socket.on("game-update", invalidate);
-
-		// Cleanup on unmount or socket change
-		return () => {
-			socket.off("game-update", invalidate);
-		};
-	}, [socket, gameName]);
+	// Client state
+	const [clientState, setClientState] = useState(LudoClientState.AWAITING_PLAYER_MOVE);
 
 	/**
 	 * EVENT HANDLERS
@@ -95,7 +69,6 @@ export default function useGame(): LudoGameState {
 			headers: {
 				"Content-Type": "application/json",
 			},
-			body: JSON.stringify({ color }),
 		});
 	};
 
@@ -127,14 +100,7 @@ export default function useGame(): LudoGameState {
 	};
 
 	// Quit game handler
-	const onQuitGame = async (): Promise<void> => {
-		if (!color) {
-			// TODO
-			console.error("No color specified for quitting the game.");
-			return;
-		}
-
-		await LeaveGame(gameName, color);
+	const onQuitGame = (): void => {
 		router.push("/games/ludo/menu");
 	};
 
@@ -157,14 +123,12 @@ export default function useGame(): LudoGameState {
 			// Connectivity
 			isLoading,
 			error,
-			connectionError,
 
 			// Game state
 			state: clientState,
 			diceNumber: game?.diceRoll as DiceRoll,
 			currentTurn: game?.turn || Color.RED,
 			isPaused: isPaused,
-			clientColor: color,
 
 			// Entities
 			players: players,

@@ -2,20 +2,17 @@
  * Enum of client side ludo game states.
  */
 export enum LudoClientState {
-	// Waiting for another player to roll dice or make a move
-	WAITING,
-
-	// Waiting for a bot move to take place (basically right away, only a visual delay)
-	WAITING_BOT_MOVE,
-
 	// Dice is rolling
 	DICE_ROLLING,
 
-	// Current player can roll the dice
-	TURN_ROLL,
+	// Awaiting player move (to click dice)
+	AWAITING_PLAYER_MOVE,
 
-	// Current player can move a pawn
-	TURN_MOVE,
+	// Awaiting player to click a pawn to move
+	AWAITING_PAWN_SELECTION,
+
+	// Awaiting player to click a spot to move to
+	AWAITING_SPOT_SELECTION,
 
 	// Game over
 	GAME_OVER,

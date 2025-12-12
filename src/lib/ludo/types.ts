@@ -160,14 +160,12 @@ export type LudoGameState = {
 	// Connectivity
 	isLoading: boolean;
 	error: Error | null;
-	connectionError: string | null;
 
 	// Game state
 	state: LudoClientState;
 	isPaused: boolean;
 	diceNumber: DiceRoll | null;
 	currentTurn: Color;
-	clientColor: Color | null;
 
 	// Entities
 	players: PlayerGameState[];
@@ -184,5 +182,5 @@ export type LudoGameState = {
 	onMovePawn: (pawnId: number, moveBy: number) => Promise<void>;
 	onPauseGame: () => void;
 	onResumeGame: () => void;
-	onQuitGame: () => Promise<void>;
+	onQuitGame: () => void;
 };
