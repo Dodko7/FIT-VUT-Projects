@@ -44,8 +44,7 @@ export default function SnakeMenuPage() {
 		{
 			label: "Customise",
 			action: () => {
-				// TODO: Open customization menu
-				console.log("Customise selected");
+				window.location.href = "/games/snake/customize";
 			},
 		},
 		{

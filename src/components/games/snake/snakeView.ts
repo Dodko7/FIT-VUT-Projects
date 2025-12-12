@@ -26,6 +26,7 @@ export interface ViewConfig {
 		wall: string;
 		text: string;
 	};
+	gridStyle: string;
 }
 
 /**
@@ -56,11 +57,55 @@ export class SnakeGameView {
 		}
 		this.ctx = ctx;
 
-		// Konfigurácia farieb podľa game type
+		// Konfigurácia farieb podľa game type a customization
 		this.config = {
 			cellSize,
 			colors: this.getColorScheme(gameType),
+			gridStyle: "subtle",
 		};
+		
+		// Load customization settings
+		this.loadCustomization();
+	}
+	
+	/**
+	 * Load customization settings from localStorage
+	 */
+	private loadCustomization(): void {
+		try {
+			const savedSettings = localStorage.getItem("snake_customization");
+			if (savedSettings) {
+				const settings = JSON.parse(savedSettings);
+				
+				// Apply snake colors
+				if (settings.snakeColorData) {
+					this.config.colors.snakeHead = settings.snakeColorData.head;
+					this.config.colors.snake = settings.snakeColorData.body;
+				}
+				
+				// Apply food color
+				if (settings.foodColorData) {
+					this.config.colors.food = settings.foodColorData.color;
+				}
+				
+				// Apply background color
+				if (settings.backgroundColorData) {
+					this.config.colors.background = settings.backgroundColorData.color;
+				}
+				
+				// Apply wall color
+				if (settings.wallColorData) {
+					this.config.colors.wall = settings.wallColorData.color;
+				}
+				
+				// Apply grid style
+				if (settings.gridStyleData) {
+					this.config.gridStyle = settings.gridStyleData.value;
+				}
+			}
+		} catch (error) {
+			console.error("Failed to load customization settings:", error);
+		}
 	}
 
 	/**
@@ -174,7 +219,19 @@ export class SnakeGameView {
 	 * Nakreslí mriežku
 	 */
 	private drawGrid(gridSize: number): void {
-		this.ctx.strokeStyle = this.config.colors.grid;
+		// Skip grid if style is "none"
+		if (this.config.gridStyle === "none") {
+			return;
+		}
+		
+		// Set grid opacity based on style
+		const gridAlpha = this.config.gridStyle === "subtle" ? 0.1 : 0.3;
+		
+		// Parse grid color and apply alpha
+		const gridColor = this.config.colors.grid;
+		this.ctx.strokeStyle = gridColor.startsWith("#") 
+			? gridColor + Math.floor(gridAlpha * 255).toString(16).padStart(2, "0")
+			: `rgba(26, 26, 26, ${gridAlpha})`;
 		this.ctx.lineWidth = 1;
 
 		for (let i = 0; i <= gridSize; i++) {
