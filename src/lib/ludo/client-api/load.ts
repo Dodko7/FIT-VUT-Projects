@@ -49,11 +49,10 @@ export async function LoadCurrentGame(): Promise<FullGame> {
 /**
  * Loads a Ludo game by its name.
  * @param gameName The name of the game to load.
- * @param host Optional host address for the request. Localhost is used if not provided.
  * @returns A promise resolving to a Game/Full
  */
-export async function LoadGameByName(gameName: string, host?: string): Promise<FullGame> {
-	const response = await fetch(`http://${host || "localhost:3000"}/api/ludo/${gameName}/load`);
+export async function LoadGameByName(gameName: string): Promise<FullGame> {
+	const response = await fetch(`/api/ludo/${gameName}/load`);
 	const result = (await response.json()) as TypedResult<FullGame>;
 
 	if (!result.success) {

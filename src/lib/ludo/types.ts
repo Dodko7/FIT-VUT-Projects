@@ -1,6 +1,7 @@
 import type { Color, Prisma } from "@prisma/client";
 import type { PawnSpotProps } from "~/components/games/ludo/board/pawn-spot";
 import type LudoClientState from "./client-state";
+import type PawnSpotHighlight from "./enum/pawn-spot-highlight";
 
 /**
  * General purpose type for a promise which may or may not succeed.
@@ -38,15 +39,18 @@ export type MenuGame = {
 	bots: number;
 };
 
+export type NewPlayerRequest = {
+	name: string;
+	color: Color;
+};
+
 /**
  * Type for new game requests.
  */
 export type NewGameRequest = {
 	name: string;
-	nofPlayers: number;
-	hostName: string;
+	players: NewPlayerRequest[];
 	bots: boolean;
-	hostColor: Color;
 };
 
 /**
@@ -130,8 +134,47 @@ export type ColorPickerProps = {
  */
 export type PausedPageProps = {
 	onResume: () => void;
-	onQuit: () => Promise<void>;
+	onQuit: () => void;
 	onExport: () => Promise<Result>;
+};
+
+/**
+ * Spot highlight and id/position.
+ */
+export type HighlightedPawnSpot = {
+	position: number;
+	highlight: PawnSpotHighlight;
+};
+
+/**
+ * For available pawn moves returned from the server.
+ */
+export type AvaliablePawnMoves = {
+	pawnId: number;
+	moves: HighlightedPawnSpot[];
+};
+
+/**
+ * On clicks per position.
+ */
+export type PawnSpotOnClicks = {
+	position: number;
+	onClick: () => void | (() => Promise<void>);
+};
+
+/**
+ * Returned upon posting to /roll
+ */
+export type RollDiceResult = {
+	// Number on the dice
+	diceNumber: DiceRoll;
+
+	// Highlights (avaliable pawns and moves)
+	avaliablePawns: HighlightedPawnSpot[];
+	avaliableMoves: AvaliablePawnMoves[];
+
+	// Next player's turn
+	refetch: boolean;
 };
 
 /**
@@ -172,9 +215,8 @@ export type LudoGameState = {
 	name: string;
 
 	// Optional, depending on the state (else -1/empty)
-	selectedPawnId: number;
-	avaliablePawns: number[];
-	avaliableMoves: number[];
+	highlights: HighlightedPawnSpot[];
+	onClicks: PawnSpotOnClicks[];
 
 	// Actions
 	onRollDice: () => Promise<void>;

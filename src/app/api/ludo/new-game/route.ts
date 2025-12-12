@@ -1,5 +1,4 @@
 import { Color, type Player } from "@prisma/client";
-import { isBot } from "next/dist/server/web/spec-extension/user-agent";
 import { NextResponse, type NextRequest } from "next/server";
 import type { NewGameRequest } from "~/lib/ludo/types";
 import { db as prisma } from "~/server/db";
@@ -69,6 +68,7 @@ async function CreatePawnsForPlayer(
 			data: {
 				position: pos,
 				playerId: playerId,
+				color: color,
 			},
 		});
 	}
@@ -80,7 +80,7 @@ async function CreatePawnsForPlayer(
 export async function POST(request: NextRequest): Promise<NextResponse> {
 	try {
 		const reqData: NewGameRequest = await request.json();
-		const { name, hostName, bots, nofPlayers, hostColor } = reqData;
+		const { name, bots, players } = reqData;
 
 		// Check if game with the same name exists
 		if (
@@ -101,55 +101,37 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 		const newGame = await prisma.game.create({
 			data: {
 				name: name,
-				hostColor: hostColor,
 				lastPlayed: new Date(),
-				turn: hostColor
 			},
 		});
 
-		// Create host
-		const hostPlayer = await CreatePlayer(
-			hostName,
-			false,
-			hostColor,
-			newGame.id,
-		);
-		await CreatePawnsForPlayer(hostPlayer.id, hostPlayer.color);
-
-		// Determine other colors
-		const allColors: Color[] = [
-			Color.RED,
-			Color.YELLOW,
-			Color.GREEN,
-			Color.BLUE,
-		];
-		const remainingColors = allColors.filter((c) => c !== hostColor);
-
-		// Create other players
-		for (let i = 1; i < nofPlayers; i++) {
-			const color = remainingColors[i - 1];
-			const playerName = "Waiting...";
-			const player = await CreatePlayer(
-				playerName,
+		// Create players
+		for (const player of players) {
+			const createdPlayer = await CreatePlayer(
+				player.name,
 				false,
-				color!,
+				player.color,
 				newGame.id,
 			);
-			await CreatePawnsForPlayer(player.id, player.color);
+			await CreatePawnsForPlayer(createdPlayer.id, player.color);
 		}
 
-		// Create bots
+		// Create bots if enabled
+		const botcount = 4 - players.length;
+		const colors = [0, 1, 2, 3]
+			.map(ColorFromIndex)
+			.filter((c) => !players.some((p) => p.color === c));
 		if (bots) {
-			const botCount = 4 - nofPlayers;
-			for (let i = 0; i < botCount; i++) {
-				const color = remainingColors[nofPlayers - 1 + i];
-				const botPlayer = await CreatePlayer(
-					`Bot ${i + 1}`,
+			for (let i = 0; i < botcount; i++) {
+				const botName = `Bot ${i + 1}`;
+				const botColor = colors[i];
+				const createdBot = await CreatePlayer(
+					botName,
 					true,
-					color!,
+					botColor!,
 					newGame.id,
 				);
-				await CreatePawnsForPlayer(botPlayer.id, botPlayer.color);
+				await CreatePawnsForPlayer(createdBot.id, botColor!);
 			}
 		}
 

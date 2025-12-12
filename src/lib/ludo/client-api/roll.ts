@@ -1,24 +1,25 @@
-import type { Result } from "../types";
+import type { Result, RollDiceResult, TypedResult } from "../types";
 
 /**
  * Calls the API to roll the dice for a specific game.
  * @param gameName The name of the game.
  * @param color The color of the player rolling.
- * @param host Optional host address for the request. Localhost is used if not provided.
- * @returns The result of the roll (success/failure).
+ * @returns The result of the roll, available moves, and any errors.
  */
-export async function RollDice(gameName: string, color: string, host?: string): Promise<Result> {
-    return await fetch(`http://${host || "localhost:3000"}/api/ludo/${gameName}/roll`, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ color }),
-    }).then(async (res) => {
-        const data: Result = await res.json();
-        return data;
-    }).catch((err) => ({
-        success: false,
-        error: err instanceof Error ? err.message : "Unknown error occurred.",
-    }));
+export async function RollDice(
+	gameName: string,
+): Promise<TypedResult<RollDiceResult>> {
+	return await fetch(`/api/ludo/${gameName}/roll`, {
+		method: "POST",
+		headers: {
+			"Content-Type": "application/json",
+		},
+	}).then(async (res) => {
+		const data: TypedResult<RollDiceResult> = await res.json();
+		if (data.success) {
+			return data;
+		} else {
+			throw new Error(data.error);
+		}
+	});
 }

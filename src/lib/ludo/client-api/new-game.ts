@@ -1,4 +1,4 @@
-import type { Color } from "@prisma/client";
+import { Color } from "@prisma/client";
 import type { NewGameRequest, TypedResult } from "../types";
 
 /**
@@ -37,20 +37,40 @@ export async function CreateNewGame(
 		};
 	}
 
-	const playerName = data.get("player-name-input");
-	if (!playerName) {
-		return {
-			success: false,
-			error: "Player name missing!",
-		};
+	// Get player names
+	const redPlayerName = data.get("player-name-input-red")?.toString().trim();
+	const yellowPlayerName = data
+		.get("player-name-input-yellow")
+		?.toString()
+		.trim();
+	const bluePlayerName = data
+		.get("player-name-input-blue")
+		?.toString()
+		.trim();
+	const greenPlayerName = data
+		.get("player-name-input-green")
+		?.toString()
+		.trim();
+
+	let players: { name: string; color: Color }[] = [];
+	if (redPlayerName) {
+		players.push({ name: redPlayerName, color: Color.RED });
+	}
+	if (yellowPlayerName) {
+		players.push({ name: yellowPlayerName, color: Color.YELLOW });
+	}
+	if (bluePlayerName) {
+		players.push({ name: bluePlayerName, color: Color.BLUE });
+	}
+	if (greenPlayerName) {
+		players.push({ name: greenPlayerName, color: Color.GREEN });
 	}
 
+	// Build request object
 	const request: NewGameRequest = {
 		name: gameName.toString(),
-		hostName: playerName.toString(),
-		nofPlayers: numberOfPlayers,
+		players: players,
 		bots: botsOn,
-		hostColor: hostColor,
 	};
 
 	// POST to API

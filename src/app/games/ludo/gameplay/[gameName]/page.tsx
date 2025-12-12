@@ -27,47 +27,32 @@ import useGame from "~/lib/ludo/hooks/use-game";
 import { LudoClientState } from "~/lib/ludo/client-state";
 import { Color } from "@prisma/client";
 import LudoPausePage from "~/components/games/ludo/pages/pause-page";
+import LudoLoadingPage from "~/components/games/ludo/pages/loading-page";
 
 export default function LudoGameplayPage() {
 	// Fetch state
 	const game = useGame();
 
 	// Errors
-	if (game.connectionError) {
-		return (
-			<LudoErrorPage
-				message={game.connectionError}
-				links={[{ text: "Back to Menu", link: "/games/ludo/menu" }]}
-			/>
-		);
-	} else if (game.error) {
+	if (game.error) {
 		return (
 			<LudoErrorPage
 				message={game.error.message || "Failed to load current game."}
 			/>
 		);
-	} else if (game.connectionError) {
-		return (
-			<LudoErrorPage
-				message={game.connectionError}
-				links={[{ text: "Back to Menu", link: "/games/ludo/menu" }]}
-			/>
-		);
-	} else if (!game.clientColor) {
-		return (
-			<LudoErrorPage
-				message="Player color not specified."
-				links={[{ text: "Back to Menu", link: "/games/ludo/menu" }]}
-			/>
-		);
+	} else if (game.isLoading) {
+		return <LudoLoadingPage />;
 	} else if (game.isPaused) {
 		return (
 			<LudoPausePage
 				onResume={game.onResumeGame}
 				onQuit={game.onQuitGame}
-				onExport={async () => {await Promise.resolve(); console.log("Export game"); return { success: true };} }
+				onExport={async () => {
+					await Promise.resolve();
+					return { success: true };
+				}}
 			/>
-		)
+		);
 	}
 
 	console.log(game.players);
@@ -81,16 +66,30 @@ export default function LudoGameplayPage() {
 	// Pawns
 	const pawns: PawnGameState[] = game.players.flatMap((p) => p.pawns);
 
-	const topPartProps = GetPawnSpotPropsForBoardPart(BOARD_TOP_PART, pawns);
+	const topPartProps = GetPawnSpotPropsForBoardPart(
+		BOARD_TOP_PART,
+		pawns,
+		game.highlights,
+		game.onClicks,
+	);
 	const rightPartProps = GetPawnSpotPropsForBoardPart(
 		BOARD_RIGHT_PART,
 		pawns,
+		game.highlights,
+		game.onClicks,
 	);
 	const bottomPartProps = GetPawnSpotPropsForBoardPart(
 		BOARD_BOTTOM_PART,
 		pawns,
+		game.highlights,
+		game.onClicks,
 	);
-	const leftPartProps = GetPawnSpotPropsForBoardPart(BOARD_LEFT_PART, pawns);
+	const leftPartProps = GetPawnSpotPropsForBoardPart(
+		BOARD_LEFT_PART,
+		pawns,
+		game.highlights,
+		game.onClicks,
+	);
 
 	return (
 		<div className="ludo-board-font flex h-screen w-screen flex-col items-center justify-start">
@@ -132,6 +131,9 @@ export default function LudoGameplayPage() {
 						:	[false, false, false, false]
 					}
 					pawnProps={RED_PAWN_HOME_PROPS}
+					highlights={game.highlights}
+					onClicks={game.onClicks}
+					color={Color.RED}
 				/>
 				{/** Vertical board part between red and green */}
 				<VerticalBoardPart
@@ -148,6 +150,9 @@ export default function LudoGameplayPage() {
 						:	[false, false, false, false]
 					}
 					pawnProps={GREEN_PAWN_HOME_PROPS}
+					highlights={game.highlights}
+					onClicks={game.onClicks}
+					color={Color.GREEN}
 				/>
 				{/** Horizontal board part between red and blue */}
 				<HorizontalBoardPart
@@ -164,12 +169,6 @@ export default function LudoGameplayPage() {
 					onRollDice={game.onRollDice}
 					isRolling={game.state === LudoClientState.DICE_ROLLING}
 				/>
-				{/* Turn Indicator Overlay */}
-				{game.currentTurn !== game.clientColor && (
-					<div className="absolute top-20 left-1/2 -translate-x-1/2 rounded-full bg-black/50 px-6 py-2 text-white backdrop-blur-sm">
-						Waiting for {game.currentTurn}...
-					</div>
-				)}
 				{/** Horizontal board part between green and yellow */}
 				<HorizontalBoardPart
 					pawnSpotProps={rightPartProps.pawnSpotProps}
@@ -184,6 +183,9 @@ export default function LudoGameplayPage() {
 						:	[false, false, false, false]
 					}
 					pawnProps={BLUE_PAWN_HOME_PROPS}
+					highlights={game.highlights}
+					onClicks={game.onClicks}
+					color={Color.BLUE}
 				/>
 				{/** Vertical board part between yellow and blue */}
 				<VerticalBoardPart
@@ -200,6 +202,9 @@ export default function LudoGameplayPage() {
 						:	[false, false, false, false]
 					}
 					pawnProps={YELLOW_PAWN_HOME_PROPS}
+					highlights={game.highlights}
+					onClicks={game.onClicks}
+					color={Color.YELLOW}
 				/>
 			</div>
 			{/** Blue and yellow player statuses */}

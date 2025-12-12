@@ -1,15 +1,21 @@
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import type {
+	HighlightedPawnSpot,
+	AvaliablePawnMoves,
 	DiceRoll,
 	FullGame,
 	LudoGameState,
 	PlayerGameState,
+	PawnSpotOnClicks,
 } from "../types";
 import { Color } from "@prisma/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { LoadGameByName } from "../client-api/load";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import LudoClientState from "../client-state";
+import { RollDice } from "../client-api/roll";
+import PawnSpotHighlight from "../enum/pawn-spot-highlight";
+import { get } from "http";
 
 /**
  * Custom hook to access the current Ludo game state.
@@ -53,10 +59,60 @@ export default function useGame(): LudoGameState {
 	const [selectedPawnId, setSelectedPawnId] = useState<number>(-1);
 
 	// Avaliable moves
-	const [avaliableMoves, setAvaliableMoves] = useState<number[]>([]);
+	const avaliableMoves = useRef<AvaliablePawnMoves[]>([]);
+
+	// Avaliable pawns
+	const avaliablePawns = useRef<HighlightedPawnSpot[]>([]);
+
+	// Highlights
+	const [highlights, setHighlights] = useState<HighlightedPawnSpot[]>([]);
+
+	// On clicks
+	const [onClicks, setOnClicks] = useState<PawnSpotOnClicks[]>([]);
+
+	// Dice roll
+	const [diceRoll, setDiceRoll] = useState<DiceRoll>(6);
 
 	// Client state
-	const [clientState, setClientState] = useState(LudoClientState.AWAITING_PLAYER_MOVE);
+	const [clientState, setClientState] = useState(
+		LudoClientState.AWAITING_PLAYER_MOVE,
+	);
+
+	/**
+	 * HELPERS
+	 */
+	const GetMoveSelectionHighlights = (): HighlightedPawnSpot[] => {
+		const moveHighlights = avaliableMoves.current.map((avalMove) => {
+			if (avalMove.pawnId !== selectedPawnId) {
+				return null;
+			}
+			return avalMove.moves;
+		});
+
+		// And add current pawn highlight (disgusting code, todo)
+		const selectedHighlight: HighlightedPawnSpot = {
+			position:
+				game?.players
+					.flatMap((p) => p.pawns)
+					.find((pawn) => pawn.id === selectedPawnId)?.position || -1,
+			highlight: PawnSpotHighlight.SELECTED_PAWN,
+		};
+
+		return [selectedHighlight].concat(
+			...moveHighlights.filter((mh) => mh !== null),
+		);
+	};
+	const GetPawnSelectionOnClicks = (): PawnSpotOnClicks[] => {
+		return avaliablePawns.current.map((spot): PawnSpotOnClicks => {
+			return {
+				position: spot.position,
+				onClick: () => {
+					// Set selected pawn
+					setSelectedPawnId(spot.position);
+				},
+			};
+		});
+	};
 
 	/**
 	 * EVENT HANDLERS
@@ -64,12 +120,28 @@ export default function useGame(): LudoGameState {
 
 	// Roll dice handler
 	const onRollDice = async (): Promise<void> => {
-		await fetch(`/api/ludo/${gameName}/roll`, {
-			method: "POST",
-			headers: {
-				"Content-Type": "application/json",
-			},
-		});
+		setClientState(LudoClientState.DICE_ROLLING);
+		const result = await RollDice(gameName);
+		if (result.success) {
+			// Set refs and dice roll
+			setDiceRoll(result.value.diceNumber);
+			setHighlights(result.value.avaliablePawns);
+			avaliableMoves.current = result.value.avaliableMoves;
+
+			// -- DEBUG EVERYTHING --
+			console.log("Avaliable moves:", avaliableMoves.current);
+			console.log("Avaliable pawns:", result.value.avaliablePawns);
+			console.log("Dice roll:", result.value.diceNumber);
+			console.log("Highlights:", highlights);
+			console.log("OnClicks:", onClicks);
+
+			// Set on clicks
+			setOnClicks(GetPawnSelectionOnClicks());
+		}
+		invalidate();
+		setTimeout(() => {
+			setClientState(LudoClientState.AWAITING_PAWN_SELECTION);
+		}, 500);
 	};
 
 	// Select pawn handler
@@ -121,21 +193,21 @@ export default function useGame(): LudoGameState {
 
 		return {
 			// Connectivity
-			isLoading,
+			isLoading: isLoading && !game,
 			error,
 
 			// Game state
 			state: clientState,
-			diceNumber: game?.diceRoll as DiceRoll,
+			diceNumber: diceRoll,
 			currentTurn: game?.turn || Color.RED,
 			isPaused: isPaused,
+			highlights,
+			onClicks,
 
 			// Entities
 			players: players,
 			selectedPawnId: selectedPawnId,
 			name: game?.name || "",
-			avaliableMoves: [], // todo
-			avaliablePawns: [], // todo
 
 			// Handlers
 			onRollDice,

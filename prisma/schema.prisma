@@ -22,10 +22,6 @@ model Game {
     turn Color  @default(RED)
     // Has to be false by default (because web api...)
     musicOn   Boolean   @default(false)
-    // Last dice roll
-    diceRoll  Int?
-    // Host color
-    hostColor Color
 }
 
 // Player model
@@ -47,6 +43,8 @@ model Pawn {
     player    Player    @relation(fields: [playerId], references: [id], onDelete: Cascade)
     playerId  Int
     inHome     Boolean   @default(false)
+    // Convenient
+    color     Color
 }
 
 // Color enum

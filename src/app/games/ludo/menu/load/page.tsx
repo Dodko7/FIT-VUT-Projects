@@ -6,7 +6,6 @@ import LudoMenuButton from "~/components/games/ludo/buttons/menu-button";
 import LudoMenuHeader from "~/components/games/ludo/other/menu-header";
 import LudoSavedGame from "~/components/games/ludo/other/saved-game";
 import LudoErrorPage from "~/components/games/ludo/pages/error-page";
-import LudoLoadingPage from "~/components/games/ludo/pages/loading-page";
 import { DeleteGame } from "~/lib/ludo/client-api/delete";
 import { LoadAllGames, LoadGameByName } from "~/lib/ludo/client-api/load";
 import { type MenuGame, type Result } from "~/lib/ludo/types";
@@ -45,7 +44,7 @@ export default function LudoLoadPage() {
 							try {
 								const game = await LoadGameByName(gameName);
 								router.push(
-									`/games/ludo/gameplay/${game.name}?color=${game.hostColor}`,
+									`/games/ludo/gameplay/${game.name}`,
 								);
 							} catch (e) {
 								console.error("Failed to load game:", e);

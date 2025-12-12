@@ -4,22 +4,20 @@ export type PlayerNameInputProps = {
 	pawnColor: string;
 	inputDivClassName: string;
 	isVisible: boolean;
+	htmlFor: string;
 };
 
 export default function PlayerNameInput({
 	pawnColor,
 	inputDivClassName,
-	isVisible
+	isVisible,
+	htmlFor,
 }: PlayerNameInputProps) {
 	return (
 		<div 
 			className={"flex w-full items-center justify-between " + (isVisible ? "" : "invisible pointer-events-none")}
 			aria-hidden={!isVisible}
 		>
-			{/** Title */}
-			<h2 className="ludo-form-text text-5xl">
-				Your name
-			</h2>
 			{/** Input div */}
 			<div
 				className={`flex items-center justify-start rounded-[40px] px-4 py-2 ${inputDivClassName} flex-grow ml-10 h-20`}
@@ -32,7 +30,7 @@ export default function PlayerNameInput({
 				/>
 				{/** Label */}
 				<label
-					htmlFor="player-name-input"
+					htmlFor={htmlFor}
 					className="mx-5 text-3xl"
 				>
 					Enter here:
@@ -40,8 +38,8 @@ export default function PlayerNameInput({
 				{/** Input */}
 				<input
 					type="text"
-					id="player-name-input"
-					name="player-name-input"
+					id={htmlFor}
+					name={htmlFor}
 					className="text-3xl focus:outline-none focus:ring-0"
 				/>
 			</div>
