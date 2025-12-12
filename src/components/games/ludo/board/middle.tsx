@@ -8,9 +8,10 @@ export type middleProps = {
     playerName: string;
     onRollDice: () => void;
     isRolling: boolean;
+    active: boolean;
 }
 
-export default function Middle({ diceNumber, playerColor, playerName, onRollDice, isRolling }: middleProps) {
+export default function Middle({ diceNumber, playerColor, playerName, onRollDice, isRolling, active }: middleProps) {
     let colorClass = "";
     switch (playerColor) {
         case "RED":
@@ -34,11 +35,13 @@ export default function Middle({ diceNumber, playerColor, playerName, onRollDice
             </div>
             {/** Dice component */}
             <Dice lastRoll={diceNumber as any} isRolling={isRolling} />
-            <LudoMenuButton
+            {active && <LudoMenuButton
                 text="Roll dice"
                 onClick={onRollDice}
                 padding="px-1 py-2"
-            />
+            />}
+            {/** Padding */}
+            {!active && <div className="h-16"></div>}
         </div>
     )
 }

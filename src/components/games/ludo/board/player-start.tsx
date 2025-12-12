@@ -43,8 +43,6 @@ export default function PlayerStart({
 				return position - 12;
 		}
 	};
-
-
 	return (
 		<div
 			className={`flex items-center justify-center border-y-4 ${divClassName}`}

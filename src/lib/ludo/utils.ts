@@ -1,5 +1,6 @@
 import type { PawnSpotProps } from "~/components/games/ludo/board/pawn-spot";
 import {
+	BLUE_PAWN_START_POSITIONS,
 	BOARD_BOTTOM_END,
 	BOARD_BOTTOM_PART,
 	BOARD_BOTTOM_START,
@@ -14,6 +15,7 @@ import {
 	BOARD_TOP_START,
 	BOTTOM_HOME_INDICES,
 	COLOR_CONFIGS,
+	GREEN_PAWN_START_POSITIONS,
 	INGAME_BLUE_PAWN_COLOR,
 	INGAME_GREEN_PAWN_COLOR,
 	INGAME_RED_PAWN_COLOR,
@@ -24,16 +26,35 @@ import {
 	MENU_RED_PAWN_COLOR,
 	MENU_YELLOW_PAWN_COLOR,
 	PAWN_BLUE_HOME_1,
+	PAWN_BLUE_HOME_2,
+	PAWN_BLUE_HOME_3,
+	PAWN_BLUE_HOME_4,
 	PAWN_GREEN_HOME_1,
+	PAWN_GREEN_HOME_2,
+	PAWN_GREEN_HOME_3,
+	PAWN_GREEN_HOME_4,
 	PAWN_RED_HOME_1,
+	PAWN_RED_HOME_2,
+	PAWN_RED_HOME_3,
+	PAWN_RED_HOME_4,
 	PAWN_SPOT_BOARD_SIZE,
 	PAWN_YELLOW_HOME_1,
+	PAWN_YELLOW_HOME_2,
+	PAWN_YELLOW_HOME_3,
+	PAWN_YELLOW_HOME_4,
+	POSITION_MAP_BLUE,
+	POSITION_MAP_GREEN,
+	POSITION_MAP_RED,
+	POSITION_MAP_YELLOW,
+	RED_PAWN_START_POSITIONS,
 	RIGHT_HOME_INDICES,
 	TOP_HOME_INDICES,
 	TOTAL_BOARD_POSITIONS,
+	YELLOW_PAWN_START_POSITIONS,
 } from "./constants";
 import type {
 	BoardPartProps,
+	FullPlayer,
 	HighlightedPawnSpot,
 	PawnGameState,
 	PawnPosition,
@@ -75,42 +96,19 @@ function ColorEnumToPawnColor(color: Color): string {
 }
 
 function GetTopBoardPartSearchedPosition(index: number): number {
-	if (TOP_HOME_INDICES.includes(index)) {
-		return PAWN_GREEN_HOME_1 + TOP_HOME_INDICES.indexOf(index);
-	} else {
-		return BOARD_TOP_START + index;
-	}
+	return POSITION_MAP_GREEN[index as keyof typeof POSITION_MAP_GREEN];
 }
 
 function GetBottomBoardPartSearchedPosition(index: number): number {
-	if (BOTTOM_HOME_INDICES.includes(index)) {
-		return PAWN_BLUE_HOME_1 + BOTTOM_HOME_INDICES.indexOf(index);
-	} else {
-		return BOARD_BOTTOM_START + index;
-	}
+	return POSITION_MAP_BLUE[index as keyof typeof POSITION_MAP_BLUE];
 }
 
 function GetRightBoardPartSearchedPosition(index: number): number {
-	if (RIGHT_HOME_INDICES.includes(index)) {
-		return PAWN_YELLOW_HOME_1 + RIGHT_HOME_INDICES.indexOf(index);
-	} else {
-		return BOARD_RIGHT_START + index;
-	}
+	return POSITION_MAP_YELLOW[index as keyof typeof POSITION_MAP_YELLOW];
 }
 
 function GetLeftBoardPartSearchedPosition(index: number): number {
-	if (LEFT_HOME_INDICES.includes(index)) {
-		return PAWN_RED_HOME_1 + LEFT_HOME_INDICES.indexOf(index);
-	} else {
-		// Reverse order from the grid iteration
-		if (index <= 3) {
-			return BOARD_LEFT_END - (3 - index);
-		} else if (index === 4) {
-			return BOARD_LEFT_END - 5;
-		} else {
-			return BOARD_LEFT_START + (index - 6);
-		}
-	}
+	return POSITION_MAP_RED[index as keyof typeof POSITION_MAP_RED];
 }
 
 function GetSearchedPosition(index: number, part: number): number {
@@ -183,8 +181,6 @@ export function GetPawnSpotPropsForBoardPart(
 				highlightType = highlight.highlight;
 			}
 
-			const onClick = onClickObj ? onClickObj.onClick : undefined;
-
 			const className =
 				searchedPos >= TOTAL_BOARD_POSITIONS ?
 					config.homeClass
@@ -206,7 +202,7 @@ export function GetPawnSpotPropsForBoardPart(
 					:	undefined,
 				arrow,
 				highlight: highlightType,
-				onClick,
+				onClick: onClickObj
 			};
 		},
 	);
@@ -302,5 +298,47 @@ export function GetAvailableMoves(
     return availableMoves;
 }
 
-export function GetMoveSelectionHighlights() {}
-export function GetMoveSelectionOnClicks() {}
+export function GetPawnIdAtPosition(
+	players: FullPlayer[],
+	position: number,
+) {
+	for (const player of players) {
+		for (const pawn of player.pawns) {
+			if (pawn.position === position) {
+				return pawn.id;
+			}
+		}
+	}
+
+	return null;
+}
+
+export function GetHomeFromColor(color: Color): number[] {
+	switch (color) {
+		case Color.RED:
+			return [PAWN_RED_HOME_1, PAWN_RED_HOME_2, PAWN_RED_HOME_3, PAWN_RED_HOME_4];
+		case Color.YELLOW:
+			return [PAWN_YELLOW_HOME_1, PAWN_YELLOW_HOME_2, PAWN_YELLOW_HOME_3, PAWN_YELLOW_HOME_4];
+		case Color.GREEN:
+			return [PAWN_GREEN_HOME_1, PAWN_GREEN_HOME_2, PAWN_GREEN_HOME_3, PAWN_GREEN_HOME_4];
+		case Color.BLUE:
+			return [PAWN_BLUE_HOME_1, PAWN_BLUE_HOME_2, PAWN_BLUE_HOME_3, PAWN_BLUE_HOME_4];
+		default:
+			throw new Error("Invalid color");
+	}
+}
+
+export function GetStartFromColor(color: Color): number[] {
+	switch (color) {
+		case Color.RED:
+			return RED_PAWN_START_POSITIONS;
+		case Color.YELLOW:
+			return YELLOW_PAWN_START_POSITIONS;
+		case Color.GREEN:
+			return GREEN_PAWN_START_POSITIONS;
+		case Color.BLUE:
+			return BLUE_PAWN_START_POSITIONS;
+		default:
+			throw new Error("Invalid color");
+	}
+}

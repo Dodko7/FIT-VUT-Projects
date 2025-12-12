@@ -16,6 +16,8 @@ import LudoClientState from "../client-state";
 import { RollDice } from "../client-api/roll";
 import PawnSpotHighlight from "../enum/pawn-spot-highlight";
 import { get } from "http";
+import { GetPawnIdAtPosition } from "../utils";
+import MovePawn from "../client-api/move";
 
 /**
  * Custom hook to access the current Ludo game state.
@@ -55,8 +57,11 @@ export default function useGame(): LudoGameState {
 	// Is game paused?
 	const [isPaused, setIsPaused] = useState(false);
 
+	// Global/irreversible error
+	const [globalError, setGlobalError] = useState<string | null>(null);
+
 	// Selected pawn
-	const [selectedPawnId, setSelectedPawnId] = useState<number>(-1);
+	const [selectedPawnId, setSelectedPawnId] = useState<number | null>(null);
 
 	// Avaliable moves
 	const avaliableMoves = useRef<AvaliablePawnMoves[]>([]);
@@ -81,34 +86,69 @@ export default function useGame(): LudoGameState {
 	/**
 	 * HELPERS
 	 */
-	const GetMoveSelectionHighlights = (): HighlightedPawnSpot[] => {
+	const GetMoveSelectionHighlights = (id: number): HighlightedPawnSpot[] => {
 		const moveHighlights = avaliableMoves.current.map((avalMove) => {
-			if (avalMove.pawnId !== selectedPawnId) {
+			if (avalMove.pawnId !== id) {
 				return null;
 			}
 			return avalMove.moves;
 		});
 
-		// And add current pawn highlight (disgusting code, todo)
-		const selectedHighlight: HighlightedPawnSpot = {
-			position:
-				game?.players
-					.flatMap((p) => p.pawns)
-					.find((pawn) => pawn.id === selectedPawnId)?.position || -1,
-			highlight: PawnSpotHighlight.SELECTED_PAWN,
-		};
-
-		return [selectedHighlight].concat(
-			...moveHighlights.filter((mh) => mh !== null),
-		);
+		return moveHighlights
+			.flat()
+			.filter((h): h is HighlightedPawnSpot => h !== null);
 	};
-	const GetPawnSelectionOnClicks = (): PawnSpotOnClicks[] => {
-		return avaliablePawns.current.map((spot): PawnSpotOnClicks => {
+
+	const GetPawnSelectionOnClicks = (
+		spots: HighlightedPawnSpot[],
+	): PawnSpotOnClicks[] => {
+		return spots.map((spot): PawnSpotOnClicks => {
 			return {
 				position: spot.position,
 				onClick: () => {
-					// Set selected pawn
-					setSelectedPawnId(spot.position);
+					const pawnId = GetPawnIdAtPosition(
+						game!.players,
+						spot.position,
+					);
+					setSelectedPawnId(pawnId);
+					const newHighlights = GetMoveSelectionHighlights(pawnId!);
+					const newOnClicks = GetMoveSelectionOnClicks(
+						newHighlights,
+						pawnId!,
+					);
+					setClientState(LudoClientState.AWAITING_PLAYER_MOVE);
+					setHighlights(newHighlights);
+					setOnClicks(newOnClicks);
+				},
+			};
+		});
+	};
+
+	// Posts to /move to move a pawn
+	const GetMoveSelectionOnClicks = (
+		spots: HighlightedPawnSpot[],
+		pawnId: number,
+	): PawnSpotOnClicks[] => {
+		return spots.map((spot): PawnSpotOnClicks => {
+			return {
+				position: spot.position,
+				onClick: async () => {
+					const res = await MovePawn(gameName, pawnId, spot.position);
+
+					if (res.success) {
+						invalidate();
+						setSelectedPawnId(null);
+						setHighlights([]);
+						setOnClicks([]);
+						avaliableMoves.current = [];
+						avaliablePawns.current = [];
+						setClientState(LudoClientState.AWAITING_PLAYER_MOVE);
+					} else {
+						setGlobalError(
+							res.error ||
+								"An unknown error occurred while moving the pawn.",
+						);
+					}
 				},
 			};
 		});
@@ -123,33 +163,27 @@ export default function useGame(): LudoGameState {
 		setClientState(LudoClientState.DICE_ROLLING);
 		const result = await RollDice(gameName);
 		if (result.success) {
+			const spots = result.value.avaliablePawns;
+			const onClicks = GetPawnSelectionOnClicks(spots);
+			setHighlights(spots);
 			// Set refs and dice roll
+			setOnClicks(onClicks);
 			setDiceRoll(result.value.diceNumber);
-			setHighlights(result.value.avaliablePawns);
 			avaliableMoves.current = result.value.avaliableMoves;
 
 			// -- DEBUG EVERYTHING --
-			console.log("Avaliable moves:", avaliableMoves.current);
-			console.log("Avaliable pawns:", result.value.avaliablePawns);
-			console.log("Dice roll:", result.value.diceNumber);
-			console.log("Highlights:", highlights);
-			console.log("OnClicks:", onClicks);
+			// console.log("Avaliable moves:", avaliableMoves.current);
+			// console.log("Avaliable pawns:", result.value.avaliablePawns);
+			// console.log("Dice roll:", result.value.diceNumber);
+			// console.log("Highlights:", highlights);
 
-			// Set on clicks
-			setOnClicks(GetPawnSelectionOnClicks());
+			// // Set on clicks
+			// console.log("OnClicks:", onClicks);
 		}
 		invalidate();
 		setTimeout(() => {
 			setClientState(LudoClientState.AWAITING_PAWN_SELECTION);
 		}, 500);
-	};
-
-	// Select pawn handler
-	const onSelectPawn = async (pawnId: number): Promise<void> => {
-		setSelectedPawnId(pawnId);
-
-		// TODO API CALL
-		await Promise.resolve();
 	};
 
 	// Move pawn handler
@@ -211,7 +245,6 @@ export default function useGame(): LudoGameState {
 
 			// Handlers
 			onRollDice,
-			onSelectPawn,
 			onMovePawn,
 			onPauseGame,
 			onResumeGame,

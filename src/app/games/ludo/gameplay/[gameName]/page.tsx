@@ -168,6 +168,7 @@ export default function LudoGameplayPage() {
 					}
 					onRollDice={game.onRollDice}
 					isRolling={game.state === LudoClientState.DICE_ROLLING}
+					active={true}
 				/>
 				{/** Horizontal board part between green and yellow */}
 				<HorizontalBoardPart

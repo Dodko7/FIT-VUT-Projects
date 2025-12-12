@@ -35,31 +35,31 @@ export const PAWN_4_BLUE_START = -16;
 
 // And as arrays!
 export const RED_PAWN_START_POSITIONS = [
-    PAWN_1_RED_START,
-    PAWN_2_RED_START,
-    PAWN_3_RED_START,
-    PAWN_4_RED_START,
+	PAWN_1_RED_START,
+	PAWN_2_RED_START,
+	PAWN_3_RED_START,
+	PAWN_4_RED_START,
 ];
 
 export const YELLOW_PAWN_START_POSITIONS = [
-    PAWN_1_YELLOW_START,
-    PAWN_2_YELLOW_START,
-    PAWN_3_YELLOW_START,
-    PAWN_4_YELLOW_START,
+	PAWN_1_YELLOW_START,
+	PAWN_2_YELLOW_START,
+	PAWN_3_YELLOW_START,
+	PAWN_4_YELLOW_START,
 ];
 
 export const GREEN_PAWN_START_POSITIONS = [
-    PAWN_1_GREEN_START,
-    PAWN_2_GREEN_START,
-    PAWN_3_GREEN_START,
-    PAWN_4_GREEN_START,
+	PAWN_1_GREEN_START,
+	PAWN_2_GREEN_START,
+	PAWN_3_GREEN_START,
+	PAWN_4_GREEN_START,
 ];
 
 export const BLUE_PAWN_START_POSITIONS = [
-    PAWN_1_BLUE_START,
-    PAWN_2_BLUE_START,
-    PAWN_3_BLUE_START,
-    PAWN_4_BLUE_START,
+	PAWN_1_BLUE_START,
+	PAWN_2_BLUE_START,
+	PAWN_3_BLUE_START,
+	PAWN_4_BLUE_START,
 ];
 
 // Pawn home positions (since there are 44 main board positions, homes start at 44)
@@ -146,36 +146,108 @@ export const PAWN_SPOT_BOARD_SIZE = 30;
 export const TOTAL_BOARD_POSITIONS = 44;
 
 export const COLOR_CONFIGS = {
-    [Color.RED]: {
-        HOME_ENTRY: 38,             // Index on the main board where RED enters its home path
-        BOARD_ENTRY: 0,             // Index on the main board where RED moves from start
-        HOME_START: 56,             // Start index of the home path (PAWN_RED_HOME_1)
-        HOME_END: 59,               // End index of the home path (PAWN_RED_HOME_4)
-        START_POS_MIN: -4,          // PAWN_4_RED_START
-        START_POS_MAX: -1,          // PAWN_1_RED_START
-    },
-    [Color.YELLOW]: {
-        HOME_ENTRY: 7,
-        BOARD_ENTRY: 11,
-        HOME_START: 48,
-        HOME_END: 51,
-        START_POS_MIN: -8,
-        START_POS_MAX: -5,
-    },
-    [Color.BLUE]: {
-        HOME_ENTRY: 27,
-        BOARD_ENTRY: 33,
-        HOME_START: 52,
-        HOME_END: 55,
-        START_POS_MIN: -16,
-        START_POS_MAX: -13,
-    },
-    [Color.GREEN]: {
-        HOME_ENTRY: 16,
-        BOARD_ENTRY: 22,
-        HOME_START: 44,
-        HOME_END: 47,
-        START_POS_MIN: -12,
-        START_POS_MAX: -9,
-    },
+	[Color.GREEN]: {
+		HOME_ENTRY: 1,
+		BOARD_ENTRY: 2,
+		HOME_START: 44,
+		HOME_END: 47,
+		START_POS_MIN: -12,
+		START_POS_MAX: -9,
+	},
+	[Color.YELLOW]: {
+		HOME_ENTRY: 12,
+		BOARD_ENTRY: 13,
+		HOME_START: 48,
+		HOME_END: 51,
+		START_POS_MIN: -8,
+		START_POS_MAX: -5,
+	},
+	[Color.BLUE]: {
+		HOME_ENTRY: 23,
+		BOARD_ENTRY: 24,
+		HOME_START: 52,
+		HOME_END: 55,
+		START_POS_MIN: -16,
+		START_POS_MAX: -13,
+	},
+	[Color.RED]: {
+		HOME_ENTRY: 34, // Index on the main board where RED enters its home path
+		BOARD_ENTRY: 35, // Index on the main board where RED moves from start
+		HOME_START: 56, // Start index of the home path (PAWN_RED_HOME_1)
+		HOME_END: 59, // End index of the home path (PAWN_RED_HOME_4)
+		START_POS_MIN: -4, // PAWN_4_RED_START
+		START_POS_MAX: -1, // PAWN_1_RED_START
+	},
+};
+
+export const POSITION_MAP_GREEN = {
+	0: 0,
+	1: 1,
+	2: 2,
+	3: 43,
+	4: 44,
+	5: 3,
+	6: 42,
+	7: 45,
+	8: 4,
+	9: 41,
+	10: 46,
+    11: 5,
+	12: 40,
+	13: 47,
+    14: 6,
+};
+
+export const POSITION_MAP_YELLOW = {
+	0: 7,
+	1: 8,
+	2: 9,
+	3: 10,
+	4: 11,
+	5: 51,
+	6: 50,
+	7: 49,
+	8: 48,
+	9: 12,
+	10: 17,
+	11: 16,
+	12: 15,
+	13: 14,
+	14: 13,
+};
+
+export const POSITION_MAP_BLUE = {
+	0: 28,
+	1: 55,
+	2: 18,
+	3: 27,
+	4: 54,
+	5: 19,
+	6: 26,
+	7: 53,
+	8: 20,
+	9: 25,
+	10: 52,
+	11: 21,
+	12: 24,
+	13: 23,
+	14: 22,
+};
+
+export const POSITION_MAP_RED = {
+	0: 35,
+	1: 36,
+	2: 37,
+	3: 38,
+	4: 39,
+	5: 34,
+	6: 56,
+	7: 57,
+	8: 58,
+	9: 59,
+	10: 33,
+	11: 32,
+	12: 31,
+	13: 30,
+	14: 29,
 };

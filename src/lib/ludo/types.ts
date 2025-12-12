@@ -81,6 +81,7 @@ export type FullPlayer = Prisma.PlayerGetPayload<{
 export type BoardPartProps = {
 	pawnSpotProps: PawnSpotProps[];
 	extraClassNames?: string;
+	positions?: number[];
 };
 
 /**
@@ -159,7 +160,7 @@ export type AvaliablePawnMoves = {
  */
 export type PawnSpotOnClicks = {
 	position: number;
-	onClick: () => void | (() => Promise<void>);
+	onClick: (() => void)| (() => Promise<void>);
 };
 
 /**
@@ -220,7 +221,6 @@ export type LudoGameState = {
 
 	// Actions
 	onRollDice: () => Promise<void>;
-	onSelectPawn: (pawnId: number) => void;
 	onMovePawn: (pawnId: number, moveBy: number) => Promise<void>;
 	onPauseGame: () => void;
 	onResumeGame: () => void;
