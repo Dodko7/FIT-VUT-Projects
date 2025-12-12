@@ -5,7 +5,7 @@
 export async function DeleteGame(gameName: string): Promise<void> {
     await fetch(`/api/ludo/${gameName}/delete`, {
         method: "DELETE"
-    }).then((res) => { // todo
+    }).then((res) => {
         if (!res.ok) {
             throw new Error(`Failed to delete game with name ${gameName}: ${res.statusText}`);
         }

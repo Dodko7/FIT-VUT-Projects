@@ -53,6 +53,7 @@ async function CreatePlayer(
  */
 async function CreatePawnsForPlayer(
 	playerId: number,
+	gameId: number,
 	color: Color,
 ): Promise<void> {
 	const startingPositions: Record<Color, number[]> = {
@@ -67,6 +68,7 @@ async function CreatePawnsForPlayer(
 		await prisma.pawn.create({
 			data: {
 				position: pos,
+				gameId: gameId,
 				playerId: playerId,
 				color: color,
 			},
@@ -113,7 +115,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 				player.color,
 				newGame.id,
 			);
-			await CreatePawnsForPlayer(createdPlayer.id, player.color);
+			await CreatePawnsForPlayer(createdPlayer.id, newGame.id, player.color);
 		}
 
 		// Create bots if enabled
@@ -131,7 +133,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 					botColor!,
 					newGame.id,
 				);
-				await CreatePawnsForPlayer(createdBot.id, botColor!);
+				await CreatePawnsForPlayer(createdBot.id, newGame.id, botColor!);
 			}
 		}
 

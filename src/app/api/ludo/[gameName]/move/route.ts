@@ -1,5 +1,12 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { GetHomeFromColor, GetStartFromColor } from "~/lib/ludo/utils";
+import { NEXT_COLOR } from "~/lib/ludo/constants";
+import { DoBotTurns, MovePawn } from "~/lib/ludo/movement";
+import type { MovePawnResult, TypedResult } from "~/lib/ludo/types";
+import {
+	GetAvailableMoves,
+	GetHomeFromColor,
+	GetStartFromColor,
+} from "~/lib/ludo/utils";
 import { db as prisma } from "~/server/db";
 
 /**
@@ -44,72 +51,78 @@ export async function POST(
 		 * 3. If another pawn is at the new position, move it to it's start.
 		 * 4. If the new pawn position is a home position, set the ishome flag.
 		 */
-		const pawn = await prisma.pawn.findFirst({
-			where: {
-				id: pawnId,
-				player: {
-					game: {
-						name: gameName,
-					},
-				},
-			},
+		await MovePawn(pawnId, position);
+
+		// Get the pawn to find the player
+		const pawn = await prisma.pawn.findUnique({
+			where: { id: pawnId },
 		});
 
 		if (!pawn) {
 			return NextResponse.json(
-				{
-					success: false,
-					error: "Pawn not found or does not belong to the game",
-				},
+				{ success: false, error: "Pawn not found after move" },
+				{ status: 500 },
+			);
+		}
+
+		// If the game is not over (player has all pawns in home) and no extra turn, switch turn
+		const game = await prisma.game.findFirst({
+			where: {
+				name: gameName,
+			},
+		});
+
+		if (!game) {
+			return NextResponse.json(
+				{ success: false, error: "Game not found" },
 				{ status: 404 },
 			);
 		}
 
-		// Check if the new position is occupied by another pawn
-		const otherPawn = await prisma.pawn.findFirst({
+		const playerPawns = await prisma.pawn.findMany({
 			where: {
-				position: position,
-				NOT: {
-					id: pawnId,
-				},
+				playerId: pawn.playerId,
 			},
 		});
 
-		// Get start position for the pawn's color
-		if (otherPawn) {
-			const startPositions = GetStartFromColor(otherPawn.color);
+		const allInHome = playerPawns.every((p) => p.inHome);
+		if (!allInHome && !game.extraTurn) {
+			// This will do all bot turns and switch to next human
+			await DoBotTurns(gameName);
+		} else if (allInHome) {
+			const announcement: MovePawnResult = {
+				isOver: true,
+			};
 
-			// Move the other pawn to its start position (but find the first free one)
-			for (const startPos of startPositions) {
-				const isOccupied = await prisma.pawn.findFirst({
-					where: {
-						position: startPos,
-					},
+			const res: TypedResult<MovePawnResult> = {
+				success: true,
+				value: announcement,
+			};
+
+			// Update the game too in case the client refetches
+			const game = await prisma.game.findFirst({
+				where: {
+					name: gameName,
+				},
+			});
+
+			if (game) {
+				await prisma.game.update({
+					where: { id: game.id },
+					data: { over: true },
 				});
-
-				if (!isOccupied) {
-					await prisma.pawn.update({
-						where: { id: otherPawn.id },
-						data: { position: startPos },
-					});
-					break;
-				}
 			}
+
+			return NextResponse.json(res);
+		} else if (game.extraTurn) {
+			// Just toggle
+			await prisma.game.update({
+				where: { id: game.id },
+				data: { extraTurn: false },
+			});
 		}
 
-		// Move the pawn to the new position and check for home
-		const homePositions = GetHomeFromColor(pawn.color);
-		const isHome = homePositions.includes(position);
-
-		await prisma.pawn.update({
-			where: { id: pawnId },
-			data: {
-				position: position,
-				inHome: isHome,
-			},
-		});
-
-		return NextResponse.json({ success: true });
+		return NextResponse.json({ success: true, value: { isOver: false } });
 	} catch (error) {
 		return NextResponse.json(
 			{

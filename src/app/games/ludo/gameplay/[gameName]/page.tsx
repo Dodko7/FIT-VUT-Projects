@@ -17,7 +17,7 @@ import {
 	RED_PAWN_HOME_PROPS,
 	YELLOW_PAWN_HOME_PROPS,
 } from "~/lib/ludo/constants";
-import type { PawnGameState, PawnPosition } from "~/lib/ludo/types";
+import type { PawnGameState } from "~/lib/ludo/types";
 import {
 	CompletedPawnsFromColor,
 	GetPawnSpotPropsForBoardPart,
@@ -28,11 +28,17 @@ import { LudoClientState } from "~/lib/ludo/client-state";
 import { Color } from "@prisma/client";
 import LudoPausePage from "~/components/games/ludo/pages/pause-page";
 import LudoLoadingPage from "~/components/games/ludo/pages/loading-page";
+import GameOverPage from "~/components/games/ludo/pages/game-over-page";
+
+const isClient = typeof window !== "undefined";
 
 export default function LudoGameplayPage() {
 	// Fetch state
 	const game = useGame();
 
+	if (!isClient || game.isLoading) {
+		return <LudoLoadingPage />;
+	}
 	// Errors
 	if (game.error) {
 		return (
@@ -40,8 +46,6 @@ export default function LudoGameplayPage() {
 				message={game.error.message || "Failed to load current game."}
 			/>
 		);
-	} else if (game.isLoading) {
-		return <LudoLoadingPage />;
 	} else if (game.isPaused) {
 		return (
 			<LudoPausePage
@@ -53,9 +57,14 @@ export default function LudoGameplayPage() {
 				}}
 			/>
 		);
+	} else if (game.state === LudoClientState.GAME_OVER) {
+		return (
+			<GameOverPage
+				gameName={game.name}
+				onQuit={game.onGameOver}
+			/>
+		);
 	}
-
-	console.log(game.players);
 
 	// Individual players (useful)
 	const redPlayer = game.players.find((p) => p.color === Color.RED);
@@ -101,7 +110,7 @@ export default function LudoGameplayPage() {
 			{/** Red and green player statuses */}
 			<div className="flex w-full">
 				<PlayerStatus
-					hasContent={true}
+					hasContent={redPlayer !== undefined}
 					playerName={redPlayer?.name || ""}
 					completedPawns={
 						redPlayer ? CompletedPawnsFromColor(redPlayer) : 0
@@ -110,7 +119,7 @@ export default function LudoGameplayPage() {
 					className="ludo-red-area"
 				/>
 				<PlayerStatus
-					hasContent={true}
+					hasContent={greenPlayer !== undefined}
 					playerName={greenPlayer?.name || ""}
 					completedPawns={
 						greenPlayer ? CompletedPawnsFromColor(greenPlayer) : 0
@@ -168,7 +177,7 @@ export default function LudoGameplayPage() {
 					}
 					onRollDice={game.onRollDice}
 					isRolling={game.state === LudoClientState.DICE_ROLLING}
-					active={true}
+					active={game.state === LudoClientState.AWAITING_PLAYER_MOVE}
 				/>
 				{/** Horizontal board part between green and yellow */}
 				<HorizontalBoardPart
@@ -211,7 +220,7 @@ export default function LudoGameplayPage() {
 			{/** Blue and yellow player statuses */}
 			<div className="flex w-full border-t">
 				<PlayerStatus
-					hasContent={true}
+					hasContent={bluePlayer !== undefined}
 					playerName={bluePlayer?.name || ""}
 					completedPawns={
 						bluePlayer ? CompletedPawnsFromColor(bluePlayer) : 0
@@ -220,7 +229,7 @@ export default function LudoGameplayPage() {
 					className="ludo-blue-area"
 				/>
 				<PlayerStatus
-					hasContent={true}
+					hasContent={yellowPlayer !== undefined}
 					playerName={yellowPlayer?.name || ""}
 					completedPawns={
 						yellowPlayer ? CompletedPawnsFromColor(yellowPlayer) : 0

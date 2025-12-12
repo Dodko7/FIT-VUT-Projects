@@ -1,4 +1,4 @@
-import type { Result, RollDiceResult, TypedResult } from "../types";
+import type { RollDiceResult, TypedResult } from "../types";
 
 /**
  * Calls the API to roll the dice for a specific game.
@@ -19,7 +19,10 @@ export async function RollDice(
 		if (data.success) {
 			return data;
 		} else {
-			throw new Error(data.error);
+			return {
+				success: false,
+				error: data.error,
+			};
 		}
 	});
 }

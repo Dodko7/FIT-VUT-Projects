@@ -160,7 +160,7 @@ export type AvaliablePawnMoves = {
  */
 export type PawnSpotOnClicks = {
 	position: number;
-	onClick: (() => void)| (() => Promise<void>);
+	onClick: (() => void) | (() => Promise<void>);
 };
 
 /**
@@ -176,6 +176,13 @@ export type RollDiceResult = {
 
 	// Next player's turn
 	refetch: boolean;
+};
+
+/**
+ * Returned upon posting to /move
+ */
+export type MovePawnResult = {
+	isOver: boolean;
 };
 
 /**
@@ -195,6 +202,14 @@ export type PlayerGameState = {
 	color: Color;
 	name: string;
 	pawns: PawnGameState[];
+};
+
+/**
+ * Props for the game over page.
+ */
+export type GameOverPageProps = {
+	gameName: string;
+	onQuit: () => Promise<void>;
 };
 
 /**
@@ -221,8 +236,8 @@ export type LudoGameState = {
 
 	// Actions
 	onRollDice: () => Promise<void>;
-	onMovePawn: (pawnId: number, moveBy: number) => Promise<void>;
 	onPauseGame: () => void;
 	onResumeGame: () => void;
 	onQuitGame: () => void;
+	onGameOver: () => Promise<void>;
 };

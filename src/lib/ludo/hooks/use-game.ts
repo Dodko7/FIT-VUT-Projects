@@ -7,17 +7,19 @@ import type {
 	LudoGameState,
 	PlayerGameState,
 	PawnSpotOnClicks,
+	TypedResult,
 } from "../types";
 import { Color } from "@prisma/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { LoadGameByName } from "../client-api/load";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import LudoClientState from "../client-state";
 import { RollDice } from "../client-api/roll";
-import PawnSpotHighlight from "../enum/pawn-spot-highlight";
-import { get } from "http";
 import { GetPawnIdAtPosition } from "../utils";
 import MovePawn from "../client-api/move";
+import { DeleteGame } from "../client-api/delete";
+
+const isClient = typeof window !== "undefined";
 
 /**
  * Custom hook to access the current Ludo game state.
@@ -26,7 +28,6 @@ import MovePawn from "../client-api/move";
 export default function useGame(): LudoGameState {
 	// Page URL
 	const params = useParams();
-	const searchParams = useSearchParams();
 
 	const gameName = params.gameName as string;
 
@@ -35,17 +36,20 @@ export default function useGame(): LudoGameState {
 
 	// For refetching on updates
 	const queryClient = useQueryClient();
-
 	// Fetch game model
 	const {
-		data: game,
+		data: gameRes,
 		isLoading,
 		error,
-	} = useQuery<FullGame>({
+	} = useQuery<TypedResult<FullGame>>({
 		queryKey: ["ludo", "game", gameName],
 		queryFn: () => LoadGameByName(gameName),
-		enabled: !!params.gameName,
+		enabled: isClient && !!params.gameName,
+		retryDelay: 1000,
+		retry: 3,
 	});
+
+	const game = gameRes?.success ? gameRes.value : null;
 
 	// For convenience
 	const invalidate = () => {
@@ -83,6 +87,13 @@ export default function useGame(): LudoGameState {
 		LudoClientState.AWAITING_PLAYER_MOVE,
 	);
 
+	// Set state on game over
+	useEffect(() => {
+		if (game?.players.some((p) => p.pawns.every((pawn) => pawn.inHome))) {
+			setClientState(LudoClientState.GAME_OVER);
+		}
+	}, [game?.over]);
+
 	/**
 	 * HELPERS
 	 */
@@ -99,6 +110,7 @@ export default function useGame(): LudoGameState {
 			.filter((h): h is HighlightedPawnSpot => h !== null);
 	};
 
+	// On clicks for selecting pawns
 	const GetPawnSelectionOnClicks = (
 		spots: HighlightedPawnSpot[],
 	): PawnSpotOnClicks[] => {
@@ -107,7 +119,7 @@ export default function useGame(): LudoGameState {
 				position: spot.position,
 				onClick: () => {
 					const pawnId = GetPawnIdAtPosition(
-						game!.players,
+						game?.players || [],
 						spot.position,
 					);
 					setSelectedPawnId(pawnId);
@@ -116,7 +128,7 @@ export default function useGame(): LudoGameState {
 						newHighlights,
 						pawnId!,
 					);
-					setClientState(LudoClientState.AWAITING_PLAYER_MOVE);
+					setClientState(LudoClientState.AWAITING_SPOT_SELECTION);
 					setHighlights(newHighlights);
 					setOnClicks(newOnClicks);
 				},
@@ -136,6 +148,14 @@ export default function useGame(): LudoGameState {
 					const res = await MovePawn(gameName, pawnId, spot.position);
 
 					if (res.success) {
+						if (res.value.isOver) {
+							setClientState(LudoClientState.GAME_OVER);
+							return;
+						}
+
+						// Avoid race conditions
+						await new Promise((r) => setTimeout(r, 500));
+
 						invalidate();
 						setSelectedPawnId(null);
 						setHighlights([]);
@@ -161,38 +181,42 @@ export default function useGame(): LudoGameState {
 	// Roll dice handler
 	const onRollDice = async (): Promise<void> => {
 		setClientState(LudoClientState.DICE_ROLLING);
+		let anyAvaliable = false;
 		const result = await RollDice(gameName);
 		if (result.success) {
 			const spots = result.value.avaliablePawns;
 			const onClicks = GetPawnSelectionOnClicks(spots);
 			setHighlights(spots);
+
 			// Set refs and dice roll
 			setOnClicks(onClicks);
 			setDiceRoll(result.value.diceNumber);
 			avaliableMoves.current = result.value.avaliableMoves;
 
-			// -- DEBUG EVERYTHING --
-			// console.log("Avaliable moves:", avaliableMoves.current);
-			// console.log("Avaliable pawns:", result.value.avaliablePawns);
-			// console.log("Dice roll:", result.value.diceNumber);
-			// console.log("Highlights:", highlights);
-
-			// // Set on clicks
-			// console.log("OnClicks:", onClicks);
+			anyAvaliable = spots.length > 0;
+		} else {
+			setGlobalError(
+				result.error ||
+					"An unknown error occurred while rolling the dice.",
+			);
+			return;
 		}
+		await new Promise((r) => setTimeout(r, 500));
 		invalidate();
 		setTimeout(() => {
-			setClientState(LudoClientState.AWAITING_PAWN_SELECTION);
+			// Set state to awaiting pawn selection, but only if there are any pawns to select
+			if (anyAvaliable) {
+				setClientState(LudoClientState.AWAITING_PAWN_SELECTION);
+			} else {
+				setClientState(LudoClientState.AWAITING_PLAYER_MOVE);
+			}
 		}, 500);
 	};
 
-	// Move pawn handler
-	const onMovePawn = async (
-		pawnId: number,
-		moveBy: number,
-	): Promise<void> => {
-		// TODO API CALL
-		await Promise.resolve();
+	// This is constant on finish
+	const onGameOver = async (): Promise<void> => {
+		await DeleteGame(name);
+		router.push("/games/ludo/menu");
 	};
 
 	// Pause game handler
@@ -228,7 +252,7 @@ export default function useGame(): LudoGameState {
 		return {
 			// Connectivity
 			isLoading: isLoading && !game,
-			error,
+			error: error || (globalError ? new Error(globalError) : null),
 
 			// Game state
 			state: clientState,
@@ -245,10 +269,10 @@ export default function useGame(): LudoGameState {
 
 			// Handlers
 			onRollDice,
-			onMovePawn,
 			onPauseGame,
 			onResumeGame,
 			onQuitGame,
+			onGameOver,
 		};
 	}, [game, isLoading, error, clientState, isPaused, selectedPawnId]);
 

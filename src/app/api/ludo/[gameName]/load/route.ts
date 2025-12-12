@@ -32,6 +32,7 @@ export async function GET(
 		});
 
 		if (!game) {
+			console.log("Game not found:", gameName);
 			return NextResponse.json(
 				{ success: false, error: "Game not found" },
 				{ status: 404 },

@@ -32,32 +32,33 @@ export async function LoadAllGames(): Promise<MenuGame[]> {
 }
 
 /**
- * Makes an API call to load the current active game.
- * @returns A promise resolving to a TypedResult containing the FullGame object.
- */
-export async function LoadCurrentGame(): Promise<FullGame> {
-	const response = await fetch("/api/ludo/load/current");
-	const result = (await response.json()) as TypedResult<FullGame>;
-
-	if (!result.success) {
-		throw new Error(result.error);
-	}
-
-	return result.value;
-}
-
-/**
  * Loads a Ludo game by its name.
  * @param gameName The name of the game to load.
  * @returns A promise resolving to a Game/Full
  */
-export async function LoadGameByName(gameName: string): Promise<FullGame> {
-	const response = await fetch(`/api/ludo/${gameName}/load`);
-	const result = (await response.json()) as TypedResult<FullGame>;
-
-	if (!result.success) {
-		throw new Error(result.error);
-	}
-
-	return result.value;
+export async function LoadGameByName(
+	gameName: string,
+): Promise<TypedResult<FullGame>> {
+	return await fetch(`/api/ludo/${gameName}/load`, {
+		method: "GET",
+		headers: {
+			"Content-Type": "application/json",
+		},
+	}).then(async (res) => {
+		if (!res.ok) {
+			throw new Error(`Failed to load game with name ${gameName}: ${res.statusText}`);
+		}
+		const data: TypedResult<FullGame> = await res.json();
+		if (data.success) {
+			return data;
+		} else {
+			return {
+				success: false,
+				error: data.error,
+			};
+		}
+	}).catch((err) => ({
+		success: false,
+		error: err instanceof Error ? err.message : "Unknown error occurred.",
+	})) as unknown as Promise<TypedResult<FullGame>>;
 }

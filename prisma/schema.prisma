@@ -18,10 +18,11 @@ model Game {
     name      String   @unique
     lastPlayed DateTime
     players   Player[]
+    over      Boolean   @default(false)
     // This can be used as a turn tracker
     turn Color  @default(RED)
-    // Has to be false by default (because web api...)
-    musicOn   Boolean   @default(false)
+    // So that if a player throws a 6, we know they can play again
+    extraTurn Boolean @default(false)
 }
 
 // Player model
@@ -42,6 +43,7 @@ model Pawn {
     position  Int
     player    Player    @relation(fields: [playerId], references: [id], onDelete: Cascade)
     playerId  Int
+    gameId    Int
     inHome     Boolean   @default(false)
     // Convenient
     color     Color

@@ -1,7 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { NEXT_COLOR } from "~/lib/ludo/constants";
 import PawnSpotHighlight from "~/lib/ludo/enum/pawn-spot-highlight";
-import type { AvaliablePawnMoves, DiceRoll, HighlightedPawnSpot, RollDiceResult } from "~/lib/ludo/types";
+import { DoBotTurns } from "~/lib/ludo/movement";
+import type {
+	AvaliablePawnMoves,
+	DiceRoll,
+	HighlightedPawnSpot,
+	RollDiceResult,
+} from "~/lib/ludo/types";
 import { GetAvailableMoves } from "~/lib/ludo/utils";
 import { db as prisma } from "~/server/db";
 
@@ -32,6 +37,13 @@ export async function POST(
 
 		// Generate random dice roll
 		const diceRoll = Math.floor(Math.random() * 6) + 1;
+		if (diceRoll === 6) {
+			// Set extra turn
+			await prisma.game.update({
+				where: { id: game.id },
+				data: { extraTurn: true },
+			});
+		}
 
 		// Get available pawns for the current player
 
@@ -40,9 +52,6 @@ export async function POST(
 			where: { gameId: game.id },
 			include: { pawns: true },
 		});
-
-		// And all colors
-		const colorsInGame = players.map((p) => p.color);
 
 		// 2. Find current player
 		const currentPlayer = players.find((p) => p.color === game.turn)!;
@@ -75,23 +84,17 @@ export async function POST(
 		}
 
 		// Update turn straight away if no moves are available
-		if (pawns.length === 0) {
-			let nextColor = NEXT_COLOR[game.turn];
-			while (!colorsInGame.includes(nextColor)) {
-				nextColor = NEXT_COLOR[nextColor];
-			}
-			await prisma.game.update({
-				where: { id: game.id },
-				data: { turn: nextColor },
-			});
+		if (pawns.length === 0 || moves.length === 0) {
+			await DoBotTurns(gameName);
 		}
 
-        const res: RollDiceResult = {
-            diceNumber: diceRoll as DiceRoll,
-            avaliablePawns: pawns,
-            avaliableMoves: moves,
-            refetch: pawns.length === 0,
-        }
+		const res: RollDiceResult = {
+			diceNumber: diceRoll as DiceRoll,
+			avaliablePawns: pawns,
+			avaliableMoves: moves,
+			refetch: pawns.length === 0,
+		};
+
 		return NextResponse.json({
 			success: true,
 			value: res,

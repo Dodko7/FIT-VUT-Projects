@@ -1,4 +1,4 @@
-import type { Result } from "../types";
+import type { MovePawnResult, TypedResult } from "../types";
 
 /**
  * Makes an API call to move a pawn in a specific game.
@@ -11,7 +11,7 @@ export default async function MovePawn(
 	gameName: string,
 	pawnId: number,
 	position: number,
-): Promise<Result> {
+): Promise<TypedResult<MovePawnResult>> {
 	return await fetch(`/api/ludo/${gameName}/move`, {
 		method: "POST",
 		headers: {
@@ -21,15 +21,20 @@ export default async function MovePawn(
 			pawnId,
 			position,
 		}),
-	})
-		.then(async (res) => {
-			const data: Result = await res.json();
+	}).then(async (res) => {
+		const data: TypedResult<MovePawnResult> = await res.json();
+		if (data.success) {
 			return data;
-		})
-		.catch((error) => {
+		} else {
 			return {
 				success: false,
-				error: error.message,
+				error: data.error,
 			};
-		});
+		}
+	}).catch((error) => {
+		return {
+			success: false,
+			error: error.message,
+		};
+	}) as TypedResult<MovePawnResult>;
 }

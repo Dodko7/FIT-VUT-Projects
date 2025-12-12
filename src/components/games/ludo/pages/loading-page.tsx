@@ -1,6 +1,5 @@
 /**
  * Function with a loading spinner. Amazing.
- * TODO: make this a rotating ludo pawn or something like that.
  */
 export default function LudoLoadingPage() {
     return (

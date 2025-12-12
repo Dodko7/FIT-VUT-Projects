@@ -14,7 +14,6 @@ export default function LudoLoadPage() {
 	const queryClient = useQueryClient();
 	const {
 		data: games,
-		isLoading,
 		error,
 	} = useQuery<MenuGame[]>({
 		queryKey: ["ludo-saved-games"],
@@ -42,12 +41,15 @@ export default function LudoLoadPage() {
 						game={game}
 						onPlay={async (gameName) => {
 							try {
-								const game = await LoadGameByName(gameName);
-								router.push(
-									`/games/ludo/gameplay/${game.name}`,
-								);
+								const res = await LoadGameByName(gameName);
+								if (res.success) {
+									router.push(
+										`/games/ludo/gameplay/${gameName}`,
+									);
+								} else {
+									throw new Error("Game not found");
+								}
 							} catch (e) {
-								console.error("Failed to load game:", e);
 								alert("Failed to load game. Please try again."); // todo remove beran ma zajebe
 							}
 						}}
