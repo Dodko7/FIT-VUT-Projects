@@ -11,12 +11,12 @@ export default function LudoPausePage({
 }: PausedPageProps) {
 	const buttonProps = [
 		{ text: "Resume", onClick: onResume },
-		{ text: "Leave", onClick: onQuit },
 		{ text: "Export to JSON", onClick: onExport },
+		{ text: "Leave", onClick: onQuit },
 	];
 
 	return (
-		<div className="flex h-full w-full flex-col items-center justify-start gap-10 py-10 bg-">
+		<div className="flex h-screen w-screen flex-col items-center justify-start gap-10 py-10 ludo-bg">
 			{/** Title */}
 			<div className="mt-10 flex w-full items-center justify-center gap-4">
 				<h1 className="ludo-text-primary text-7xl text-[#ffc916]">

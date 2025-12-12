@@ -33,7 +33,7 @@ model Player {
     id        Int       @id @default(autoincrement())
     name      String
     color     Color
-    game      Game      @relation(fields: [gameId], references: [id])
+    game      Game      @relation(fields: [gameId], references: [id], onDelete: Cascade)
     gameId    Int
     pawns     Pawn[]
     isBot     Boolean
@@ -44,7 +44,7 @@ model Player {
 model Pawn {
     id        Int       @id @default(autoincrement())
     position  Int
-    player    Player    @relation(fields: [playerId], references: [id])
+    player    Player    @relation(fields: [playerId], references: [id], onDelete: Cascade)
     playerId  Int
     inHome     Boolean   @default(false)
 }

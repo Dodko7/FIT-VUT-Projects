@@ -1,8 +1,5 @@
 "use client";
 
-import { Color } from "@prisma/client";
-import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
 import BoardNavbar from "~/components/games/ludo/board/board-navbar";
 import HorizontalBoardPart from "~/components/games/ludo/board/horizontal-board-part";
 import Middle from "~/components/games/ludo/board/middle";
@@ -10,8 +7,6 @@ import PlayerStart from "~/components/games/ludo/board/player-start";
 import PlayerStatus from "~/components/games/ludo/board/player-status";
 import VerticalBoardPart from "~/components/games/ludo/board/vertical-board-part";
 import LudoErrorPage from "~/components/games/ludo/pages/error-page";
-import LudoLoadingPage from "~/components/games/ludo/pages/loading-page";
-import LudoPausePage from "~/components/games/ludo/pages/pause-page";
 import {
 	BLUE_PAWN_HOME_PROPS,
 	BOARD_BOTTOM_PART,
@@ -22,138 +17,105 @@ import {
 	RED_PAWN_HOME_PROPS,
 	YELLOW_PAWN_HOME_PROPS,
 } from "~/lib/ludo/constants";
-import type { FullGame, PawnPosition } from "~/lib/ludo/types";
+import type { PawnGameState, PawnPosition } from "~/lib/ludo/types";
 import {
 	CompletedPawnsFromColor,
 	GetPawnSpotPropsForBoardPart,
 	PawnsInStartFromPlayer,
 } from "~/lib/ludo/utils";
-import { useParams, useSearchParams } from "next/navigation";
-import { LoadGameById } from "~/lib/ludo/client-api/load";
-import { LeaveGame } from "~/lib/ludo/client-api/leave";
-import useSocket from "~/lib/ludo/hooks/use-socket";
+import useGame from "~/lib/ludo/hooks/use-game";
+import { LudoClientState } from "~/lib/ludo/client-state";
+import { Color } from "@prisma/client";
+import LudoPausePage from "~/components/games/ludo/pages/pause-page";
 
 export default function LudoGameplayPage() {
-	const params = useParams();
-	const searchParams = useSearchParams();
-	const gameId = Number(params.gameId);
-	const playerColor = searchParams.get("color") as Color | null;
+	// Fetch state
+	const game = useGame();
 
-	// Fetch game state
-	const {
-		data: game,
-		isLoading,
-		error,
-	} = useQuery<FullGame>({
-		queryKey: ["ludo", "game", gameId],
-		queryFn: () => LoadGameById(gameId),
-		enabled: !!gameId,
-	});
-
-	// Socket connection
-	const { socket, connectionError } = useSocket(game?.name || "");
-
-	// Is the game paused?
-	const [isPaused, setIsPaused] = useState<boolean>(false);
-
-	// Avaliable pawns to move
-	const [avaliablePawns, setAvailablePawns] = useState<number[]>([]);
-
-	// Selected pawn
-	const [selectedPawnId, setSelectedPawnId] = useState<number | null>(null);
-
-	// Available moves for the selected pawn
-	const [avaliableMoves, setAvailableMoves] = useState<number[]>([]);
-
-	// Is the dice rolling?
-	const [isRolling, setIsRolling] = useState(false);
-
-	if (isLoading) {
-		return <LudoLoadingPage />;
-	} else if (connectionError) {
+	// Errors
+	if (game.connectionError) {
 		return (
 			<LudoErrorPage
-				message={connectionError}
+				message={game.connectionError}
 				links={[{ text: "Back to Menu", link: "/games/ludo/menu" }]}
 			/>
 		);
-	} else if (error || !game || !playerColor) {
+	} else if (game.error) {
 		return (
 			<LudoErrorPage
-				message={error?.message || "Failed to load current game."}
+				message={game.error.message || "Failed to load current game."}
 			/>
 		);
-	} else if (isPaused) {
+	} else if (game.connectionError) {
+		return (
+			<LudoErrorPage
+				message={game.connectionError}
+				links={[{ text: "Back to Menu", link: "/games/ludo/menu" }]}
+			/>
+		);
+	} else if (!game.clientColor) {
+		return (
+			<LudoErrorPage
+				message="Player color not specified."
+				links={[{ text: "Back to Menu", link: "/games/ludo/menu" }]}
+			/>
+		);
+	} else if (game.isPaused) {
 		return (
 			<LudoPausePage
-				onResume={() => setIsPaused(false)}
-				onQuit={async () => await LeaveGame(gameId, playerColor!)}
-				onExport={async () => {
-					console.log("Export placeholder");
-					return { success: true };
-				}}
+				onResume={game.onResumeGame}
+				onQuit={async () => {await Promise.resolve(); console.log("Quit game"); return { success: true };} }
+				onExport={async () => {await Promise.resolve(); console.log("Export game"); return { success: true };} }
 			/>
-		);
+		)
 	}
 
-	// Number of players (useful)
-	const numberOfPlayers = game.players.length;
+	console.log(game.players);
 
 	// Individual players (useful)
-	const redPlayer = game.players[0]!;
-	const greenPlayer = game.players[1]!;
+	const redPlayer = game.players.find((p) => p.color === Color.RED);
+	const greenPlayer = game.players.find((p) => p.color === Color.GREEN);
+	const bluePlayer = game.players.find((p) => p.color === Color.BLUE);
+	const yellowPlayer = game.players.find((p) => p.color === Color.YELLOW);
 
-	// These won't always be there
-	const bluePlayer = numberOfPlayers >= 3 ? game.players[2] : null;
-	const yellowPlayer = numberOfPlayers === 4 ? game.players[3] : null;
+	// Pawns
+	const pawns: PawnGameState[] = game.players.flatMap((p) => p.pawns);
 
-	// TODO move this to the backend
-	const positions: PawnPosition[] = game.players.flatMap(
-		(player): PawnPosition[] => {
-			return player.pawns.map((pawn) => ({
-				position: pawn.position,
-				color: player.color,
-			}));
-		},
-	);
-
-	const topPartProps = GetPawnSpotPropsForBoardPart(
-		BOARD_TOP_PART,
-		positions,
-	);
+	const topPartProps = GetPawnSpotPropsForBoardPart(BOARD_TOP_PART, pawns);
 	const rightPartProps = GetPawnSpotPropsForBoardPart(
 		BOARD_RIGHT_PART,
-		positions,
+		pawns,
 	);
 	const bottomPartProps = GetPawnSpotPropsForBoardPart(
 		BOARD_BOTTOM_PART,
-		positions,
+		pawns,
 	);
-	const leftPartProps = GetPawnSpotPropsForBoardPart(
-		BOARD_LEFT_PART,
-		positions,
-	);
+	const leftPartProps = GetPawnSpotPropsForBoardPart(BOARD_LEFT_PART, pawns);
 
 	return (
 		<div className="ludo-board-font flex h-screen w-screen flex-col items-center justify-start">
 			{/** Top navbar */}
 			<BoardNavbar
 				gameName={game.name}
-				onPause={() => setIsPaused(true)}
+				onPause={game.onPauseGame}
 			/>
 			{/** Red and green player statuses */}
 			<div className="flex w-full">
 				<PlayerStatus
 					hasContent={true}
-					playerName={redPlayer.name}
-					completedPawns={CompletedPawnsFromColor(redPlayer)}
+					playerName={redPlayer?.name || ""}
+					completedPawns={
+						redPlayer ? CompletedPawnsFromColor(redPlayer) : 0
+					}
 					border={true}
 					className="ludo-red-area"
 				/>
 				<PlayerStatus
 					hasContent={true}
-					playerName={greenPlayer.name}
-					completedPawns={CompletedPawnsFromColor(greenPlayer)}
+					playerName={greenPlayer?.name || ""}
+					completedPawns={
+						greenPlayer ? CompletedPawnsFromColor(greenPlayer) : 0
+					}
 					border={false}
 					className="ludo-green-area"
 				/>
@@ -164,7 +126,11 @@ export default function LudoGameplayPage() {
 				<PlayerStart
 					divClassName="ludo-red-area border-r-4"
 					pawnSpotClassName="ludo-red-circle"
-					pawnsPresent={PawnsInStartFromPlayer(redPlayer)}
+					pawnsPresent={
+						redPlayer ?
+							PawnsInStartFromPlayer(redPlayer)
+						:	[false, false, false, false]
+					}
 					pawnProps={RED_PAWN_HOME_PROPS}
 				/>
 				{/** Vertical board part between red and green */}
@@ -176,7 +142,11 @@ export default function LudoGameplayPage() {
 				<PlayerStart
 					divClassName="ludo-green-area border-l-4"
 					pawnSpotClassName="ludo-green-circle"
-					pawnsPresent={PawnsInStartFromPlayer(greenPlayer)}
+					pawnsPresent={
+						greenPlayer ?
+							PawnsInStartFromPlayer(greenPlayer)
+						:	[false, false, false, false]
+					}
 					pawnProps={GREEN_PAWN_HOME_PROPS}
 				/>
 				{/** Horizontal board part between red and blue */}
@@ -185,23 +155,19 @@ export default function LudoGameplayPage() {
 				/>
 				{/** Center board area */}
 				<Middle
-					diceNumber={game.diceRoll ?? 6}
-					playerColor={game.turn}
+					diceNumber={game.diceNumber ?? 6}
+					playerColor={game.currentTurn}
 					playerName={
-						game.players.find((p) => p.color === game.turn)?.name ||
-						""
+						game.players.find((p) => p.color === game.currentTurn)
+							?.name || ""
 					}
-					onRollDice={() => {
-						// TODO
-						setIsRolling(true);
-						setTimeout(() => setIsRolling(false), 1000);
-					}}
-					isRolling={isRolling}
+					onRollDice={game.onRollDice}
+					isRolling={game.state === LudoClientState.DICE_ROLLING}
 				/>
 				{/* Turn Indicator Overlay */}
-				{game.turn !== playerColor && (
+				{game.currentTurn !== game.clientColor && (
 					<div className="absolute top-20 left-1/2 -translate-x-1/2 rounded-full bg-black/50 px-6 py-2 text-white backdrop-blur-sm">
-						Waiting for {game.turn}...
+						Waiting for {game.currentTurn}...
 					</div>
 				)}
 				{/** Horizontal board part between green and yellow */}

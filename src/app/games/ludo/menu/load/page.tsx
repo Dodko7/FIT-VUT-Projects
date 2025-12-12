@@ -1,6 +1,6 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import LudoMenuButton from "~/components/games/ludo/buttons/menu-button";
 import LudoMenuHeader from "~/components/games/ludo/other/menu-header";
@@ -12,6 +12,7 @@ import { LoadAllGames, LoadGameById } from "~/lib/ludo/client-api/load";
 import { type MenuGame, type Result } from "~/lib/ludo/types";
 
 export default function LudoLoadPage() {
+	const queryClient = useQueryClient();
     const { data: games, isLoading, error } = useQuery<MenuGame[]>({
 		queryKey: ["ludo-saved-games"],
 		queryFn: LoadAllGames
@@ -19,9 +20,7 @@ export default function LudoLoadPage() {
 
 	const router = useRouter();
 
-	if (isLoading) {
-		return <LudoLoadingPage />;
-	} else if (error || !games) {
+	if (error) {
 		return <LudoErrorPage message={error?.message || "Unknown error"} />;
 	}
 
@@ -36,17 +35,20 @@ export default function LudoLoadPage() {
 			<div
 				className="flex w-full flex-grow flex-col items-center justify-start px-25 my-15 gap-10"
 			>
-				{games.map((game) => (
+				{(games || []).map((game) => (
 					<LudoSavedGame
 						key={game.id}
 						game={game}
 						onPlay={async (gameId) => {
-							const res: Result = await LoadGameById(gameId.toString());
+							const res: Result = await LoadGameById(gameId);
 							if (res.success) {
 								router.push("/games/ludo/gameplay");
 							}
 						}}
-						onDelete={async (gameId) => DeleteGame(gameId.toString())}
+						onDelete={async (gameId) => {
+							await DeleteGame(gameId.toString());
+							queryClient.invalidateQueries({ queryKey: ["ludo-saved-games"] });
+						}}
 					/>
 				))}
 			</div>

@@ -5,21 +5,24 @@ import type {
 	LudoGameState,
 	PlayerGameState,
 } from "../types";
-import type { Color } from "@prisma/client";
+import { Color } from "@prisma/client";
 import useSocket from "./use-socket";
 import { useQuery } from "@tanstack/react-query";
 import { LoadGameById } from "../client-api/load";
 import { useMemo, useState } from "react";
-import LudoClientState from "../client-state";
+import { LudoClientState } from "../client-state";
 
 /**
  * Custom hook to access the current Ludo game state.
  * @returns The current Ludo game state or null if not available.
  */
-export default function useGame(): LudoGameState | null {
+export default function useGame(): LudoGameState {
 	// Page URL
 	const params = useParams();
 	const searchParams = useSearchParams();
+
+	const id = Number(params.gameId);
+	const color = searchParams.get("color") as Color | null;
 
 	// Fetch game model
 	const {
@@ -28,13 +31,12 @@ export default function useGame(): LudoGameState | null {
 		error,
 		refetch,
 	} = useQuery<FullGame>({
-		queryKey: ["ludo", "game", Number(params.gameId)],
-		queryFn: () => LoadGameById(Number(params.gameId)),
+		queryKey: ["ludo", "game", id],
+		queryFn: () => LoadGameById(id),
 		enabled: !!params.gameId,
 	});
 
-    const id = Number(params.gameId);
-    const name = game?.name || "";
+	const name = game?.name || "";
 
 	// Websockets connection
 	const { socket, connectionError } = useSocket(name);
@@ -67,7 +69,7 @@ export default function useGame(): LudoGameState | null {
 			headers: {
 				"Content-Type": "application/json",
 			},
-			body: JSON.stringify({ color: searchParams.get("color") }),
+			body: JSON.stringify({ color }),
 		});
 	};
 
@@ -88,33 +90,48 @@ export default function useGame(): LudoGameState | null {
 		await Promise.resolve();
 	};
 
-	// Compute the final state
-	const state: LudoGameState | null = useMemo(() => {
-		if (!game || error) {
-			return null;
-		}
+	// Pause game handler
+	const onPauseGame = (): void => {
+		setIsPaused(true);
+	};
 
+	// Resume game handler
+	const onResumeGame = (): void => {
+		setIsPaused(false);
+	};
+
+	// Compute the final state
+	const state: LudoGameState = useMemo(() => {
 		// Game players
-		const players: PlayerGameState[] = game.players.map((p) => ({
-			name: p.name,
-			color: p.color,
-			pawns: p.pawns.map((pawn) => ({
-				id: pawn.id,
-				position: pawn.position,
+		const players: PlayerGameState[] =
+			game?.players.map((p) => ({
+				name: p.name,
 				color: p.color,
-			})),
-		}));
+				pawns: p.pawns.map((pawn) => ({
+					id: pawn.id,
+					position: pawn.position,
+					inHome: pawn.inHome,
+					color: p.color,
+				})),
+			})) || [];
 
 		return {
+			// Connectivity
+			isLoading,
+			error,
+			connectionError,
+
 			// Game state
 			state: clientState,
-			diceNumber: game.diceRoll as DiceRoll,
-			currentTurn: game.turn,
+			diceNumber: game?.diceRoll as DiceRoll,
+			currentTurn: game?.turn || Color.RED,
 			isPaused: isPaused,
+			clientColor: color,
 
 			// Entities
 			players: players,
 			selectedPawnId: selectedPawnId,
+			name: game?.name || "",
 			avaliableMoves: [], // todo
 			avaliablePawns: [], // todo
 
@@ -122,6 +139,8 @@ export default function useGame(): LudoGameState | null {
 			onRollDice,
 			onSelectPawn,
 			onMovePawn,
+			onPauseGame,
+			onResumeGame,
 		};
 	}, [game, isLoading, error, clientState, isPaused, selectedPawnId]);
 

@@ -51,13 +51,13 @@ export async function LoadCurrentGame(): Promise<FullGame> {
  * @param gameId The, well, id of the game to load.
  * @returns A promise resolving to a Game/Full
  */
-export async function LoadGameById(gameId: number): Promise<FullGame> {
+export async function LoadGameById(gameId: number): Promise<Result> {
 	const response = await fetch(`/api/ludo/${gameId}/load`);
-	const result = (await response.json()) as TypedResult<FullGame>;
+	const result = (await response.json()) as Result;
 
 	if (!result.success) {
 		throw new Error(result.error);
 	}
 
-	return result.value;
+	return result;
 }

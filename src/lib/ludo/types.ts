@@ -135,22 +135,43 @@ export type PausedPageProps = {
 };
 
 /**
- * For LudoGameState.
+ * For player game state.
+ */
+export type PawnGameState = {
+	id: number;
+	position: number;
+	inHome: boolean;
+	color: Color;
+};
+
+/**
+ * Andddd for LudoGameState.
  */
 export type PlayerGameState = {
 	color: Color;
 	name: string;
-	pawns: PawnPosition[];
+	pawns: PawnGameState[];
 };
 
 /**
  * Represents the state of a Ludo game for a concrete player.
  */
 export type LudoGameState = {
+	// Connectivity
+	isLoading: boolean;
+	error: Error | null;
+	connectionError: string | null;
+
+	// Game state
 	state: LudoClientState;
+	isPaused: boolean;
 	diceNumber: DiceRoll | null;
-	players: PlayerGameState[];
 	currentTurn: Color;
+	clientColor: Color | null;
+
+	// Entities
+	players: PlayerGameState[];
+	name: string;
 
 	// Optional, depending on the state (else -1/empty)
 	selectedPawnId: number;
@@ -161,4 +182,6 @@ export type LudoGameState = {
 	onRollDice: () => Promise<void>;
 	onSelectPawn: (pawnId: number) => void;
 	onMovePawn: (pawnId: number, moveBy: number) => Promise<void>;
+	onPauseGame: () => void;
+	onResumeGame: () => void;
 };

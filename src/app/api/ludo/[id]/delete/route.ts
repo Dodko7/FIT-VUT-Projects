@@ -23,6 +23,7 @@ export async function DELETE(
 		});
 		return new Response(null, { status: 204 });
 	} catch (error) {
+		console.error("Error deleting game:", error);
 		return new Response(
 			`Failed to delete game with ID ${id}: ${(error as Error).message}`,
 			{ status: 500 },

@@ -1,7 +1,7 @@
 import { createServer } from "node:http";
 import { parse } from "node:url";
 import next from "next";
-import { Server } from "socket.io";
+import { InitSocketServer } from "./src/lib/ludo/socket.ts"; // TODO
 
 const hostname = "localhost";
 const port = 3000;
@@ -25,7 +25,7 @@ app.prepare().then(() => {
 	});
 
     // Init Socket.io
-	const io = new Server(httpServer);
+	const io = InitSocketServer(httpServer);
 
 	io.on("connection", (socket) => {
 		console.log("Client connected:", socket.id);
