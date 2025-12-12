@@ -7,11 +7,9 @@ import LudoMenuButton from "../buttons/menu-button";
 export default function LudoPausePage({
 	onResume,
 	onQuit,
-	onExport,
 }: PausedPageProps) {
 	const buttonProps = [
 		{ text: "Resume", onClick: onResume },
-		{ text: "Export to JSON", onClick: onExport },
 		{ text: "Leave", onClick: onQuit },
 	];
 

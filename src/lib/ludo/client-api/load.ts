@@ -8,6 +8,24 @@ import type { FullGame, MenuGame, Result, TypedResult } from "~/lib/ludo/types";
 export async function LoadFromJSON(
 	e: React.ChangeEvent<HTMLInputElement>,
 ): Promise<Result> {
+	const file = e.target.files?.[0];
+	if (!file) return { success: false, error: "No file selected." };
+
+	const reader = new FileReader();
+	reader.onload = async (e) => {
+		try {
+			const text = e.target?.result as string;
+			const data = JSON.parse(text);
+
+			// Send to backend
+			await fetch("/api/ludo/import", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify(data),
+			}).catch(() => null);
+		} catch (err) {}
+	};
+	reader.readAsText(file);
 	return { success: true };
 }
 
@@ -39,26 +57,31 @@ export async function LoadAllGames(): Promise<MenuGame[]> {
 export async function LoadGameByName(
 	gameName: string,
 ): Promise<TypedResult<FullGame>> {
-	return await fetch(`/api/ludo/${gameName}/load`, {
+	return (await fetch(`/api/ludo/${gameName}/load`, {
 		method: "GET",
 		headers: {
 			"Content-Type": "application/json",
 		},
-	}).then(async (res) => {
-		if (!res.ok) {
-			throw new Error(`Failed to load game with name ${gameName}: ${res.statusText}`);
-		}
-		const data: TypedResult<FullGame> = await res.json();
-		if (data.success) {
-			return data;
-		} else {
-			return {
-				success: false,
-				error: data.error,
-			};
-		}
-	}).catch((err) => ({
-		success: false,
-		error: err instanceof Error ? err.message : "Unknown error occurred.",
-	})) as unknown as Promise<TypedResult<FullGame>>;
+	})
+		.then(async (res) => {
+			if (!res.ok) {
+				throw new Error(
+					`Failed to load game with name ${gameName}: ${res.statusText}`,
+				);
+			}
+			const data: TypedResult<FullGame> = await res.json();
+			if (data.success) {
+				return data;
+			} else {
+				return {
+					success: false,
+					error: data.error,
+				};
+			}
+		})
+		.catch((err) => ({
+			success: false,
+			error:
+				err instanceof Error ? err.message : "Unknown error occurred.",
+		}))) as unknown as Promise<TypedResult<FullGame>>;
 }

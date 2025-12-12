@@ -12,8 +12,6 @@ import LudoLoadingPage from "~/components/games/ludo/pages/loading-page";
  * Main menu page for the ludo game.
  */
 export default function LudoMenuPage() {
-    // Ref to the current file
-    const fileInputRef = useRef<HTMLInputElement>(null);
 
     // Loading and error states
     const [loading, setLoading] = useState(false);
@@ -26,7 +24,6 @@ export default function LudoMenuPage() {
     const buttonProps = [
         { text: "New Game", link: "/games/ludo/menu/setup" },
         { text: "Load Game", link: "/games/ludo/menu/load" },
-        { text: "Load from JSON", onClick: () => fileInputRef.current?.click() },
         { text: "Back to Arcade", link: "/" },
     ];
 
@@ -63,27 +60,10 @@ export default function LudoMenuPage() {
             <div
                 className="flex flex-col flex-grow justify-between items-center w-full h-full my-15"
             >
-                {buttonProps.map(({ text, link, onClick }, index) => (
-                    <LudoMenuButton key={index} text={text} link={link} onClick={onClick} />
+                {buttonProps.map(({ text, link }, index) => (
+                    <LudoMenuButton key={index} text={text} link={link} />
                 ))}
             </div>
-            {/** Hidden file dialog */}
-            <input
-                type="file"
-                accept=".json"
-                ref={fileInputRef}
-                className="hidden"
-                onChange={async (e) => {
-                    setLoading(true);
-                    const res = await LoadFromJSON(e);
-                    setLoading(false);
-                    if (res.success) {
-                        router.push("/games/ludo/gameplay");
-                    } else {
-                        setError(res.error);
-                    }
-                }}
-            />
         </div>
     )
 }
