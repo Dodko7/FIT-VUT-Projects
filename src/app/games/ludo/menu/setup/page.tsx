@@ -118,11 +118,11 @@ export default function LudoSetupPage() {
 						selectedColor,
 					);
 					if (res.success) {
-						console.log("New game created with ID:", res); // Debug log
-						const newGameId = res.value;
+						console.log("New game created with name:", res); // Debug log
+						const newGameName = res.value;
 						// Auto-join as selected color
 						router.push(
-							`/games/ludo/gameplay/${newGameId}?color=${selectedColor}`,
+							`/games/ludo/gameplay/${newGameName}?color=${selectedColor}`,
 						);
 					} else {
 						setError(res.error!);

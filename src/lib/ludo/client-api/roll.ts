@@ -2,12 +2,12 @@ import type { Result } from "../types";
 
 /**
  * Calls the API to roll the dice for a specific game.
- * @param gameId The ID of the game.
+ * @param gameName The name of the game.
  * @param color The color of the player rolling.
  * @returns The result of the roll (success/failure).
  */
-export async function RollDice(gameId: number, color: string): Promise<Result> {
-    return await fetch(`/api/ludo/${gameId}/roll`, {
+export async function RollDice(gameName: string, color: string): Promise<Result> {
+    return await fetch(`/api/ludo/${gameName}/roll`, {
         method: "POST",
         headers: {
             "Content-Type": "application/json",

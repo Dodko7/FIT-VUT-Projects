@@ -7,10 +7,10 @@ import { db as prisma } from "~/server/db";
  */
 export async function POST(
     request: NextRequest,
-    { params }: { params: Promise<{ id: string }> }
+    { params }: { params: Promise<{ gameName: string }> }
 ): Promise<NextResponse> {
     try {
-        const id = parseInt((await params).id, 10);
+        const gameName = (await params).gameName;
 
         return NextResponse.json({
             success: true,

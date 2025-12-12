@@ -10,7 +10,7 @@ import type {
 import { Color } from "@prisma/client";
 import useSocket from "./use-socket";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { LoadGameById } from "../client-api/load";
+import { LoadGameByName } from "../client-api/load";
 import { useMemo, useState } from "react";
 import { LudoClientState } from "../client-state";
 import { LeaveGame } from "../client-api/leave";
@@ -24,8 +24,9 @@ export default function useGame(): LudoGameState {
 	const params = useParams();
 	const searchParams = useSearchParams();
 
-	const id = Number(params.gameId);
+	const gameName = params.gameName as string;
 	const color = searchParams.get("color") as Color | null;
+	const preferredColor = searchParams.get("preferredColor") as Color | null;
 
 	// For redirects
 	const router = useRouter();
@@ -39,14 +40,14 @@ export default function useGame(): LudoGameState {
 		isLoading,
 		error,
 	} = useQuery<FullGame>({
-		queryKey: ["ludo", "game", id],
-		queryFn: () => LoadGameById(id),
-		enabled: !!params.gameId,
+		queryKey: ["ludo", "game", gameName],
+		queryFn: () => LoadGameByName(gameName),
+		enabled: !!params.gameName,
 	});
 
 	// For convenience
 	const invalidate = () => {
-		queryClient.invalidateQueries({ queryKey: ["ludo", "game", id] });
+		queryClient.invalidateQueries({ queryKey: ["ludo", "game", gameName] });
 	};
 
 	const name = game?.name || "";
@@ -73,7 +74,7 @@ export default function useGame(): LudoGameState {
 	// On socket game update
 	useEffect(() => {
 		if (!socket) return;
-		socket.emit("join", `game_${id}`);
+		socket.emit("join", `game_${gameName}`);
 
 		socket.on("game-update", invalidate);
 
@@ -81,7 +82,7 @@ export default function useGame(): LudoGameState {
 		return () => {
 			socket.off("game-update", invalidate);
 		};
-	}, [socket, id]);
+	}, [socket, gameName]);
 
 	/**
 	 * EVENT HANDLERS
@@ -89,7 +90,7 @@ export default function useGame(): LudoGameState {
 
 	// Roll dice handler
 	const onRollDice = async (): Promise<void> => {
-		await fetch(`/api/ludo/${id}/roll`, {
+		await fetch(`/api/ludo/${gameName}/roll`, {
 			method: "POST",
 			headers: {
 				"Content-Type": "application/json",
@@ -133,7 +134,7 @@ export default function useGame(): LudoGameState {
 			return;
 		}
 
-		await LeaveGame(id, color);
+		await LeaveGame(gameName, color);
 		router.push("/games/ludo/menu");
 	};
 

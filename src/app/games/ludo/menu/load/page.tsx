@@ -8,7 +8,7 @@ import LudoSavedGame from "~/components/games/ludo/other/saved-game";
 import LudoErrorPage from "~/components/games/ludo/pages/error-page";
 import LudoLoadingPage from "~/components/games/ludo/pages/loading-page";
 import { DeleteGame } from "~/lib/ludo/client-api/delete";
-import { LoadAllGames, LoadGameById } from "~/lib/ludo/client-api/load";
+import { LoadAllGames, LoadGameByName } from "~/lib/ludo/client-api/load";
 import { type MenuGame, type Result } from "~/lib/ludo/types";
 
 export default function LudoLoadPage() {
@@ -41,19 +41,19 @@ export default function LudoLoadPage() {
 					<LudoSavedGame
 						key={game.id}
 						game={game}
-						onPlay={async (gameId) => {
+						onPlay={async (gameName) => {
 							try {
-								const game = await LoadGameById(gameId);
+								const game = await LoadGameByName(gameName);
 								router.push(
-									`/games/ludo/gameplay/${game.id}?color=${game.hostColor}`,
+									`/games/ludo/gameplay/${game.name}?color=${game.hostColor}`,
 								);
 							} catch (e) {
 								console.error("Failed to load game:", e);
 								alert("Failed to load game. Please try again."); // todo remove beran ma zajebe
 							}
 						}}
-						onDelete={async (gameId) => {
-							await DeleteGame(gameId.toString());
+						onDelete={async (gameName) => {
+							await DeleteGame(gameName);
 							queryClient.invalidateQueries({
 								queryKey: ["ludo-saved-games"],
 							});

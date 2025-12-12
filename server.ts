@@ -31,15 +31,15 @@ app.prepare().then(() => {
 		console.log("Client connected:", socket.id);
 
         // Connect to game
-		socket.on("join-game", (gameId: string) => {
-			const roomName = `game-${gameId}`;
+		socket.on("join-game", (gameName: string) => {
+			const roomName = `game-${gameName}`;
 			socket.join(roomName);
 			console.log(`Socket ${socket.id} joined room ${roomName}`);
 		});
 
         // Handle game actions
-		socket.on("game-action", (gameId: string) => {
-			const roomName = `game-${gameId}`;
+		socket.on("game-action", (gameName: string) => {
+			const roomName = `game-${gameName}`;
 			io.to(roomName).emit("game-updated");
 			console.log(`Game action in ${roomName}, broadcasting update`);
 		});

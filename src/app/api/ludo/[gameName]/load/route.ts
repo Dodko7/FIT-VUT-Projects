@@ -2,26 +2,26 @@ import { NextResponse } from "next/server";
 import { db as prisma } from "~/server/db";
 
 /**
- * Loads a Ludo game by ID.
- * @param param1 Game ID parameter from the URL.
+ * Loads a Ludo game by name.
+ * @param param1 Game name parameter from the URL.
  * @returns The game data if found.
  */
 export async function GET(
     request: Request,
-	{ params }: { params: Promise<{ id: string }> }
+	{ params }: { params: Promise<{ gameName: string }> }
 ): Promise<NextResponse> {
 	try {
-		const id = parseInt((await params).id, 10);
+		const gameName = (await params).gameName;
 
-		if (isNaN(id)) {
+		if (!gameName) {
 			return NextResponse.json(
-				{ success: false, error: "Invalid game ID" },
+				{ success: false, error: "Invalid game name" },
 				{ status: 400 },
 			);
 		}
 
 		const game = await prisma.game.findUnique({
-			where: { id: id },
+			where: { name: gameName },
 			include: {
 				players: {
 					include: {

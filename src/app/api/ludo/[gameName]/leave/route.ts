@@ -6,18 +6,18 @@ import { GetSocketServer } from "~/lib/ludo/socket";
 /**
  * Called when a player leaves a game.
  * @param Request The incoming request.
- * @param params Contains the game id.
+ * @param params Contains the game name.
  * @returns A response indicating the result of the leave operation.
  */
 export async function POST(
 	Request: NextRequest,
-	{ params }: { params: Promise<{ id: string }> },
+	{ params }: { params: Promise<{ gameName: string }> },
 ): Promise<NextResponse> {
 	// Parse id
-	const id = parseInt((await params).id, 10);
-	if (isNaN(id)) {
+	const gameName = (await params).gameName;
+	if (!gameName) {
 		return NextResponse.json(
-			{ success: false, error: "Invalid game ID" },
+			{ success: false, error: "Invalid game name" },
 			{ status: 400 },
 		);
 	}
@@ -25,6 +25,18 @@ export async function POST(
 	// Parse color from body
 	const body = await Request.json();
 	const color: Color = body.color;
+
+	// Find game by name to get id
+	const game = await prisma.game.findUnique({
+		where: { name: gameName },
+	});
+	if (!game) {
+		return NextResponse.json(
+			{ success: false, error: "Game not found" },
+			{ status: 404 },
+		);
+	}
+	const id = game.id;
 
 	// If player is bot return error
 	try {
@@ -61,7 +73,7 @@ export async function POST(
 
 		// Notify via WebSocket
 		const io = GetSocketServer();
-		io.to(`game_${id}`).emit("game-update");
+		io.to(`game-${id}`).emit("game-update");
 
 		return NextResponse.json({ success: true });
 	} catch (error) {

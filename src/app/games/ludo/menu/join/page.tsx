@@ -5,6 +5,8 @@ import { useState } from "react";
 import LudoMenuButton from "~/components/games/ludo/buttons/menu-button";
 import LudoMenuHeader from "~/components/games/ludo/other/menu-header";
 import { FaNetworkWired, FaGamepad } from "react-icons/fa";
+import { Color } from "@prisma/client";
+import ColorPicker from "~/components/games/ludo/other/color-picker";
 
 /**
  * Page for joining an existing ludo game.
@@ -12,7 +14,8 @@ import { FaNetworkWired, FaGamepad } from "react-icons/fa";
 export default function LudoJoinPage() {
 	const router = useRouter();
 	const [ipAddress, setIpAddress] = useState("");
-	const [gameId, setGameId] = useState("");
+	const [gameName, setGameName] = useState("");
+	const [preferredColor, setPreferredColor] = useState<Color>(Color.RED);
 
 	return (
 		<div className="flex h-full w-full flex-col items-center justify-between py-10">
@@ -48,10 +51,17 @@ export default function LudoJoinPage() {
 						</label>
 						<input
 							type="text"
-							value={gameId}
-							onChange={(e) => setGameId(e.target.value)}
+							value={gameName}
+							onChange={(e) => setGameName(e.target.value)}
 							placeholder="e.g. epic-friday-game"
 							className="w-full bg-transparent text-3xl placeholder-yellow-800/50 focus:ring-0 focus:outline-none"
+						/>
+					</div>
+					{/** Color picker */}
+					<div className="flex w-full flex-col items-start gap-4">
+						<ColorPicker
+							currentColor={preferredColor}
+							onColorChange={setPreferredColor}
 						/>
 					</div>
 				</div>
@@ -61,7 +71,7 @@ export default function LudoJoinPage() {
 			<div className="flex w-full flex-row justify-center gap-10">
 				<LudoMenuButton
 					text="Join"
-					onClick={() => console.log(`Joining game ${gameId} at ${ipAddress}`)}
+					onClick={() => console.log(`Joining game ${gameName} at ${ipAddress}`)}
 				/>
 				<LudoMenuButton
 					text="Back"

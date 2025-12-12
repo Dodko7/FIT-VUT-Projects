@@ -1,23 +1,21 @@
 import { useEffect, useState } from "react";
 import { io, Socket } from "socket.io-client";
-import { useQueryClient } from "@tanstack/react-query";
 
 /**
  * Custom hook to manage Socket.io connection for a Ludo game.
- * @param gameId The ID of the game to connect to.
+ * @param gameName The name of the game to connect to.
  * @returns An object containing the socket instance and any connection error.
  */
-export default function useSocket(gameId: string) {
+export default function useSocket(gameName: string) {
 	const [socket, setSocket] = useState<Socket | null>(null);
 	const [connectionError, setConnectionError] = useState<string | null>(null);
-	const queryClient = useQueryClient();
 
 	useEffect(() => {
-		const socketInstance = io();
+		const socketInstance = io("http://localhost:3000");
 
 		socketInstance.on("connect", () => {
 			console.log("Connected to socket");
-			socketInstance.emit("join-game", gameId);
+			socketInstance.emit("join-game", gameName);
 		});
 
 		socketInstance.on("connect_error", (err) => {
@@ -25,19 +23,12 @@ export default function useSocket(gameId: string) {
 			setConnectionError("Failed to connect to game server.");
 		});
 
-		socketInstance.on("game-updated", () => {
-			console.log("Game updated event received");
-			queryClient.invalidateQueries({
-				queryKey: ["ludo", "game", Number(gameId)],
-			});
-		});
-
 		setSocket(socketInstance);
 
 		return () => {
 			socketInstance.disconnect();
 		};
-	}, [gameId, queryClient]);
+	}, []);
 
 	return { socket, connectionError };
 }

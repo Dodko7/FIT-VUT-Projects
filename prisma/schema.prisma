@@ -15,7 +15,7 @@ datasource db {
 // Game model
 model Game {
     id        Int       @id @default(autoincrement())
-    name      String
+    name      String   @unique
     lastPlayed DateTime
     players   Player[]
     // This can be used as a turn tracker

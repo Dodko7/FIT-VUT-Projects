@@ -1,13 +1,13 @@
 /**
- * Makes a DELETE request to delete a Ludo game by its ID.
- * @param gameId The ID of the game to delete.
+ * Makes a DELETE request to delete a Ludo game by its name.
+ * @param gameName The name of the game to delete.
  */
-export async function DeleteGame(gameId: string): Promise<void> {
-    await fetch(`/api/ludo/${gameId}/delete`, {
+export async function DeleteGame(gameName: string): Promise<void> {
+    await fetch(`/api/ludo/${gameName}/delete`, {
         method: "DELETE"
     }).then((res) => { // todo
         if (!res.ok) {
-            throw new Error(`Failed to delete game with ID ${gameId}: ${res.statusText}`);
+            throw new Error(`Failed to delete game with name ${gameName}: ${res.statusText}`);
         }
     });
 }

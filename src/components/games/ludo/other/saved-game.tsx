@@ -5,8 +5,8 @@ import type { MenuGame } from "~/lib/ludo/types"
 
 type SavedGameProps = {
     game: MenuGame;
-    onPlay: (gameId: number) => void;
-    onDelete: (gameId: number) => void;
+    onPlay: (gameName: string) => void;
+    onDelete: (gameName: string) => void;
 };
 
 /**
@@ -42,11 +42,11 @@ export default function LudoSavedGame({ game, onPlay, onDelete }: SavedGameProps
             >
                 <FaPlay
                     className="text-4xl cursor-pointer ludo-icon"
-                    onClick={() => onPlay(game.id)}
+                    onClick={() => onPlay(game.name)}
                 />
                 <FaTrash
                     className="text-4xl cursor-pointer ludo-icon"
-                    onClick={() => onDelete(game.id)}
+                    onClick={() => onDelete(game.name)}
                 />
             </div>
         </div>

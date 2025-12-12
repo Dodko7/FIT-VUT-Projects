@@ -156,7 +156,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 		// Return OK
 		return NextResponse.json({
 			success: true,
-			value: newGame.id,
+			value: newGame.name,
 		});
 	} catch (error) {
 		return NextResponse.json(
