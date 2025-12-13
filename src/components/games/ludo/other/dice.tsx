@@ -30,7 +30,7 @@ export default function Dice({ lastRoll, isRolling }: DiceProps) {
 			dots.push(
 				<div
 					key={i}
-					className={`h-3 w-3 rounded-full ${activeDots.includes(i) ? "bg-black" : "bg-transparent"}`}
+					className={`size-2 rounded-full ${activeDots.includes(i) ? "bg-black" : "bg-transparent"}`}
 				/>,
 			);
 		}
@@ -39,7 +39,7 @@ export default function Dice({ lastRoll, isRolling }: DiceProps) {
 
 	return (
 		<div
-			className={`flex size-32 items-center justify-center rounded-xl border-4 border-black bg-white shadow-lg ${isRolling ? "dice-rolling" : ""}`}
+			className={`flex size-25 items-center justify-center rounded-xl border-4 border-black bg-white shadow-lg ${isRolling ? "dice-rolling" : ""}`}
 		>
 			<div className="grid h-full w-full grid-cols-3 grid-rows-3 place-items-center gap-1 p-2">
 				{renderDots(roll)}

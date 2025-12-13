@@ -233,9 +233,10 @@ export type LudoGameState = {
 	// Optional, depending on the state (else -1/empty)
 	highlights: HighlightedPawnSpot[];
 	onClicks: PawnSpotOnClicks[];
+	middleButtonText?: string;
 
 	// Actions
-	onRollDice: () => Promise<void>;
+	onMiddleButtonClick?: (() => Promise<void>) | (() => void);
 	onPauseGame: () => void;
 	onResumeGame: () => void;
 	onQuitGame: () => void;

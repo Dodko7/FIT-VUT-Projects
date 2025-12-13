@@ -175,6 +175,16 @@ export default function useGame(): LudoGameState {
 		});
 	};
 
+	// Cancels the current pawn selection and sets highlights to avaliable pawns
+	const CancelPawnSelection = (): void => {
+		const newHighlights = avaliablePawns.current;
+		const newOnClicks = GetPawnSelectionOnClicks(newHighlights);
+		setSelectedPawnId(null);
+		setHighlights(newHighlights);
+		setOnClicks(newOnClicks);
+		setClientState(LudoClientState.AWAITING_PAWN_SELECTION);
+	};
+
 	/**
 	 * EVENT HANDLERS
 	 */
@@ -188,10 +198,11 @@ export default function useGame(): LudoGameState {
 			const spots = result.value.avaliablePawns;
 			const onClicks = GetPawnSelectionOnClicks(spots);
 			setHighlights(spots);
-
+			
 			// Set refs and dice roll
 			setOnClicks(onClicks);
 			setDiceRoll(result.value.diceNumber);
+			avaliablePawns.current = spots;
 			avaliableMoves.current = result.value.avaliableMoves;
 
 			anyAvaliable = spots.length > 0;
@@ -252,6 +263,29 @@ export default function useGame(): LudoGameState {
 				})),
 			})) || [];
 
+		// Middle button things
+		let middleButtonText: string | undefined = undefined;
+		if (clientState === LudoClientState.AWAITING_PLAYER_MOVE) {
+			middleButtonText = "Roll Dice";
+		} else if (clientState === LudoClientState.AWAITING_SPOT_SELECTION) {
+			middleButtonText = "Choose another pawn";
+		}
+
+		let onMiddleButtonClick:
+			| (() => Promise<void>)
+			| (() => void)
+			| undefined = undefined;
+		if (clientState === LudoClientState.AWAITING_PLAYER_MOVE) {
+			onMiddleButtonClick = onRollDice;
+		} else if (clientState === LudoClientState.AWAITING_SPOT_SELECTION) {
+			onMiddleButtonClick = CancelPawnSelection;
+		}
+
+		console.log("Rerendering useGame with state:", {
+			clientState,
+			middleButtonText,
+		});
+
 		return {
 			// Connectivity
 			isLoading: isLoading && !game,
@@ -271,7 +305,8 @@ export default function useGame(): LudoGameState {
 			name: game?.name || "",
 
 			// Handlers
-			onRollDice,
+			onMiddleButtonClick,
+			middleButtonText,
 			onPauseGame,
 			onResumeGame,
 			onQuitGame,

@@ -175,9 +175,13 @@ export default function LudoGameplayPage() {
 						game.players.find((p) => p.color === game.currentTurn)
 							?.name || ""
 					}
-					onRollDice={game.onRollDice}
+					onButtonClick={game.onMiddleButtonClick}
+					text={game.middleButtonText}
 					isRolling={game.state === LudoClientState.DICE_ROLLING}
-					active={game.state === LudoClientState.AWAITING_PLAYER_MOVE}
+					active={
+						game.state === LudoClientState.AWAITING_PLAYER_MOVE ||
+						game.state === LudoClientState.AWAITING_SPOT_SELECTION
+					}
 				/>
 				{/** Horizontal board part between green and yellow */}
 				<HorizontalBoardPart
