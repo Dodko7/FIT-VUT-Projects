@@ -2,6 +2,7 @@ import type { Color, Prisma } from "@prisma/client";
 import type { PawnSpotProps } from "~/components/games/ludo/board/pawn-spot";
 import type LudoClientState from "./client-state";
 import type PawnSpotHighlight from "./enum/pawn-spot-highlight";
+import type StatusIndicatorState from "./enum/status-indicator-state";
 
 /**
  * General purpose type for a promise which may or may not succeed.
@@ -136,7 +137,7 @@ export type ColorPickerProps = {
 export type PausedPageProps = {
 	onResume: () => void;
 	onQuit: () => void;
-	onExport: () => Promise<Result>;
+	onExport: () => Promise<void>;
 };
 
 /**
@@ -213,6 +214,15 @@ export type GameOverPageProps = {
 };
 
 /**
+ * Status indicator props (when loading from/exporting to JSON).
+ */
+export type StatusIndicatorProps = {
+	type: StatusIndicatorState;
+	message: string;
+	isVisible: boolean;
+};
+
+/**
  * Represents the state of a Ludo game for a concrete player.
  */
 export type LudoGameState = {
@@ -240,5 +250,6 @@ export type LudoGameState = {
 	onPauseGame: () => void;
 	onResumeGame: () => void;
 	onQuitGame: () => void;
+	onExport: () => Promise<void>;
 	onGameOver: () => Promise<void>;
 };

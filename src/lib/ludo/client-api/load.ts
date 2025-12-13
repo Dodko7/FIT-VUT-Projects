@@ -6,27 +6,27 @@ import type { FullGame, MenuGame, Result, TypedResult } from "~/lib/ludo/types";
  * @return A promise resolving to a Result indicating success or failure.
  */
 export async function LoadFromJSON(
-	e: React.ChangeEvent<HTMLInputElement>,
+	jsonContent: any,
 ): Promise<Result> {
-	const file = e.target.files?.[0];
-	if (!file) return { success: false, error: "No file selected." };
-
-	const reader = new FileReader();
-	reader.onload = async (e) => {
-		try {
-			const text = e.target?.result as string;
-			const data = JSON.parse(text);
-
-			// Send to backend
-			await fetch("/api/ludo/import", {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify(data),
-			}).catch(() => null);
-		} catch (err) {}
-	};
-	reader.readAsText(file);
-	return { success: true };
+	return await fetch(`/api/ludo/load-from-json`, {
+		method: "POST",
+		headers: {
+			"Content-Type": "application/json",
+		},
+		body: JSON.stringify({ jsonContent }),
+	}).then(async (res) => {
+		const data: Result = await res.json();
+		if (data.success) {
+			return {
+				success: true,
+			};
+		} else {
+			return {
+				success: false,
+				error: data.error,
+			};
+		}
+	});
 }
 
 /**

@@ -29,6 +29,7 @@ import { Color } from "@prisma/client";
 import LudoPausePage from "~/components/games/ludo/pages/pause-page";
 import LudoLoadingPage from "~/components/games/ludo/pages/loading-page";
 import GameOverPage from "~/components/games/ludo/pages/game-over-page";
+import StatusIndicatorState from "~/lib/ludo/enum/status-indicator-state";
 
 const isClient = typeof window !== "undefined";
 
@@ -51,10 +52,7 @@ export default function LudoGameplayPage() {
 			<LudoPausePage
 				onResume={game.onResumeGame}
 				onQuit={game.onQuitGame}
-				onExport={async () => {
-					await Promise.resolve();
-					return { success: true };
-				}}
+				onExport={game.onExport}
 			/>
 		);
 	} else if (game.state === LudoClientState.GAME_OVER) {

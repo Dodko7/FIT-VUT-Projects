@@ -5,6 +5,9 @@
 export default async function UpdateDate(gameName: string): Promise<void> {
 	await fetch(`/api/ludo/${gameName}/update-date`, {
 		method: "POST",
+		headers: {
+			"Content-Type": "application/json",
+		},
 	})
 		.then((_res) => {})
 		.catch((_e) => {});

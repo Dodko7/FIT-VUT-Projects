@@ -19,6 +19,8 @@ import { GetPawnIdAtPosition } from "../utils";
 import MovePawn from "../client-api/move";
 import { DeleteGame } from "../client-api/delete";
 import UpdateDate from "../client-api/update-date";
+import StatusIndicatorState from "../enum/status-indicator-state";
+import CopyGameToClipboard from "../clipboard";
 
 const isClient = typeof window !== "undefined";
 
@@ -87,6 +89,13 @@ export default function useGame(): LudoGameState {
 	const [clientState, setClientState] = useState(
 		LudoClientState.AWAITING_PLAYER_MOVE,
 	);
+
+	const onExport = async (): Promise<void> => {
+		if (!game) {
+			throw new Error("No game loaded to export.");
+		}
+		await CopyGameToClipboard(game);
+	};
 
 	// Set state on game over
 	useEffect(() => {
@@ -198,7 +207,7 @@ export default function useGame(): LudoGameState {
 			const spots = result.value.avaliablePawns;
 			const onClicks = GetPawnSelectionOnClicks(spots);
 			setHighlights(spots);
-			
+
 			// Set refs and dice roll
 			setOnClicks(onClicks);
 			setDiceRoll(result.value.diceNumber);
@@ -281,11 +290,6 @@ export default function useGame(): LudoGameState {
 			onMiddleButtonClick = CancelPawnSelection;
 		}
 
-		console.log("Rerendering useGame with state:", {
-			clientState,
-			middleButtonText,
-		});
-
 		return {
 			// Connectivity
 			isLoading: isLoading && !game,
@@ -311,6 +315,7 @@ export default function useGame(): LudoGameState {
 			onResumeGame,
 			onQuitGame,
 			onGameOver,
+			onExport
 		};
 	}, [game, isLoading, error, clientState, isPaused, selectedPawnId]);
 
