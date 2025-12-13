@@ -31,11 +31,6 @@ export default function ArcadeScreen() {
 						title="Ludo"
 						href="/games/ludo/menu"
 					/>
-
-					<MenuTitle
-						title="Settings"
-						href="/settings"
-					/>
 				</div>
 			</div>
 		</div>

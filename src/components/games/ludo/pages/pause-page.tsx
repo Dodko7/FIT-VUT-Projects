@@ -22,7 +22,7 @@ export default function LudoPausePage({
 				</h1>
 			</div>
 			{/** Menu */}
-			<div className="my-15 flex h-full w-full flex-grow flex-col items-center justify-between gap-6">
+			<div className="my-15 flex h-full w-full flex-grow flex-col items-center justify-start gap-15">
 				{buttonProps.map(({ text, onClick }) => (
 					<LudoMenuButton
 						key={text}

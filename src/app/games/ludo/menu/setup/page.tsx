@@ -146,7 +146,7 @@ export default function LudoSetupPage() {
 					/>
 				</div>
 				{/** Number of players buttons */}
-				<div className="flex w-full items-center justify-between">
+				<div className="flex w-full items-center justify-between my-5">
 					<h2 className="ludo-form-text text-5xl">
 						Number of Players:
 					</h2>
@@ -158,7 +158,7 @@ export default function LudoSetupPage() {
 					))}
 				</div>
 				{/** Bot toggle */}
-				<div className="flex w-full items-center justify-between">
+				<div className="flex w-full items-center justify-between my-5">
 					<h2 className="ludo-form-text text-5xl">
 						Use bots as missing players:
 					</h2>
@@ -174,7 +174,7 @@ export default function LudoSetupPage() {
 					</div>
 				</div>
 				{/** Player name inputs */}
-				<div className="flex w-full flex-col gap-10">
+				<div className="flex w-full flex-col gap-10 mb-7">
 					{Array.from(playerNameInputs.entries()).map(
 						([color, props]) => (
 							<PlayerNameInput
