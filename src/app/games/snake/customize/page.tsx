@@ -20,6 +20,7 @@ const SNAKE_COLORS = [
 	{ name: "Orange", head: "#f97316", body: "#fb923c" },
 	{ name: "Pink", head: "#ec4899", body: "#f472b6" },
 	{ name: "Yellow", head: "#eab308", body: "#fde047" },
+	{ name: "Cyan", head: "#06b6d4", body: "#22d3ee" },
 ];
 
 const FOOD_COLORS = [
@@ -158,27 +159,26 @@ export default function SnakeCustomizePage() {
 										0deg,
 										transparent,
 										transparent 19px,
-										rgba(255, 255, 255, ${gridStyle === 1 ? "0.05" : "0.15"}) 19px,
-										rgba(255, 255, 255, ${gridStyle === 1 ? "0.05" : "0.15"}) 20px
+										rgba(255, 255, 255, ${gridStyle === 1 ? "0.15" : "0.5"}) 19px,
+										rgba(255, 255, 255, ${gridStyle === 1 ? "0.15" : "0.5"}) 20px
 									),
 									repeating-linear-gradient(
 										90deg,
 										transparent,
 										transparent 19px,
-										rgba(255, 255, 255, ${gridStyle === 1 ? "0.05" : "0.15"}) 19px,
-										rgba(255, 255, 255, ${gridStyle === 1 ? "0.05" : "0.15"}) 20px
+										rgba(255, 255, 255, ${gridStyle === 1 ? "0.15" : "0.5"}) 19px,
+										rgba(255, 255, 255, ${gridStyle === 1 ? "0.15" : "0.5"}) 20px
 									)
 								`,
 							}}
 						></div>
 					)}
 					
-					{/* Wall border (thick visible border like in game) */}
+					{/* Wall border (visible border like in game) */}
 					<div
 						className="absolute inset-0 pointer-events-none"
 						style={{
-							border: `8px solid ${WALL_COLORS[wallColor]?.color ?? "#fbbf24"}`,
-							boxShadow: `inset 0 0 0 4px rgba(255, 215, 0, 0.3)`,
+							border: `4px solid ${WALL_COLORS[wallColor]?.color ?? "#fbbf24"}`,
 						}}
 					></div>
 					
@@ -403,13 +403,6 @@ export default function SnakeCustomizePage() {
 						Save
 					</button>
 				</div>
-			</div>
-
-			{/* Hint */}
-			<div className="absolute bottom-8 text-center">
-				<p className="font-['Press_Start_2P'] text-xs text-gray-400">
-					Press ESC to go back
-				</p>
 			</div>
 		</div>
 	);

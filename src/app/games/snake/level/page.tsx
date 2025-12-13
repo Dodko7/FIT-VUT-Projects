@@ -17,23 +17,35 @@ export default function SnakeLevelPage() {
 	const { level: contextLevel, setLevel: setContextLevel, gameType, setCurrentGameId } = useSnakeGame();
 	const router = useRouter();
 	
-	// Local state pre slider (synchronizovaný s context)
-	const [level, setLevel] = useState(contextLevel);
+	// Local state pre slider - will be synced with localStorage on mount
+	const [level, setLevel] = useState(5); // Default for SSR
 	const [isCreatingGame, setIsCreatingGame] = useState(false);
 	const [error, setError] = useState<string | null>(null);
+	const [isClient, setIsClient] = useState(false);
 	
 	const minLevel = 1;
 	const maxLevel = 10;
 
-	// Synchronizuj local state s context pri načítaní
+	// Detect client-side rendering and load from localStorage
 	useEffect(() => {
-		setLevel(contextLevel);
-	}, [contextLevel]);
+		setIsClient(true);
+		// Load the actual level from localStorage on client mount
+		if (typeof window !== "undefined") {
+			const saved = localStorage.getItem("snake_level");
+			if (saved) {
+				const savedLevel = parseInt(saved, 10);
+				setLevel(savedLevel);
+				setContextLevel(savedLevel); // Sync with context
+			}
+		}
+	}, []); // Run only once on mount
 
-	// Update context pri zmene levelu
+	// Update context when level changes (from slider interaction)
 	useEffect(() => {
-		setContextLevel(level);
-	}, [level, setContextLevel]);
+		if (isClient) {
+			setContextLevel(level);
+		}
+	}, [level, isClient, setContextLevel]);
 
 	const handleKeyDown = (e: React.KeyboardEvent) => {
 		if (e.key === "ArrowLeft" || e.key === "<" || e.key === ",") {
@@ -54,6 +66,8 @@ export default function SnakeLevelPage() {
 	 * Vytvorí hru s Anonymous - meno sa zadá po skončení hry
 	 */
 	const handlePlayClick = () => {
+		// Update context with current level before creating game
+		setContextLevel(level);
 		void createGame();
 	};
 
@@ -71,7 +85,6 @@ export default function SnakeLevelPage() {
 				: null;
 			const finalGameType = storedGameType || gameType;
 			
-			console.log('[Level] Creating game with gameType from context:', gameType, 'localStorage:', storedGameType, 'using:', finalGameType, 'level:', level);
 			// Vytvoríme novú hru v databáze (s Anonymous - meno sa zadá po hre)
 			const response = await fetch("/api/snake/game", {
 				method: "POST",
@@ -86,7 +99,6 @@ export default function SnakeLevelPage() {
 			if (result.success) {
 				// Uložíme gameId do contextu
 				setCurrentGameId(result.data.id);
-				console.log(`Game created with ID: ${result.data.id}`);
 				
 				// Presmerujeme na gameplay
 				router.push("/games/snake/gameplay");
@@ -142,6 +154,7 @@ export default function SnakeLevelPage() {
 						<div
 							className="absolute left-0 top-0 h-full bg-gradient-to-r from-yellow-300 to-yellow-400 transition-all duration-200"
 							style={{ width: `${fillPercentage}%` }}
+							suppressHydrationWarning
 						></div>
 					</div>
 					
@@ -153,12 +166,14 @@ export default function SnakeLevelPage() {
 						value={level}
 						onChange={handleSliderChange}
 						className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+						suppressHydrationWarning
 					/>
 
 					{/* Slider Thumb */}
 					<div
 						className="absolute top-1/2 -translate-y-1/2 w-12 h-12 bg-gradient-to-b from-gray-300 to-gray-500 rounded-full border-4 border-gray-700 shadow-xl transition-all duration-200 pointer-events-none z-20"
 						style={{ left: `calc(${fillPercentage}% - 24px)` }}
+						suppressHydrationWarning
 					></div>
 				</div>
 
@@ -172,7 +187,7 @@ export default function SnakeLevelPage() {
 			</div>
 
 			{/* Level Display */}
-			<div className="mb-16 font-['Press_Start_2P'] text-6xl snake-gradient-text drop-shadow-[0_0_8px_rgba(250,204,21,0.6)]">
+			<div className="mb-16 font-['Press_Start_2P'] text-6xl snake-gradient-text drop-shadow-[0_0_8px_rgba(250,204,21,0.6)]" suppressHydrationWarning>
 				{level}
 			</div>
 

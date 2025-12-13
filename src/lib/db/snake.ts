@@ -166,14 +166,10 @@ export async function loadGameState(gameId: string) {
  * @param gameId - ID hry
  */
 export async function deleteGameState(gameId: string) {
-	try {
-		await db.snakeGameState.delete({
-			where: { gameId },
-		});
-	} catch (error) {
-		// Stav neexistuje - ignorujeme
-		console.log(`Game state for ${gameId} does not exist`);
-	}
+	// Use deleteMany instead of delete - it won't throw error if record doesn't exist
+	await db.snakeGameState.deleteMany({
+		where: { gameId },
+	});
 }
 
 // ============================================================================

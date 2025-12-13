@@ -25,8 +25,6 @@ const GAME_TYPE_LABELS = {
 export default function SnakeMenuPage() {
 	const { gameType, level } = useSnakeGame();
 	const [selectedIndex, setSelectedIndex] = useState(0);
-	
-	console.log('[Menu] Current gameType from context:', gameType, 'level:', level);
 
 	const menuOptions: MenuOption[] = [
 		{
@@ -88,7 +86,7 @@ export default function SnakeMenuPage() {
 			autoFocus
 		>
 			{/* Title */}
-			<h1 className="mb-16 font-['Press_Start_2P'] text-6xl snake-gradient-text drop-shadow-[0_0_10px_rgba(250,204,21,0.5)] self-center">
+			<h1 className="mb-16 font-['Press_Start_2P'] text-6xl snake-gradient-text drop-shadow-[0_0_10px_rgba(250,204,21,0.5)] self-center ml-[40px]">
 				Snake
 			</h1>
 

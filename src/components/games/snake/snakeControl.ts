@@ -432,15 +432,9 @@ export class SnakeGameController {
 			});
 
 			// Vymaž game state (už nie je potrebný)
-			await fetch("/api/snake/game-state", {
+			await fetch(`/api/snake/game-state?gameId=${this.config.gameId}`, {
 				method: "DELETE",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({
-					gameId: this.config.gameId,
-				}),
 			});
-
-			console.log("Game finished and saved successfully");
 		} catch (error) {
 			console.error("Failed to finish game:", error);
 		}
@@ -452,7 +446,6 @@ export class SnakeGameController {
 	private handleGameOverConfirm(): void {
 		// Tento callback sa použije v React komponente
 		// Pre zobrazenie Game Over modalu
-		console.log("Game Over confirmed");
 	}
 
 	/**

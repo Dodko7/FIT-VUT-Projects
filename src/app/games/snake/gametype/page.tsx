@@ -165,8 +165,8 @@ export default function SnakeGameTypePage() {
 								ctx.strokeRect(0, 0, 200, 200);
 								ctx.lineWidth = 1;
 								
-								// Draw walls for BOX mode
-								if (selectedType === "BOX") {
+								// Draw walls for BOX and CAMPAIGN mode
+								if (selectedType === "BOX" || selectedType === "CAMPAIGN") {
 									ctx.fillStyle = "#facc15"; // Yellow color matching the text
 									for (let i = 0; i < gridSize; i++) {
 										ctx.fillRect(0, i * cellSize, cellSize, cellSize);

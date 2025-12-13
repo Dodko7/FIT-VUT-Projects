@@ -8,7 +8,7 @@
 
 "use client";
 
-import { createContext, useContext, useState, type ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, type ReactNode } from "react";
 import type { SnakeGameType } from "~/lib/types/snake";
 
 // ============================================================================
@@ -52,13 +52,42 @@ const SnakeGameContext = createContext<SnakeGameContextType | undefined>(
  * Obaľuje všetky Snake routes a poskytuje im prístup k hernému stavu
  */
 export function SnakeGameProvider({ children }: { children: ReactNode }) {
-	// Herné nastavenia (default hodnoty)
-	const [gameType, setGameType] = useState<SnakeGameType>("CLASSIC");
-	const [level, setLevel] = useState<number>(5);
+	// Load initial values from localStorage
+	const [gameType, setGameTypeState] = useState<SnakeGameType>(() => {
+		if (typeof window !== "undefined") {
+			const saved = localStorage.getItem("snake_gameType");
+			return (saved as SnakeGameType) || "CLASSIC";
+		}
+		return "CLASSIC";
+	});
+	
+	const [level, setLevelState] = useState<number>(() => {
+		if (typeof window !== "undefined") {
+			const saved = localStorage.getItem("snake_level");
+			return saved ? parseInt(saved, 10) : 5;
+		}
+		return 5;
+	});
 	
 	// Aktuálna hra
 	const [currentGameId, setCurrentGameId] = useState<string | null>(null);
 	const [playerName, setPlayerName] = useState<string>("");
+
+	// Persist gameType to localStorage
+	const setGameType = (type: SnakeGameType) => {
+		setGameTypeState(type);
+		if (typeof window !== "undefined") {
+			localStorage.setItem("snake_gameType", type);
+		}
+	};
+
+	// Persist level to localStorage
+	const setLevel = (newLevel: number) => {
+		setLevelState(newLevel);
+		if (typeof window !== "undefined") {
+			localStorage.setItem("snake_level", newLevel.toString());
+		}
+	};
 
 	/**
 	 * Reset nastavení na default hodnoty (ale ponechá playerName a gameId)

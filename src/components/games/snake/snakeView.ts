@@ -120,7 +120,7 @@ export class SnakeGameView {
 					snake: "#00ff00",
 					snakeHead: "#00cc00",
 					food: "#ff0000",
-					wall: "#ffffff",
+					wall: "#fbbf24",
 					text: "#ffffff",
 				};
 			case "BOX":
@@ -130,7 +130,7 @@ export class SnakeGameView {
 					snake: "#00d9ff",
 					snakeHead: "#0099ff",
 					food: "#ff6b6b",
-					wall: "#ffd700",
+					wall: "#fbbf24",
 					text: "#ffffff",
 				};
 			case "CAMPAIGN":
@@ -140,7 +140,7 @@ export class SnakeGameView {
 					snake: "#ff00ff",
 					snakeHead: "#cc00cc",
 					food: "#ffff00",
-					wall: "#ffffff",
+					wall: "#fbbf24",
 					text: "#ffffff",
 				};
 		}
@@ -162,8 +162,8 @@ export class SnakeGameView {
 		this.clearCanvas();
 		this.drawGrid(state.gridSize);
 		
-		// Steny len pre BOX mode
-		if (this.gameType === "BOX") {
+		// Steny pre BOX a CAMPAIGN mode
+		if (this.gameType === "BOX" || this.gameType === "CAMPAIGN") {
 			this.drawWalls(state.gridSize);
 		}
 		
@@ -224,14 +224,11 @@ export class SnakeGameView {
 			return;
 		}
 		
-		// Set grid opacity based on style
-		const gridAlpha = this.config.gridStyle === "subtle" ? 0.1 : 0.3;
+		// Set grid opacity based on style - increased for better visibility
+		const gridAlpha = this.config.gridStyle === "subtle" ? 0.15 : 0.5;
 		
-		// Parse grid color and apply alpha
-		const gridColor = this.config.colors.grid;
-		this.ctx.strokeStyle = gridColor.startsWith("#") 
-			? gridColor + Math.floor(gridAlpha * 255).toString(16).padStart(2, "0")
-			: `rgba(26, 26, 26, ${gridAlpha})`;
+		// Use a lighter grid color (white) for better visibility, similar to preview
+		this.ctx.strokeStyle = `rgba(255, 255, 255, ${gridAlpha})`;
 		this.ctx.lineWidth = 1;
 
 		for (let i = 0; i <= gridSize; i++) {
@@ -255,22 +252,17 @@ export class SnakeGameView {
 	 * Nakreslí steny (BOX mode)
 	 */
 	private drawWalls(gridSize: number): void {
-		// Draw visible walls as a thick border
+		// Draw visible walls with user's chosen color
 		this.ctx.strokeStyle = this.config.colors.wall;
-		this.ctx.lineWidth = 8; // Thicker wall (was 4)
-		this.ctx.strokeRect(4, 4, this.canvas.width - 8, this.canvas.height - 8);
-		
-		// Add inner shadow for better visibility
-		this.ctx.strokeStyle = "rgba(255, 215, 0, 0.5)";
 		this.ctx.lineWidth = 4;
-		this.ctx.strokeRect(8, 8, this.canvas.width - 16, this.canvas.height - 16);
+		this.ctx.strokeRect(2, 2, this.canvas.width - 4, this.canvas.height - 4);
 	}
 	
 	/**
 	 * Nakreslí CAMPAIGN barrier
 	 */
 	private drawCampaignBarrier(barrier: ReadonlyArray<Position>): void {
-		this.ctx.fillStyle = "#facc15"; // Yellow matching the preview
+		this.ctx.fillStyle = this.config.colors.wall; // Use wall color from customization
 		
 		barrier.forEach((pos) => {
 			const x = pos.x * this.config.cellSize;

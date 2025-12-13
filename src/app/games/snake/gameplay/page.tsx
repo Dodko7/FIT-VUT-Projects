@@ -47,7 +47,6 @@ export default function SnakeGameplayPage() {
 	// Redirect ak nemáme game ID
 	useEffect(() => {
 		if (!currentGameId) {
-			console.warn("No game ID found, redirecting to menu");
 			router.push("/games/snake");
 		}
 	}, [currentGameId, router]);
@@ -59,16 +58,11 @@ export default function SnakeGameplayPage() {
 		// Prevent double initialization in development (React Strict Mode)
 		// Check both the ref flag AND if controller already exists
 		if (isInitializedRef.current || controllerRef.current) {
-			console.log('[Gameplay] Already initialized, skipping...', {
-				refFlag: isInitializedRef.current,
-				hasController: !!controllerRef.current
-			});
 			return;
 		}
 
 		// SET FLAG IMMEDIATELY to prevent race condition with async initialization
 		isInitializedRef.current = true;
-		console.log('[Gameplay] Starting initialization, flag set to true');
 
 		const canvas = canvasRef.current;
 		let controller: SnakeGameController | null = null;
@@ -76,7 +70,6 @@ export default function SnakeGameplayPage() {
 		// Fetch game from database to get the correct gameType
 		const initializeGame = async () => {
 			try {
-				console.log('[Gameplay] Fetching game from database, gameId:', currentGameId);
 				const response = await fetch(`/api/snake/game?gameId=${currentGameId}`);
 				const result = await response.json() as {
 					success: boolean;
@@ -88,8 +81,6 @@ export default function SnakeGameplayPage() {
 					error?: string;
 				};
 				
-				console.log('[Gameplay] API response:', result);
-				
 				if (!result.success || !result.data) {
 					console.error("Failed to load game from database:", result.error);
 					setIsLoading(false);
@@ -97,7 +88,6 @@ export default function SnakeGameplayPage() {
 				}
 				
 				const { gameType: dbGameType, level: dbLevel, playerName: dbPlayerName } = result.data;
-				console.log('[Gameplay] Game data from DB - gameType:', dbGameType, 'level:', dbLevel, 'playerName:', dbPlayerName);
 				setActualGameType(dbGameType);
 				
 				controller = new SnakeGameController(
@@ -131,7 +121,6 @@ export default function SnakeGameplayPage() {
 
 			controllerRef.current = controller;			// Pokús sa načítať uložený stav
 			const loaded = await controller.loadSavedState();
-			console.log(loaded ? "Loaded saved state" : "Starting new game");
 			
 			// Start the game
 			controller.start();
@@ -144,10 +133,6 @@ export default function SnakeGameplayPage() {
 	
 	void initializeGame();	// Cleanup - DO NOT reset isInitializedRef here as it causes double init in Strict Mode
 	return () => {
-		console.log('[Gameplay] Cleanup running, stopping controller', {
-			hasController: !!controller,
-			refController: !!controllerRef.current
-		});
 		if (controller) {
 			controller.stop();
 		}
@@ -189,7 +174,8 @@ export default function SnakeGameplayPage() {
 			controllerRef.current = null;
 		}
 		isInitializedRef.current = false;
-		resetAll();
+		// Only reset game ID, keep gameType and level settings
+		setCurrentGameId(null);
 		router.push("/games/snake");
 	};
 
