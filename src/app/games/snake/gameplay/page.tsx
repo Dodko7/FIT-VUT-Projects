@@ -111,7 +111,8 @@ export default function SnakeGameplayPage() {
 						}
 					},
 					onScoreChange: (newScore) => {
-						setScore(newScore);
+						// Only update if score actually changed to prevent unnecessary re-renders
+						setScore(prevScore => prevScore !== newScore ? newScore : prevScore);
 					},
 					onError: (error) => {
 						console.error("Game error:", error);

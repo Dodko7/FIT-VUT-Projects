@@ -174,19 +174,6 @@ export class SnakeGameView {
 
 		this.drawFood(state.food);
 		this.drawSnake(state.snake);
-		
-		// HUD len ak sa niečo zmenilo (avoid flickering)
-		if (
-			state.score !== this.lastScore ||
-			level !== this.lastLevel ||
-			playerName !== this.lastPlayerName
-		) {
-			this.clearHUDArea(); // Vymažeme len HUD area
-			this.drawHUD(state.score, playerName, level);
-			this.lastScore = state.score;
-			this.lastLevel = level;
-			this.lastPlayerName = playerName;
-		}
 
 		// Game Over / Paused overlay
 		if (state.isGameOver) {
@@ -450,7 +437,7 @@ export class SnakeGameView {
 		this.ctx.fillStyle = "#ffffff";
 		this.ctx.font = "14px 'Press Start 2P', monospace";
 		this.ctx.fillText(
-			"Press SPACE to resume",
+			"Press SPACE/ESC to resume",
 			this.canvas.width / 2,
 			this.canvas.height / 2 + 40
 		);

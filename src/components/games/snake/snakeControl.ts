@@ -233,11 +233,10 @@ export class SnakeGameController {
 			if (this.config.enableSound) {
 				this.soundManager.playEatSound();
 			}
-		}
-
-		// Callback pre zmenu score
-		if (this.callbacks.onScoreChange) {
-			this.callbacks.onScoreChange(currentScore);
+			// Callback pre zmenu score - only when it actually changes
+			if (this.callbacks.onScoreChange) {
+				this.callbacks.onScoreChange(currentScore);
+			}
 		}
 
 		// Game Over handling
