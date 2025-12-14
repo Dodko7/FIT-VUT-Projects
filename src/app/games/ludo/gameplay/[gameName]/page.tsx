@@ -29,7 +29,6 @@ import { Color } from "@prisma/client";
 import LudoPausePage from "~/components/games/ludo/pages/pause-page";
 import LudoLoadingPage from "~/components/games/ludo/pages/loading-page";
 import GameOverPage from "~/components/games/ludo/pages/game-over-page";
-import StatusIndicatorState from "~/lib/ludo/enum/status-indicator-state";
 
 const isClient = typeof window !== "undefined";
 

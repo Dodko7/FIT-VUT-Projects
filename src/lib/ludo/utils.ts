@@ -75,7 +75,27 @@ export function CompletedPawnsFromColor(player: PlayerGameState): number {
  * Returns a boolean array of pawns indicating if they are in the start area.
  */
 export function PawnsInStartFromPlayer(player: PlayerGameState): boolean[] {
-	return player.pawns.map((pawn) => pawn.position < 0);
+	let starts = [];
+	if (player.color === Color.RED) {
+		starts = RED_PAWN_START_POSITIONS;
+	} else if (player.color === Color.YELLOW) {
+		starts = YELLOW_PAWN_START_POSITIONS;
+	} else if (player.color === Color.GREEN) {
+		starts = GREEN_PAWN_START_POSITIONS;
+	} else if (player.color === Color.BLUE) {
+		starts = BLUE_PAWN_START_POSITIONS;
+	} else {
+		throw new Error("Invalid color");
+	}
+
+	let res = [false , false, false, false];
+
+	for (let i = 0; i < 4; ++i) {
+		if (player.pawns.find((p) => p.position === starts[i])) {
+			res[i] = true;
+		}
+	}
+	return res;
 }
 
 /**

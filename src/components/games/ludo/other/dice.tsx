@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import type { DiceProps } from "~/lib/ludo/types";
 
 /**
@@ -6,7 +7,27 @@ import type { DiceProps } from "~/lib/ludo/types";
  * @returns The Dice component.
  */
 export default function Dice({ lastRoll, isRolling }: DiceProps) {
+	const [color, setColor] = useState("white");
+	useEffect(() => {
+		const savedColor = localStorage.getItem("ludoDiceColor") || "white";
+		setColor(savedColor);
+	}, []);
 	const roll = lastRoll ?? 6;
+
+	const getBg = () => {
+		switch (color) {
+			case "red":
+				return "ludo-dice-red";
+			case "green":
+				return "ludo-dice-green";
+			case "blue":
+				return "ludo-dice-blue";
+			case "yellow":
+				return "ludo-dice-yellow";
+			default:
+				return "bg-white";
+		}
+	}
 
 	const renderDots = (num: number) => {
 		const dots = [];
@@ -39,7 +60,7 @@ export default function Dice({ lastRoll, isRolling }: DiceProps) {
 
 	return (
 		<div
-			className={`flex size-25 items-center justify-center rounded-xl border-4 border-black bg-white shadow-lg ${isRolling ? "dice-rolling" : ""}`}
+			className={`flex size-25 items-center justify-center rounded-xl border-4 border-black ${getBg()} shadow-lg ${isRolling ? "dice-rolling" : ""}`}
 		>
 			<div className="grid h-full w-full grid-cols-3 grid-rows-3 place-items-center gap-1 p-2">
 				{renderDots(roll)}

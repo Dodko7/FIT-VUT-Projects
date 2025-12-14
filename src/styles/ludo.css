@@ -119,6 +119,45 @@
   background: #22c55e;
 }
 
+.ludo-white-button {
+  background: #fff;
+  color: #222;
+  box-shadow: 0 4px 0 #bbb;
+  font-family: var(--font-russo);
+}
+
+.ludo-white-button:hover {
+  background: #f3f4f6;
+}
+
+.ludo-white-button:active {
+  background: #acaaaa;
+}
+
+.ludo-white-button-active {
+  background: #cdcece;
+}
+
+.ludo-dice-red {
+  background: #fca5a5;
+  color: #7f1d1d;
+}
+
+.ludo-dice-yellow {
+  background: #fde68a;
+  color: #78350f;
+}
+
+.ludo-dice-blue {
+  background: #93c5fd;
+  color: #1e3a8a;
+}
+
+.ludo-dice-green {
+  background: #86efac;
+  color: #065f46;
+}
+
 .ludo-form-text {
   color: #facc15;
   font-family: var(--font-russo);
