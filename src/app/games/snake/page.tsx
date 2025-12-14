@@ -1,7 +1,7 @@
 /**
  * Snake Main Menu Page
  * 
- * @author Igor Lacko
+ * @author Jozef Ondrejicka
  * @description Hlavné menu Snake hry s navigáciou a zobrazením aktuálnych nastavení
  */
 
@@ -40,7 +40,7 @@ export default function SnakeMenuPage() {
 			},
 		},
 		{
-			label: "Customise",
+			label: "Customize",
 			action: () => {
 				window.location.href = "/games/snake/customize";
 			},

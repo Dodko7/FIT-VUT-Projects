@@ -1,7 +1,7 @@
 /**
  * Snake Customize Page
  * 
- * @author Igor Lacko
+ * @author Jozef Ondrejicka
  * @description Customization settings for Snake game appearance
  */
 

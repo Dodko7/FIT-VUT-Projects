@@ -10,8 +10,7 @@
  * - Auto-save stavu
  * - Komunikáciu s API
  * 
- * @author Igor Lacko
- * @date 2025-11-29
+ * @author Jozef Ondrejicka
  */
 
 import { SnakeGameModel, type Direction } from "./snakeModel";

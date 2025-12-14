@@ -1,7 +1,7 @@
 /**
  * Snake Gameplay Page
  * 
- * @author Igor Lacko
+ * @author Jozef Ondrejicka
  * @description Hlavná herná stránka s funkčnou hrou
  */
 

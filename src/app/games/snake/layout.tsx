@@ -1,7 +1,7 @@
 /**
  * Snake Game Layout - Provider wrapper
  * 
- * @author Igor Lacko
+ * @author Jozef Ondrejicka
  * @description Obaľuje všetky Snake routes v SnakeGameProvider
  *              pre zdieľanie stavu medzi stránkami
  */

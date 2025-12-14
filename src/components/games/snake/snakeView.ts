@@ -8,8 +8,7 @@
  * - Vizuálne efekty
  * - Rozlíšenie medzi hernými typmi
  * 
- * @author Igor Lacko
- * @date 2025-11-29
+ * @author Jozef Ondrejicka
  */
 
 import type { GameState, Position } from "./snakeModel";

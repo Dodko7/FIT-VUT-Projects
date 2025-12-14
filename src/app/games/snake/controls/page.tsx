@@ -1,3 +1,9 @@
+/**
+ * Snake Controls Visualization Page
+ * @author Jozef Ondrejicka
+ * @description Zobrazenie ovládacích prvkov a ich stavu pri stlačení
+ */
+
 "use client";
 
 import Link from "next/link";
@@ -83,9 +89,14 @@ export default function SnakeControlsPage() {
 			</Link>
 
 			{/* Title */}
-			<h1 className="mb-20 font-['Press_Start_2P'] text-6xl snake-gradient-text drop-shadow-[0_0_10px_rgba(250,204,21,0.5)]">
+			<h1 className="mb-8 font-['Press_Start_2P'] text-6xl snake-gradient-text drop-shadow-[0_0_10px_rgba(250,204,21,0.5)]">
 				Controls
 			</h1>
+
+			{/* Instruction text */}
+			<p className="mb-12 font-['Press_Start_2P'] text-sm text-gray-400">
+				Press keys to visualize
+			</p>
 
 			{/* Controls Display */}
 			<div className="flex flex-col items-center gap-16">

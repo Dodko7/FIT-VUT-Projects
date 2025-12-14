@@ -1,7 +1,7 @@
 /**
  * TypeScript type definitions pre Snake game
  * 
- * @author Igor Lacko
+ * @author Jozef Ondrejicka
  * @description Definície typov pre frontend Snake hry
  */
 

@@ -1,7 +1,7 @@
 /**
  * Snake Level Selection Page
  * 
- * @author Igor Lacko
+ * @author Jozef Ondrejicka
  * @description Výber úrovne obtiažnosti (1-10)
  *              Ukladá do Context a vytvorí novú hru v databáze
  */
@@ -81,7 +81,7 @@ export default function SnakeLevelPage() {
 			try {
 			// Try to get gameType from localStorage as fallback
 			const storedGameType = typeof window !== 'undefined' 
-				? localStorage.getItem('snake_gameType') as SnakeGameType | null
+				? localStorage.getItem('snake_gameType')
 				: null;
 			const finalGameType = storedGameType || gameType;
 			

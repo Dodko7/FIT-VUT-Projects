@@ -1,7 +1,7 @@
 /**
  * Snake Game Sound Manager
  * 
- * @author Igor Lacko
+ * @author Jozef Ondrejicka
  * @description Web Audio API pre herné zvuky
  */
 

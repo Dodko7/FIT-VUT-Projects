@@ -1,7 +1,7 @@
 /**
  * Snake Leaderboard Page
  * 
- * @author Igor Lacko
+ * @author Jozef Ondrejicka
  * @description Zobrazenie top výsledkov s filtrom podľa typu hry
  */
 

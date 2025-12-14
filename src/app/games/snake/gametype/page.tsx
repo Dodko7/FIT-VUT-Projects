@@ -1,14 +1,14 @@
 /**
  * Snake Game Type Selection Page
  * 
- * @author Igor Lacko
+ * @author Jozef Ondrejicka
  * @description Výber typu hry (CLASSIC, BOX, CAMPAIGN)
  *              Ukladá výber do Context a vracia na menu
  */
 
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useSnakeGame } from "~/contexts/SnakeGameContext";
@@ -26,18 +26,24 @@ export default function SnakeGameTypePage() {
 	
 	const gameTypes: SnakeGameType[] = ["CLASSIC", "BOX", "CAMPAIGN"];
 	
-	// Inicializácia selectedIndex podľa aktuálneho gameType z contextu
-	const initialIndex = gameTypes.indexOf(gameType);
-	const [selectedIndex, setSelectedIndex] = useState(
-		initialIndex !== -1 ? initialIndex : 0,
-	);
+	// Start with 0 to match SSR, then sync with gameType on client
+	const [selectedIndex, setSelectedIndex] = useState(0);
+	const [isClient, setIsClient] = useState(false);
+	
+	// Sync selectedIndex with gameType after mount
+	useEffect(() => {
+		setIsClient(true);
+		const initialIndex = gameTypes.indexOf(gameType);
+		if (initialIndex !== -1) {
+			setSelectedIndex(initialIndex);
+		}
+	}, [gameType]);
 	
 	// Sync selectedIndex with arrow key selection in real-time
 	const handleIndexChange = (newIndex: number) => {
 		setSelectedIndex(newIndex);
 		const selectedType = gameTypes[newIndex];
 		if (selectedType) {
-			console.log('[GameType] Arrow key selected:', selectedType);
 			setGameType(selectedType);
 			// Also save to localStorage
 			if (typeof window !== 'undefined') {
@@ -50,13 +56,11 @@ export default function SnakeGameTypePage() {
 	 * Handler pre výber game type
 	 */
 	const handleSelect = (type: SnakeGameType) => {
-		console.log('[GameType] Setting gameType in context to:', type);
 		setGameType(type);
 		// Also save to localStorage as backup
 		if (typeof window !== 'undefined') {
 			localStorage.setItem('snake_gameType', type);
 		}
-		console.log(`[GameType] Game type changed to: ${type}`);
 		router.push("/games/snake");
 	};
 
@@ -109,6 +113,7 @@ export default function SnakeGameTypePage() {
 							className={`font-['Press_Start_2P'] text-3xl transition-opacity ${
 								selectedIndex === index ? "opacity-100 snake-gradient-text" : "opacity-0"
 							}`}
+							suppressHydrationWarning
 						>
 							&gt;
 						</span>
@@ -120,6 +125,7 @@ export default function SnakeGameTypePage() {
 									? "snake-gradient-text drop-shadow-[0_0_8px_rgba(250,204,21,0.6)]"
 									: "text-yellow-200"
 							}`}
+							suppressHydrationWarning
 						>
 							{GAME_TYPE_LABELS[type]}
 						</span>
@@ -207,7 +213,7 @@ export default function SnakeGameTypePage() {
 						}
 					}}
 				/>
-				<p className="text-center text-xs font-['Press_Start_2P'] text-gray-400 mt-2">
+				<p className="text-center text-xs font-['Press_Start_2P'] text-gray-400 mt-2" suppressHydrationWarning>
 					{gameTypes[selectedIndex] === "CLASSIC" && "No walls - wrap around edges"}
 					{gameTypes[selectedIndex] === "BOX" && "Walls on all sides"}
 					{gameTypes[selectedIndex] === "CAMPAIGN" && "Cross barrier in the middle"}

@@ -1,7 +1,7 @@
 /**
  * Player Name Modal Component
  * 
- * @author Igor Lacko
+ * @author Jozef Ondrejicka
  * @description Modal pre zadanie mena hráča po skončení hry
  */
 

@@ -1,7 +1,7 @@
 /**
  * Mobile Touch Controls Component
  * 
- * @author Igor Lacko
+ * @author Jozef Ondrejicka
  * @description Virtual D-pad pre mobilné zariadenia
  */
 
