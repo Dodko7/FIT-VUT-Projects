@@ -1,8 +1,10 @@
 /**
  * Snake Leaderboard Page
  * 
+ * Zobrazenie top výsledkov s filtrom podľa typu hry
+ * Načítava dáta z API a umožňuje filtrovanie medzi CLASSIC/BOX/CAMPAIGN/ALL
+ * 
  * @author Jozef Ondrejicka
- * @description Zobrazenie top výsledkov s filtrom podľa typu hry
  */
 
 "use client";

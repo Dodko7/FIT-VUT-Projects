@@ -1,9 +1,10 @@
 /**
  * Snake Game Layout - Provider wrapper
  * 
+ * Obaľuje všetky Snake routes v SnakeGameProvider
+ * Umožňuje zdieľanie stavu medzi stránkami (gameType, level, currentGameId)
+ * 
  * @author Jozef Ondrejicka
- * @description Obaľuje všetky Snake routes v SnakeGameProvider
- *              pre zdieľanie stavu medzi stránkami
  */
 
 import { SnakeGameProvider } from "~/contexts/SnakeGameContext";

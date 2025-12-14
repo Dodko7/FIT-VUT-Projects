@@ -1,9 +1,11 @@
 /**
  * Snake Level Selection Page
  * 
+ * Výber úrovne obtiažnosti (1-10)
+ * Ukladá do Context/localStorage a vytvorí novú hru v databáze
+ * Navigácia: šípky vľavo/vpravo (zmena levelu), Enter (štart hry), Escape (späť)
+ * 
  * @author Jozef Ondrejicka
- * @description Výber úrovne obtiažnosti (1-10)
- *              Ukladá do Context a vytvorí novú hru v databáze
  */
 
 "use client";

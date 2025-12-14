@@ -1,7 +1,10 @@
 /**
- * Snake Controls Visualization Page
+ * Snake Controls Page
+ * 
+ * Zobrazenie ovládacích prvkov a ich stavu pri stlačení
+ * Interaktívna vizualizácia klávesnice s live feedback
+ * 
  * @author Jozef Ondrejicka
- * @description Zobrazenie ovládacích prvkov a ich stavu pri stlačení
  */
 
 "use client";

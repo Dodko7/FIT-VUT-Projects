@@ -1,8 +1,10 @@
 /**
- * Database helper functions pre Snake game
+ * Database layer pre Snake game
  * 
- * @author Igor Lacko
- * @description Pomocné funkcie pre prácu s databázou (abstrakcia Prisma operácií)
+ * Pomocné funkcie pre prácu s databázou - abstrakcia Prisma operácií
+ * Obsahuje CRUD operácie pre hry, stavy a hráčov
+ * 
+ * @author Jozef Ondrejicka
  */
 
 import { db } from "~/server/db";

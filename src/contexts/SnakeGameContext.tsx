@@ -1,9 +1,11 @@
 /**
  * Snake Game Context - Správa stavu hry počas session
  * 
- * @author Igor Lacko
- * @description Poskytuje globálny stav pre nastavenia Snake hry
- *              Ukladá gameType, level, currentGameId a playerName
+ * Poskytuje globálny stav pre nastavenia Snake hry
+ * Ukladá gameType, level, currentGameId a playerName
+ * Zachováva nastavenia v localStorage pre perzistenciu naprieč reláciami
+ * 
+ * @author Jozef Ondrejicka
  */
 
 "use client";
@@ -50,6 +52,7 @@ const SnakeGameContext = createContext<SnakeGameContextType | undefined>(
 /**
  * Provider pre Snake Game Context
  * Obaľuje všetky Snake routes a poskytuje im prístup k hernému stavu
+ * Pri inicializácii načíta nastavenia z localStorage
  */
 export function SnakeGameProvider({ children }: { children: ReactNode }) {
 	// Load initial values from localStorage
@@ -90,7 +93,8 @@ export function SnakeGameProvider({ children }: { children: ReactNode }) {
 	};
 
 	/**
-	 * Reset nastavení na default hodnoty (ale ponechá playerName a gameId)
+	 * Resetuje herné nastavenia na predvolené hodnoty
+	 * Ponechá playerName a currentGameId nezmenené
 	 */
 	const resetSettings = () => {
 		setGameType("CLASSIC");
@@ -98,7 +102,8 @@ export function SnakeGameProvider({ children }: { children: ReactNode }) {
 	};
 
 	/**
-	 * Kompletný reset - vráti všetko na default
+	 * Kompletný reset - vráti všetko na predvolené hodnoty
+	 * Vymaže aj playerName a currentGameId
 	 */
 	const resetAll = () => {
 		setGameType("CLASSIC");
@@ -135,7 +140,7 @@ export function SnakeGameProvider({ children }: { children: ReactNode }) {
  * Custom hook pre prístup k Snake Game Context
  * 
  * @throws Error ak sa použije mimo SnakeGameProvider
- * @returns Snake game context value
+ * @returns Hodnoty a funkcie Snake game contextu
  * 
  * @example
  * const { gameType, setGameType, level, setLevel } = useSnakeGame();

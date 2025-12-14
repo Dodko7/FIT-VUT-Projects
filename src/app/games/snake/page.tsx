@@ -1,8 +1,10 @@
 /**
  * Snake Main Menu Page
  * 
+ * Hlavné menu Snake hry s navigáciou a zobrazením aktuálnych nastavení
+ * Navigácia: šípky hore/dole, Enter pre výber
+ * 
  * @author Jozef Ondrejicka
- * @description Hlavné menu Snake hry s navigáciou a zobrazením aktuálnych nastavení
  */
 
 "use client";

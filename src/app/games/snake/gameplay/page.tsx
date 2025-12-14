@@ -1,8 +1,11 @@
 /**
  * Snake Gameplay Page
  * 
+ * Hlavná herná stránka s funkčnou hrou
+ * Riadi herný loop, interakciu s užívateľom a ukladanie stavu
+ * Podporuje klávesnicovú aj dotykovú navigáciu
+ * 
  * @author Jozef Ondrejicka
- * @description Hlavná herná stránka s funkčnou hrou
  */
 
 "use client";

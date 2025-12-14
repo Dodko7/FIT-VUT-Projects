@@ -1,8 +1,10 @@
 /**
  * Player Name Modal Component
  * 
+ * Modal pre zadanie mena hráča po skončení hry
+ * Umožňuje uložiť výsledok pod menom alebo preskočiť
+ * 
  * @author Jozef Ondrejicka
- * @description Modal pre zadanie mena hráča po skončení hry
  */
 
 "use client";

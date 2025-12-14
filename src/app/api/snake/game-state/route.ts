@@ -1,8 +1,12 @@
 /**
  * API Route: /api/snake/game-state
- * Správa stavu Snake hry (Save/Load)
  * 
- * @author Igor Lacko
+ * Správa stavu Snake hry - Save/Load/Delete operácie
+ * POST: uloženie aktuálneho stavu hry
+ * GET: načítanie uloženého stavu
+ * DELETE: vymazanie stavu
+ * 
+ * @author Jozef Ondrejicka
  */
 
 import { NextResponse } from "next/server";

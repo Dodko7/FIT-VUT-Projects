@@ -4,10 +4,10 @@
  * MVC Pattern - Controller Layer
  * Zodpovedá za:
  * - Inicializáciu hry
- * - Game loop
- * - Input handling (keyboard, touch)
+ * - Herný loop (logika + rendering)
+ * - Spracovanie vstupu (klávesnica, dotyková obrazovka)
  * - Prepojenie Model a View
- * - Auto-save stavu
+ * - Auto-save stavu do databázy
  * - Komunikáciu s API
  * 
  * @author Jozef Ondrejicka
@@ -89,7 +89,9 @@ export class SnakeGameController {
 	}
 
 	/**
-	 * Načíta uložený stav z API
+	 * Načíta uložený stav hry z databázy cez API
+	 * Deserializuje JSON dáta a obnoví Model
+	 * @returns true ak sa podarilo načítať stav, false ak neexistuje
 	 */
 	public async loadSavedState(): Promise<boolean> {
 		try {
@@ -140,6 +142,7 @@ export class SnakeGameController {
 
 	/**
 	 * Spustí hru
+	 * Pridá keyboard listener, začne game loop a auto-save
 	 */
 	public start(): void {
 		// Pridaj keyboard listener
@@ -156,7 +159,8 @@ export class SnakeGameController {
 	}
 
 	/**
-	 * Zastaví hru a cleanup
+	 * Zastaví hru a vyčistí resources
+	 * Odstráni listenery, zastaví game loop a auto-save
 	 */
 	public stop(): void {
 		this.stopGameLoop();
@@ -170,7 +174,9 @@ export class SnakeGameController {
 	}
 
 	/**
-	 * Začne game loop
+	 * Začne herný loop
+	 * Používa setInterval pre hernú logiku (podľa rýchlosti levelu)
+	 * a requestAnimationFrame pre plynulé renderovanie (60 FPS)
 	 */
 	private startGameLoop(): void {
 		if (this.gameLoopInterval || this.animationFrameId) return;
@@ -200,7 +206,8 @@ export class SnakeGameController {
 	}
 
 	/**
-	 * Zastaví game loop
+	 * Zastaví herný loop
+	 * Vyčistí interval aj animačný frame
 	 */
 	private stopGameLoop(): void {
 		if (this.gameLoopInterval) {
@@ -215,7 +222,8 @@ export class SnakeGameController {
 	}
 
 	/**
-	 * Hlavný update (každý frame)
+	 * Hlavná update funkcia (volaná každý frame)
+	 * Aktualizuje Model, deteguje zmeny skóre, volá callbacky
 	 */
 	private update(): void {
 		if (this.model.isPaused() || this.model.isGameOver()) {
@@ -447,7 +455,8 @@ export class SnakeGameController {
 	}
 
 	/**
-	 * Pauza hry (volané z UI)
+	 * Prepína pauzu hry
+	 * Zastaví/obnoví game loop
 	 */
 	public pause(): void {
 		this.model.setPaused(true);

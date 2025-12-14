@@ -1,8 +1,11 @@
 /**
  * API Route: /api/snake/players
- * Zoznam všetkých hráčov
  * 
- * @author Igor Lacko
+ * Zoznam všetkých hráčov
+ * GET: získanie hráčov (všetkých alebo top podľa skóre)
+ * Query params: top (boolean), limit (počet výsledkov)
+ * 
+ * @author Jozef Ondrejicka
  */
 
 import { NextResponse } from "next/server";

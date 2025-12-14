@@ -1,8 +1,12 @@
 /**
  * API Route: /api/snake/player/[playerName]
- * Štatistiky konkrétneho hráča
  * 
- * @author Igor Lacko
+ * Štatistiky konkrétneho hráča
+ * GET: získanie štatistík a histórie hier pre daného hráča
+ * Params: playerName
+ * Query: includeGames (boolean) - zahrnie históriu hier
+ * 
+ * @author Jozef Ondrejicka
  */
 
 import { NextResponse } from "next/server";
@@ -43,7 +47,7 @@ export async function GET(
 		}
 
 		// Voliteľne pridáme históriu hier
-		let recentGames = [];
+		let recentGames: Awaited<ReturnType<typeof getPlayerGames>> = [];
 		if (includeGames) {
 			recentGames = await getPlayerGames(decodedPlayerName, 10);
 		}

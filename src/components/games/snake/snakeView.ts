@@ -3,10 +3,11 @@
  * 
  * MVC Pattern - View Layer
  * Zodpovedá za:
- * - Rendering hada, jedla, gridu na canvas
- * - Vykreslenie HUD (skóre, lives)
- * - Vizuálne efekty
- * - Rozlíšenie medzi hernými typmi
+ * - Renderovanie hada, jedla, gridu na canvas
+ * - Vykreslenie overlay (pauza, game over)
+ * - Vizuálne efekty a animaácie
+ * - Customizáciu farieb a štýlu
+ * - Rozlíšenie medzi hernými typmi (CLASSIC/BOX/CAMPAIGN)
  * 
  * @author Jozef Ondrejicka
  */
@@ -68,7 +69,8 @@ export class SnakeGameView {
 	}
 	
 	/**
-	 * Load customization settings from localStorage
+	 * Načíta customizačné nastavenia z localStorage
+	 * Aplikácia: farby hada, jedla, pozadia, stén a štýl gridu
 	 */
 	private loadCustomization(): void {
 		try {
@@ -108,7 +110,8 @@ export class SnakeGameView {
 	}
 
 	/**
-	 * Farebná schéma podľa typu hry
+	 * Vráti farebnú schemu podľa typu hry
+	 * Každý herný mód má vlastné predvolené farby
 	 */
 	private getColorScheme(gameType: SnakeGameType): ViewConfig["colors"] {
 		switch (gameType) {
@@ -146,7 +149,7 @@ export class SnakeGameView {
 	}
 
 	/**
-	 * Nastaví veľkosť canvasu
+	 * Nastaví veľkosť canvasu podľa veľkosti gridu
 	 */
 	public setCanvasSize(gridSize: number): void {
 		const canvasSize = gridSize * this.config.cellSize;
@@ -202,7 +205,8 @@ export class SnakeGameView {
 	}
 
 	/**
-	 * Nakreslí mriežku
+	 * Vykreslí grid (mriežku)
+	 * Používa bieĺu farbu s rôznou opacitou (subtle: 15%, visible: 50%)
 	 */
 	private drawGrid(gridSize: number): void {
 		// Skip grid if style is "none"
@@ -235,7 +239,8 @@ export class SnakeGameView {
 	}
 
 	/**
-	 * Nakreslí steny (BOX mode)
+	 * Vykreslí steny (BOX a CAMPAIGN mód)
+	 * 4px široký rám okolo hracej plochy
 	 */
 	private drawWalls(gridSize: number): void {
 		// Draw visible walls with user's chosen color
@@ -318,7 +323,8 @@ export class SnakeGameView {
 	}
 
 	/**
-	 * Nakreslí jedlo
+	 * Vykreslí jedlo
+	 * Krúh s glow efektom
 	 */
 	private drawFood(food: Position): void {
 		const x = food.x * this.config.cellSize;
@@ -390,7 +396,8 @@ export class SnakeGameView {
 	}
 
 	/**
-	 * Game Over overlay
+	 * Vykreslí Game Over overlay
+	 * Tmavá vrstva s textom a finálnym skóre
 	 */
 	private drawGameOverOverlay(score: number): void {
 		// Tmavý overlay
@@ -420,7 +427,8 @@ export class SnakeGameView {
 	}
 
 	/**
-	 * Paused overlay
+	 * Vykreslí Pauza overlay
+	 * Tmavá vrstva s textom PAUSED a návodom na pokračovanie
 	 */
 	private drawPausedOverlay(): void {
 		// Tmavý overlay
@@ -443,7 +451,7 @@ export class SnakeGameView {
 	}
 
 	/**
-	 * Animovaný efekt pre intro (voliteľné)
+	 * Vykreslí odpočítavanie pred začatím hry (volitelné)
 	 */
 	public drawCountdown(count: number): void {
 		this.clearCanvas();

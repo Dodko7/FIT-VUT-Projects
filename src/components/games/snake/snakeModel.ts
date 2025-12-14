@@ -65,7 +65,8 @@ export class SnakeGameModel {
 	}
 	
 	/**
-	 * Generate "+" barrier positions for CAMPAIGN mode
+	 * Generuje pozície "+" bariéry pre CAMPAIGN mód
+	 * Vytvorí kríž v strede hracej plochy (od 6 do 14 na osi)
 	 */
 	private generateCampaignBarrier(gridSize: number): Position[] {
 		if (this.gameType !== "CAMPAIGN") return [];
@@ -88,6 +89,7 @@ export class SnakeGameModel {
 
 	/**
 	 * Vytvorí počiatočnú pozíciu hada (3 segmenty v ľavom hornom rohu)
+	 * Začína na pozícii (3,3) aby sa vyhol bariéram v CAMPAIGN móde
 	 */
 	private initializeSnake(gridSize: number): Position[] {
 		// Start in top-left area to avoid barriers in CAMPAIGN mode
@@ -99,7 +101,8 @@ export class SnakeGameModel {
 	}
 
 	/**
-	 * Vypočíta rýchlosť podľa levelu (level 1 = slow, level 10 = fast)
+	 * Vypočíta rýchlosť podľa levelu (level 1 = pomalý, level 10 = rýchly)
+	 * Level 1: 200ms medzi frameami, Level 10: 50ms medzi frameami
 	 */
 	private calculateSpeed(level: number): number {
 		// Level 1: 200ms, Level 10: 50ms
@@ -109,7 +112,8 @@ export class SnakeGameModel {
 	}
 
 	/**
-	 * Generuje náhodné jedlo (nie na hadovi)
+	 * Generuje náhodné jedlo na hracej ploche
+	 * Kontroluje, aby jedlo nevzniklo na hadovi ani na bariére
 	 */
 	private generateFood(): void {
 		let newFood: Position;
@@ -140,7 +144,8 @@ export class SnakeGameModel {
 	}
 	
 	/**
-	 * Kontrola či je pozícia na CAMPAIGN barrier
+	 * Kontroluje či je zadaná pozícia na CAMPAIGN bariére
+	 * Vracia false pre iné herné módy ako CAMPAIGN
 	 */
 	private isPositionOnBarrier(pos: Position): boolean {
 		if (this.gameType !== "CAMPAIGN") return false;
@@ -150,7 +155,8 @@ export class SnakeGameModel {
 	}
 
 	/**
-	 * Nastaví smer (s validáciou - nemôže ísť opačne)
+	 * Nastaví nový smer pohybu hada
+	 * Validuje, že had nemôže ísť priamo opačným smerom (predídenie samovražde)
 	 */
 	public setDirection(newDirection: Direction): void {
 		if (this.state.isPaused || this.state.isGameOver) return;
@@ -169,8 +175,9 @@ export class SnakeGameModel {
 	}
 
 	/**
-	 * Hlavný update loop - posunie hada o 1 krok
-	 * @returns true ak hra pokračuje, false ak game over
+	 * Hlavná update funkcia - posunie hada o jeden krok
+	 * Kontroluje kolízie, jedenie jedla a aktualizuje skóre
+	 * @returns true ak hra pokračuje, false ak nastala kolízia (game over)
 	 */
 	public update(): boolean {
 		if (this.state.isPaused || this.state.isGameOver) {
@@ -207,7 +214,8 @@ export class SnakeGameModel {
 	}
 
 	/**
-	 * Vypočíta ďalšiu pozíciu hlavy
+	 * Vypočíta ďalšiu pozíciu hlavy hada na základe smeru
+	 * Pre CLASSIC mód implementuje wrap-around (prechod cez okraje)
 	 */
 	private getNextPosition(current: Position, direction: Direction): Position {
 		const next = { ...current };
@@ -239,7 +247,10 @@ export class SnakeGameModel {
 	}
 
 	/**
-	 * Kontrola kolízií
+	 * Kontroluje všetky typy kolízií
+	 * - Kolízia so stenou (BOX a CAMPAIGN mód)
+	 * - Kolízia s bariérou (CAMPAIGN mód)
+	 * - Kolízia so sebou samým
 	 */
 	private checkCollision(position: Position): boolean {
 		// Kolízia so stenou (len pre BOX a CAMPAIGN mode)
@@ -268,7 +279,7 @@ export class SnakeGameModel {
 	}
 
 	/**
-	 * Pauza/Resume
+	 * Prepína stav pauzy (zapne/vypne)
 	 */
 	public togglePause(): void {
 		this.state.isPaused = !this.state.isPaused;
@@ -279,7 +290,7 @@ export class SnakeGameModel {
 	}
 
 	/**
-	 * Gettery pre stav
+	 * Vracia aktuálny stav hry (read-only kópia)
 	 */
 	public getState(): Readonly<GameState> {
 		return { ...this.state };
@@ -306,7 +317,8 @@ export class SnakeGameModel {
 	}
 
 	/**
-	 * Serializácia stavu pre save do DB
+	 * Serializuje aktuálny stav hry do JSON formátu
+	 * Používa sa pre uloženie do databázy
 	 */
 	public serialize(): string {
 		return JSON.stringify({
@@ -319,7 +331,8 @@ export class SnakeGameModel {
 	}
 
 	/**
-	 * Načítanie stavu z DB
+	 * Deserializuje uložený stav hry z JSON formátu
+	 * Vytvára nový Model a načíta do neho uložené dáta
 	 */
 	public static deserialize(
 		data: string,
@@ -352,7 +365,8 @@ export class SnakeGameModel {
 	}
 
 	/**
-	 * Reset hry
+	 * Resetuje hru do počiatočného stavu
+	 * Zachováva úroveň a veľkosť hracej plochy
 	 */
 	public reset(): void {
 		this.state = {

@@ -1,8 +1,11 @@
 /**
  * Snake Customize Page
  * 
+ * Stránka pre prispôsobenie vzhľadu Snake hry
+ * Umožňuje výber farieb hada, jedla, pozadia, stien a štýlu gridu
+ * Live preview s canvas ukážkou
+ * 
  * @author Jozef Ondrejicka
- * @description Customization settings for Snake game appearance
  */
 
 "use client";

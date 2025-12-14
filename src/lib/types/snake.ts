@@ -1,8 +1,10 @@
 /**
  * TypeScript type definitions pre Snake game
  * 
+ * Definície typov pre frontend Snake hry
+ * Obsahuje game types, pozície, databázové modely, API requesty/responsy
+ * 
  * @author Jozef Ondrejicka
- * @description Definície typov pre frontend Snake hry
  */
 
 // ============================================================================

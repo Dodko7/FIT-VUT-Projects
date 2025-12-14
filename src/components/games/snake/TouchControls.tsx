@@ -1,8 +1,10 @@
 /**
  * Mobile Touch Controls Component
  * 
+ * Virtuálny D-pad pre mobilné zariadenia
+ * Poskytuje tlačidlá pre ovládanie hry na dotykovej obrazovke
+ * 
  * @author Jozef Ondrejicka
- * @description Virtual D-pad pre mobilné zariadenia
  */
 
 "use client";

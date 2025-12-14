@@ -1,8 +1,13 @@
 /**
  * API Route: /api/snake/game
- * Správa Snake hier (CRUD operácie)
  * 
- * @author Igor Lacko
+ * Správa Snake hier - CRUD operácie
+ * POST: vytvorenie novej hry
+ * GET: získanie hry podľa ID
+ * PATCH: aktualizácia hry (skóre, status, finish)
+ * DELETE: vymazanie hry
+ * 
+ * @author Jozef Ondrejicka
  */
 
 import { NextResponse } from "next/server";
@@ -25,8 +30,6 @@ import type { CreateGameRequest, UpdateGameRequest } from "~/lib/types/snake";
 export async function POST(request: Request) {
 	try {
 		const body = (await request.json()) as CreateGameRequest;
-		
-		console.log('[API] POST /api/snake/game - Received body:', JSON.stringify(body));
 
 		// Validácia
 		if (!body.playerName || !body.gameType || !body.level) {
@@ -49,8 +52,6 @@ export async function POST(request: Request) {
 			body.gameType,
 			body.level,
 		);
-		
-		console.log('[API] Created game:', JSON.stringify({ id: game.id, gameType: game.gameType, level: game.level }));
 
 		return NextResponse.json({
 			success: true,
@@ -89,8 +90,6 @@ export async function GET(request: Request) {
 				{ status: 404 },
 			);
 		}
-		
-		console.log('[API] GET /api/snake/game - Returning game:', JSON.stringify({ id: game.id, gameType: game.gameType, level: game.level }));
 
 		return NextResponse.json({
 			success: true,

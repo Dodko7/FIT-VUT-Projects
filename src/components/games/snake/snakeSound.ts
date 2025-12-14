@@ -1,8 +1,11 @@
 /**
  * Snake Game Sound Manager
  * 
+ * Web Audio API pre herné zvuky
+ * Retro 8-bit štýl zvukov (eat, game over, pause, resume)
+ * Ukladá nastavenie mute do localStorage
+ * 
  * @author Jozef Ondrejicka
- * @description Web Audio API pre herné zvuky
  */
 
 export class SnakeSoundManager {

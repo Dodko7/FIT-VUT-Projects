@@ -1,9 +1,11 @@
 /**
  * Snake Game Type Selection Page
  * 
+ * Výber typu hry (CLASSIC, BOX, CAMPAIGN)
+ * Ukladá výber do Context a localStorage, potom vracia na menu
+ * Navigácia: šípky hore/dole, Enter pre potvrdenie, Escape pre späť
+ * 
  * @author Jozef Ondrejicka
- * @description Výber typu hry (CLASSIC, BOX, CAMPAIGN)
- *              Ukladá výber do Context a vracia na menu
  */
 
 "use client";

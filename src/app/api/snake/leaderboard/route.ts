@@ -1,8 +1,11 @@
 /**
  * API Route: /api/snake/leaderboard
- * Leaderboard pre Snake hru
  * 
- * @author Igor Lacko
+ * Leaderboard pre Snake hru
+ * GET: získanie top výsledkov s filtrom podľa typu hry
+ * Query params: gameType (CLASSIC/BOX/CAMPAIGN), limit (počet výsledkov)
+ * 
+ * @author Jozef Ondrejicka
  */
 
 import { NextResponse } from "next/server";
