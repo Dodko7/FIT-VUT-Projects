@@ -62,9 +62,9 @@ export default function LudoSettingsPage() {
 						Dice Color
 					</h2>
 					<div className="flex w-full justify-start gap-20 px-10">
-						{circularButtons.map((button) => (
+						{circularButtons.map((button, index) => (
 							<CircularButton
-								key={button.text}
+								key={index}
 								text={""}
 								className={button.className!}
 								onClick={button.onClick!}
