@@ -56,3 +56,11 @@
 .triangle-button-down {
   clip-path: polygon(50% 100%, 0% 0%, 100% 0%);
 }
+
+/* Snake game gradient text */
+.snake-gradient-text {
+  background: linear-gradient(to bottom, #ffffff 0%, #fef08a 50%, #fde047 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}

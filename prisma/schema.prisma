@@ -59,6 +59,95 @@ enum Color {
 
 // END OF LUDO MODELS
 
+// SNAKE GAME MODELS
+
+/**
+ * Enum pre typy Snake hier
+ * @author Igor Lacko
+ */
+enum SnakeGameType {
+    CLASSIC
+    BOX
+    CAMPAIGN
+}
+
+/**
+ * Enum pre stav hry
+ * @author Igor Lacko
+ */
+enum SnakeGameStatus {
+    IN_PROGRESS
+    FINISHED
+    PAUSED
+}
+
+/**
+ * Hlavná tabuľka hier - ukladá všetky hry (dokončené aj aktuálne)
+ * @author Igor Lacko
+ */
+model SnakeGame {
+    id          String           @id @default(cuid())
+    playerName  String
+    gameType    SnakeGameType    @default(CLASSIC)
+    level       Int              @default(5)
+    score       Int              @default(0)
+    status      SnakeGameStatus  @default(IN_PROGRESS)
+    createdAt   DateTime         @default(now())
+    finishedAt  DateTime?
+    
+    // Relácia na detaily stavu hry
+    gameState   SnakeGameState?
+    
+    @@index([score(sort: Desc)])
+    @@index([playerName])
+    @@index([status])
+}
+
+/**
+ * Detaily aktuálneho stavu hry - pre save/load funkcionalitu
+ * @author Igor Lacko
+ */
+model SnakeGameState {
+    id              String     @id @default(cuid())
+    gameId          String     @unique
+    game            SnakeGame  @relation(fields: [gameId], references: [id], onDelete: Cascade)
+    
+    // Herný stav (JSON formát)
+    snakePositions  String     // JSON array of {x, y} positions
+    foodPosition    String     // JSON {x, y}
+    direction       String     @default("RIGHT")
+    speed           Int        @default(100)
+    
+    lastUpdated     DateTime   @updatedAt
+    
+    @@index([gameId])
+}
+
+/**
+ * Agregované štatistiky hráčov
+ * @author Igor Lacko
+ */
+model SnakePlayer {
+    id                String        @id @default(cuid())
+    playerName        String        @unique
+    
+    totalGames        Int           @default(0)
+    totalScore        Int           @default(0)
+    bestScore         Int           @default(0)
+    bestScoreGameType SnakeGameType @default(CLASSIC)
+    
+    gamesClassic      Int           @default(0)
+    gamesBox          Int           @default(0)
+    gamesCampaign     Int           @default(0)
+    
+    lastPlayedAt      DateTime      @default(now())
+    createdAt         DateTime      @default(now())
+    
+    @@index([bestScore(sort: Desc)])
+    @@index([totalScore(sort: Desc)])
+}
+
+// END OF SNAKE MODELS
 // PACMAN MODELS
 model PacmanLevel {
     id  Int @id @default(autoincrement())
