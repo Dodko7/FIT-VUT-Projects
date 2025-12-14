@@ -12,25 +12,17 @@ datasource db {
 
 // LUDO MODELS
 
-// Current game model (basically set when a match starts, cleared upon exiting or when it ends since then the entire match data is deleted)
-model CurrentGame {
-    id      Int   @id @default(autoincrement())
-    game    Game  @relation(fields: [gameId], references: [id])
-    gameId  Int   @unique
-}
-
 // Game model
 model Game {
     id        Int       @id @default(autoincrement())
+    name      String   @unique
     lastPlayed DateTime
     players   Player[]
+    over      Boolean   @default(false)
     // This can be used as a turn tracker
-    turn Color
-    // Has to be false by default (because web api...)
-    musicOn   Boolean   @default(false)
-    currentGame CurrentGame?
-    // JSON loaded games - can be saved though on pause
-    isTemp    Boolean   @default(false)
+    turn Color  @default(RED)
+    // So that if a player throws a 6, we know they can play again
+    extraTurn Boolean @default(false)
 }
 
 // Player model
@@ -38,10 +30,10 @@ model Player {
     id        Int       @id @default(autoincrement())
     name      String
     color     Color
-    game      Game      @relation(fields: [gameId], references: [id])
+    game      Game      @relation(fields: [gameId], references: [id], onDelete: Cascade)
     gameId    Int
     pawns     Pawn[]
-    isBot     Boolean   @default(false)
+    isBot     Boolean
     finished  Boolean   @default(false)
 }
 
@@ -49,9 +41,12 @@ model Player {
 model Pawn {
     id        Int       @id @default(autoincrement())
     position  Int
-    player    Player    @relation(fields: [playerId], references: [id])
+    player    Player    @relation(fields: [playerId], references: [id], onDelete: Cascade)
     playerId  Int
+    gameId    Int
     inHome     Boolean   @default(false)
+    // Convenient
+    color     Color
 }
 
 // Color enum
@@ -153,3 +148,18 @@ model SnakePlayer {
 }
 
 // END OF SNAKE MODELS
+// PACMAN MODELS
+model PacmanLevel {
+    id  Int @id @default(autoincrement())
+    name String
+    map Json
+    createdAt DateTime @default(now()) 
+}
+
+model PacmanScore {
+    id  Int @id @default(autoincrement())
+    playerName String
+    score Int
+    levelId Int
+    createdAt DateTime @default(now()) 
+}

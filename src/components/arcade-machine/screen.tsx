@@ -19,7 +19,7 @@ export default function ArcadeScreen() {
 				>
 					<MenuTitle
 						title="Pacman"
-						href="/games/pacman"
+						href="/games/pacman/menu"
 					/>
 
 					<MenuTitle
@@ -30,11 +30,6 @@ export default function ArcadeScreen() {
 					<MenuTitle
 						title="Ludo"
 						href="/games/ludo/menu"
-					/>
-
-					<MenuTitle
-						title="Settings"
-						href="/settings"
 					/>
 				</div>
 			</div>

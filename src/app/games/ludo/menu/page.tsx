@@ -3,88 +3,130 @@
 import Image from "next/image";
 import { useRef, useState } from "react";
 import LudoMenuButton from "~/components/games/ludo/buttons/menu-button";
-import { LoadFromJSON } from "~/lib/requests/ludo/load-game";
-import { useRouter } from "next/navigation";
-import LudoErrorPage from "~/components/games/ludo/error-page";
-import LudoLoadingPage from "~/components/games/ludo/loading-page";
+import { LoadFromJSON } from "~/lib/ludo/client-api/load";
+import { StatusIndicator } from "~/components/games/ludo/other/status-indicator";
+import StatusIndicatorState from "~/lib/ludo/enum/status-indicator-state";
 
 /**
  * Main menu page for the ludo game.
  */
 export default function LudoMenuPage() {
-    // Ref to the current file
-    const fileInputRef = useRef<HTMLInputElement>(null);
+	// Status indicator
+	const [statusState, setStatusState] = useState<StatusIndicatorState | null>(
+		null,
+	);
 
-    // Loading and error states
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
+	// JSON input
+	const fileInputRef = useRef<HTMLInputElement>(null);
 
-    // Router
-    const router = useRouter();
+	const onClickLoad = () => {
+		fileInputRef.current?.click();
+	};
 
-    // Button props
-    const buttonProps = [
-        { text: "New Game", link: "/games/ludo/setup" },
-        { text: "Load Game", link: "/games/ludo/load" },
-        { text: "Load from JSON", onClick: () => fileInputRef.current?.click() },
-        { text: "Back to Arcade", link: "/" },
-    ];
+	// Status indicator message
+	const getMessage = () => {
+		switch (statusState) {
+			case StatusIndicatorState.LOADING:
+				return "Loading...";
+			case StatusIndicatorState.SUCCESS:
+				return "Successfully loaded!";
+			case StatusIndicatorState.ERROR:
+				return "Error loading game.";
+			default:
+				return "";
+		}
+	};
 
-    if (loading) {
-        return <LudoLoadingPage />;
-    } else if (error) {
-        return <LudoErrorPage
-            message={error}
-            onClose={() => setError(null)}
-        />;
-    }
+	// Wrapper to set it for a while
+	const setError = () => {
+		setStatusState(StatusIndicatorState.ERROR);
+		setTimeout(() => setStatusState(null), 3000);
+	};
 
-    return (
-        <div
-            className="flex flex-col items-center justify-start w-screen h-screen \
-            bg-gradient-to-b from-[#840abd] via-[#0077ff] to-[#00ffcc] py-10 gap-10"
-        >
-            {/** Title and pawn svg */}
-            <div
-                className="w-full items-center justify-center flex gap-4 mt-10"
-            >
-                <h1
-                    className="font-['Luckiest_Guy'] text-5xl text-[#ffc916]"
-                >
-                    Ludo Hero
-                </h1>
-                <Image
-                    src="/ludo/pawn.svg"
-                    alt="Ludo Pawn"
-                    width={64}
-                    height={64}
-                />
-            </div>
-            {/** Menu */}
-            <div
-                className="flex flex-col flex-grow justify-between items-center w-full h-full my-15"
-            >
-                {buttonProps.map(({ text, link, onClick }, index) => (
-                    <LudoMenuButton key={index} text={text} link={link} onClick={onClick} />
-                ))}
-            </div>
-            {/** Hidden file dialog */}
-            <input
-                type="file"
-                accept=".json"
-                ref={fileInputRef}
-                className="hidden"
-                onChange={async (e) => {
-                    setLoading(true);
-                    const res = await LoadFromJSON(e);
-                    setLoading(false);
-                    if (res.success) {
-                        router.push("/games/ludo/gameplay");
-                    } else {
-                        setError(res.error);
-                    }
-                }}
-            />
-        </div>
-    )
+	const setSuccess = () => {
+		setStatusState(StatusIndicatorState.SUCCESS);
+		setTimeout(() => setStatusState(null), 3000);
+	};
+
+	const onFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+		const file = e.target.files?.[0];
+		if (!file) {
+			return;
+		}
+
+		const reader = new FileReader();
+		reader.onload = async (event) => {
+			const content = event.target?.result;
+			if (typeof content === "string") {
+				try {
+					const jsonContent = JSON.parse(content);
+					const result = await LoadFromJSON(jsonContent);
+					if (result.success) {
+						setSuccess();
+					} else {
+						setError();
+					}
+				} catch (err) {
+					setError();
+				}
+			} else {
+				setError();
+			}
+		};
+
+		reader.readAsText(file);
+	};
+
+	// Button props
+	const buttonProps = [
+		{ text: "New Game", link: "/games/ludo/menu/setup" },
+		{ text: "Load Game", link: "/games/ludo/menu/load" },
+		{ text: "Load from JSON", onClick: onClickLoad },
+		{ text: "Settings", link: "/games/ludo/menu/settings" },
+		{ text: "Back to Arcade", link: "/" },
+	];
+
+	return (
+		<div className="flex h-full w-full flex-col items-center justify-start gap-10 py-10">
+			{/** Title and pawn svg */}
+			<div className="mt-10 flex w-full items-center justify-center gap-4">
+				<h1 className="ludo-text-primary text-7xl text-[#ffc916]">
+					Ludo Hero
+				</h1>
+				<Image
+					src="/ludo/pawn.svg"
+					alt="Ludo Pawn"
+					width={128}
+					height={128}
+				/>
+			</div>
+			{/** Menu */}
+			<div className="my-15 flex h-full w-full flex-grow flex-col items-center justify-between">
+				{buttonProps.map(({ text, link, onClick }, index) => (
+					<LudoMenuButton
+						key={index}
+						text={text}
+						link={link}
+						onClick={onClick}
+					/>
+				))}
+			</div>
+			<input
+				type="file"
+				ref={fileInputRef}
+				onChange={onFileChange}
+				accept=".json,application/json"
+				style={{ display: "none" }}
+			/>
+			<StatusIndicator
+				isVisible={statusState !== null}
+				message={getMessage()}
+				type={
+					statusState !== null ? statusState : (
+						StatusIndicatorState.LOADING
+					)
+				}
+			/>
+		</div>
+	);
 }

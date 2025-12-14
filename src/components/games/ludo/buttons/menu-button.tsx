@@ -6,7 +6,9 @@ import Link from "next/link";
 export type LudoMenuButtonProps = {
 	text: string;
 	link?: string;
-	onClick?: () => void;
+	type?: "submit";
+	onClick?: () => void | Promise<void>;
+	padding?: string;
 };
 
 /**
@@ -16,23 +18,39 @@ export default function LudoMenuButton({
 	text,
 	link,
 	onClick,
+	type,
+	padding = "p-5",
 }: LudoMenuButtonProps) {
 	const cn =
-		"font-['Russo_One'] text-2xl text-[#2ddada] bg-[#841889] rounded-[15px] \
-                    items-center justify-center hover:shadow-lg hover:bg-[#ff00ff] \
-                    transition-all duration-200 ease-in-out p-5 w-lg text-center cursor-pointer";
+		"ludo-button text-3xl items-center justify-center transition-all duration-200 ease-in-out w-lg text-center cursor-pointer "
+			+ padding;
 
-	return link ?
+	if (link) {
+		return (
 			<Link
 				href={link}
 				className={cn}
 			>
 				{text}
 			</Link>
-		:	<button
+		);
+	} else if (type) {
+		return (
+			<button
+				className={cn}
+				type={type}
+			>
+				{text}
+			</button>
+		);
+	} else {
+		return (
+			<button
 				className={cn}
 				onClick={onClick}
 			>
 				{text}
-			</button>;
+			</button>
+		);
+	}
 }
