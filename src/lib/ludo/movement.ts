@@ -39,11 +39,13 @@ export async function MovePawn(
             const isOccupied = await prisma.pawn.findFirst({
                 where: {
                     position: pos,
+                    gameId: gameId,
                 },
             });
+
             if (!isOccupied) {
                 await prisma.pawn.update({
-                    where: { id: occupyingPawn.id },
+                    where: { id: occupyingPawn.id, gameId: gameId },
                     data: { position: pos },
                 });
                 break;
@@ -55,7 +57,7 @@ export async function MovePawn(
     const isInHome = homePositions.includes(newPosition);
 
     await prisma.pawn.update({
-        where: { id: pawnId },
+        where: { id: pawnId, gameId: gameId },
         data: {
             position: newPosition,
             inHome: isInHome,

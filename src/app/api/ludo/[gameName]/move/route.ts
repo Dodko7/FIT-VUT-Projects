@@ -82,6 +82,7 @@ export async function POST(
 		const playerPawns = await prisma.pawn.findMany({
 			where: {
 				playerId: pawn.playerId,
+				gameId: game.id,
 			},
 		});
 
