@@ -7,96 +7,118 @@
 #include "driver/gpio.h"
 #include "driver/spi_master.h"
 
-#include "esp_system.h"
 #include "esp_log.h"
 #include "esp_rom_sys.h"
 
+/* ============================================================
+ *  LOG
+ * ============================================================ */
+static const char *TAG = "LED_MATRIX";
 
-/* ===================== PIN MAPOVANIE PODĽA SCHÉMY ===================== */
+/* ============================================================
+ *  PIN MAPOVANIE (PODĽA SCHÉMY SHIELDU)
+ * ============================================================ */
 
-/* 74HCT154 – výber stĺpca */
+/* 74HCT154 – výber stĺpca (aktívny LOW) */
 #define PIN_ADR0 25
 #define PIN_ADR1 16
 #define PIN_ADR2 17
 #define PIN_ADR3 27
-#define PIN_EN   14   // aktívny LOW
+#define PIN_EN   14
 
-/* TLC5947 – SPI */
+/* TLC5947 */
 #define PIN_SPI_CLK   18
 #define PIN_SPI_MOSI  23
 #define PIN_XLAT      26
 #define PIN_BLANK     12
 
-/* ===================== NASTAVENIE FARBY ===================== */
-/* 12-bit PWM: 0 – 4095 */
-#define COLOR_R 1024
-#define COLOR_G 1024
-#define COLOR_B 1024
+/* ============================================================
+ *  ROZMERY DISPLEJA
+ * ============================================================ */
+#define COLS 16
+#define ROWS 8
 
-/* ===================== KONŠTANTY ===================== */
+/* ============================================================
+ *  FARBA (12-bit PWM)
+ * ============================================================ */
+#define COLOR_R 2048
+#define COLOR_G 2048
+#define COLOR_B 2048
 
-#define MATRIX_COLS 16
-#define MATRIX_ROWS 8
+/* ============================================================
+ *  TLC5947 PARAMETRE
+ * ============================================================ */
 #define TLC_CHANNELS 24
 #define TLC_BITS_PER_CH 12
-#define TLC_TOTAL_BITS (TLC_CHANNELS * TLC_BITS_PER_CH)
+#define TLC_TOTAL_BITS  (TLC_CHANNELS * TLC_BITS_PER_CH)
 #define TLC_TOTAL_BYTES (TLC_TOTAL_BITS / 8)
 
-/* ===================== FRAMEBUFFER ===================== */
-/* [col][row][RGB] */
-static uint16_t framebuffer[MATRIX_COLS][MATRIX_ROWS][3];
+/* ============================================================
+ *  MAPOVANIE TLC5947 KANÁLOV (PODĽA SCHÉMY)
+ * ============================================================ */
+static const uint8_t MAP_R[ROWS] = {1, 4, 7, 10, 13, 16, 19, 22};
+static const uint8_t MAP_G[ROWS] = {0, 3, 6, 9, 12, 15, 18, 21};
+static const uint8_t MAP_B[ROWS] = {2, 5, 8, 11, 14, 17, 20, 23};
 
-/* SPI handle */
-static spi_device_handle_t spi_handle;
+/* ============================================================
+ *  FRAMEBUFFER
+ *  framebuffer[col][row][0]=R, [1]=G, [2]=B
+ * ============================================================ */
+static uint16_t framebuffer[COLS][ROWS][3];
+static uint16_t tlc_channels[TLC_CHANNELS];
 
-/* ===================== POMOCNÉ FUNKCIE ===================== */
+static spi_device_handle_t spi;
 
+/* ============================================================
+ *  GPIO INIT
+ * ============================================================ */
 static void gpio_init_all(void)
 {
-    gpio_config_t io = {0};
-
-    /* Výstupy */
-    io.mode = GPIO_MODE_OUTPUT;
-    io.pin_bit_mask =
-        (1ULL << PIN_ADR0) |
-        (1ULL << PIN_ADR1) |
-        (1ULL << PIN_ADR2) |
-        (1ULL << PIN_ADR3) |
-        (1ULL << PIN_EN)   |
-        (1ULL << PIN_XLAT) |
-        (1ULL << PIN_BLANK);
+    gpio_config_t io = {
+        .mode = GPIO_MODE_OUTPUT,
+        .pin_bit_mask =
+            (1ULL << PIN_ADR0) |
+            (1ULL << PIN_ADR1) |
+            (1ULL << PIN_ADR2) |
+            (1ULL << PIN_ADR3) |
+            (1ULL << PIN_EN)   |
+            (1ULL << PIN_XLAT) |
+            (1ULL << PIN_BLANK)
+    };
     gpio_config(&io);
 
-    /* Definované počiatočné stavy */
-    gpio_set_level(PIN_EN, 1);      // vypni všetky stĺpce
-    gpio_set_level(PIN_BLANK, 1);   // zhasni LED
+    gpio_set_level(PIN_EN, 1);     // vypni všetky stĺpce
+    gpio_set_level(PIN_BLANK, 1);  // LED off
     gpio_set_level(PIN_XLAT, 0);
 }
 
-static void spi_init_tlc5947(void)
+/* ============================================================
+ *  SPI INIT
+ * ============================================================ */
+static void spi_init(void)
 {
     spi_bus_config_t buscfg = {
         .mosi_io_num = PIN_SPI_MOSI,
         .miso_io_num = -1,
         .sclk_io_num = PIN_SPI_CLK,
-        .quadwp_io_num = -1,
-        .quadhd_io_num = -1,
         .max_transfer_sz = TLC_TOTAL_BYTES
     };
 
     spi_device_interface_config_t devcfg = {
-        .clock_speed_hz = 10 * 1000 * 1000, // 10 MHz
+        .clock_speed_hz = 10 * 1000 * 1000,
         .mode = 0,
-        .spics_io_num = -1, // CS nepoužívame
+        .spics_io_num = -1,
         .queue_size = 1
     };
 
     spi_bus_initialize(SPI2_HOST, &buscfg, SPI_DMA_CH_AUTO);
-    spi_bus_add_device(SPI2_HOST, &devcfg, &spi_handle);
+    spi_bus_add_device(SPI2_HOST, &devcfg, &spi);
 }
 
-/* nastaví adresu stĺpca (0–15) */
-static void select_column(uint8_t col)
+/* ============================================================
+ *  VÝBER STĹPCA
+ * ============================================================ */
+static inline void select_column(uint8_t col)
 {
     gpio_set_level(PIN_ADR0, (col >> 0) & 1);
     gpio_set_level(PIN_ADR1, (col >> 1) & 1);
@@ -104,97 +126,86 @@ static void select_column(uint8_t col)
     gpio_set_level(PIN_ADR3, (col >> 3) & 1);
 }
 
-/* odošle PWM dáta pre jeden stĺpec */
+/* ============================================================
+ *  ODOSLANIE PWM PRE JEDEN STĹPEC
+ * ============================================================ */
 static void send_column_pwm(uint8_t col)
 {
-    uint8_t tx_buf[TLC_TOTAL_BYTES];
-    memset(tx_buf, 0, sizeof(tx_buf));
+    memset(tlc_channels, 0, sizeof(tlc_channels));
 
-    int bit_pos = TLC_TOTAL_BITS - 1;
+    for (int r = 0; r < ROWS; r++) {
+        tlc_channels[MAP_R[r]] = framebuffer[col][r][0];
+        tlc_channels[MAP_G[r]] = framebuffer[col][r][1];
+        tlc_channels[MAP_B[r]] = framebuffer[col][r][2];
+    }
 
-    for (int row = 0; row < MATRIX_ROWS; row++) {
-        /* poradie: B, G, R (podľa schémy riadkov) */
-        uint16_t values[3] = {
-            framebuffer[col][row][2], // B
-            framebuffer[col][row][1], // G
-            framebuffer[col][row][0]  // R
-        };
+    uint8_t tx[TLC_TOTAL_BYTES];
+    memset(tx, 0, sizeof(tx));
 
-        for (int c = 0; c < 3; c++) {
-            for (int b = 11; b >= 0; b--) {
-                if (values[c] & (1 << b)) {
-                    tx_buf[bit_pos / 8] |= (1 << (bit_pos % 8));
-                }
-                bit_pos--;
+    int bit = 0;
+    for (int ch = TLC_CHANNELS - 1; ch >= 0; ch--) {
+        uint16_t v = tlc_channels[ch] & 0x0FFF;
+        for (int b = 11; b >= 0; b--) {
+            if (v & (1 << b)) {
+                tx[bit >> 3] |= (1 << (7 - (bit & 7)));
             }
+            bit++;
         }
     }
 
     spi_transaction_t t = {
         .length = TLC_TOTAL_BITS,
-        .tx_buffer = tx_buf
+        .tx_buffer = tx
     };
 
-    spi_device_transmit(spi_handle, &t);
+    spi_device_transmit(spi, &t);
 
-    /* XLAT pulz */
     gpio_set_level(PIN_XLAT, 1);
     esp_rom_delay_us(1);
     gpio_set_level(PIN_XLAT, 0);
 }
 
-/* ===================== MULTIPLEX TASK ===================== */
-
+/* ============================================================
+ *  MULTIPLEX TASK
+ * ============================================================ */
 static void display_task(void *arg)
 {
     while (1) {
-        for (uint8_t col = 0; col < MATRIX_COLS; col++) {
+        for (uint8_t col = 0; col < COLS; col++) {
 
-            /* 1. deaktivuj všetko */
-            gpio_set_level(PIN_EN, 1);
             gpio_set_level(PIN_BLANK, 1);
+            gpio_set_level(PIN_EN, 1);
 
-            /* 2. pošli PWM dáta */
             send_column_pwm(col);
-
-            /* 3. povoľ výstupy TLC */
-            gpio_set_level(PIN_BLANK, 0);
-
-            /* 4. nastav adresu stĺpca */
             select_column(col);
 
-            /* 5. aktivuj stĺpec */
             gpio_set_level(PIN_EN, 0);
+            gpio_set_level(PIN_BLANK, 0);
 
-            /* 6. čas svitu */
-            esp_rom_delay_us(500);
+            esp_rom_delay_us(250);
         }
     }
 }
 
-
-/* ===================== HLAVNÁ FUNKCIA ===================== */
-
+/* ============================================================
+ *  MAIN
+ * ============================================================ */
 void app_main(void)
 {
-    gpio_set_level(PIN_EN, 1);
-    gpio_set_level(PIN_BLANK, 1);
-    vTaskDelay(pdMS_TO_TICKS(10));
+    ESP_LOGI(TAG, "Starting LED matrix");
 
     gpio_init_all();
-    spi_init_tlc5947();
+    spi_init();
 
-    /* vymaž framebuffer */
     memset(framebuffer, 0, sizeof(framebuffer));
 
-    /* nastav celú maticu na jednu farbu */
-    for (int c = 0; c < MATRIX_COLS; c++) {
-        for (int r = 0; r < MATRIX_ROWS; r++) {
+    for (int c = 0; c < COLS; c++) {
+        for (int r = 0; r < ROWS; r++) {
             framebuffer[c][r][0] = COLOR_R;
             framebuffer[c][r][1] = COLOR_G;
             framebuffer[c][r][2] = COLOR_B;
         }
     }
 
-    xTaskCreate(display_task, "display_task", 4096, NULL, 5, NULL);
+    xTaskCreate(display_task, "display", 4096, NULL, 5, NULL);
 }
