@@ -1,8 +1,6 @@
 #include "../include/fonts.h"
 #include "../include/display.h"
 
-#include "../include/gpio_hw.h"
-
 /* Original fonts */
 static const uint8_t original_3[ROWS][5] = {
     {1,1,1,1,1},

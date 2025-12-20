@@ -4,7 +4,6 @@
 #include "driver/gpio.h"
 #include "driver/spi_master.h"
 #include "esp_err.h"
-#include "esp_log.h"
 
 void gpio_init_all(void)
 {
@@ -27,8 +26,6 @@ void gpio_init_all(void)
     gpio_set_level(PIN_EN, 1);
     gpio_set_level(PIN_BLANK, 1);
     gpio_set_level(PIN_XLAT, 0);
-
-    // Assuming E0 and E1 of 74HC154 are tied low on the shield to keep the decoder always enabled.
 }
 
 void spi_init(void)

@@ -31,11 +31,5 @@ typedef struct {
 /* Convert color enum to RGB triple with brightness control */
 rgb_triple_t color_to_rgb_triple(color_enum_t color, uint8_t brightness_percent);
 
-/* Set global brightness (0-100) */
-void color_set_brightness(uint8_t brightness_percent);
-
-/* Get current brightness */
-uint8_t color_get_brightness(void);
-
 #endif // COLORS_H
 

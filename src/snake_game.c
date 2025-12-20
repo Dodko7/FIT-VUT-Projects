@@ -5,7 +5,6 @@
 #include "../include/colors.h"
 
 #include "driver/gpio.h"
-#include "esp_log.h"
 #include "esp_random.h"
 #include "esp_timer.h"
 #include "freertos/FreeRTOS.h"
@@ -13,6 +12,15 @@
 
 #define SNAKE_MAX 32
 #define DEBOUNCE_TIME_US 50000  // 50ms debounce time
+#define MIN_SPEED_MS 40
+#define MAX_SPEED_MS 400
+#define SPEED_STEP_MS 20
+#define GAME_OVER_SNAKE_DELAY_MS 1200
+#define GAME_OVER_PAUSE_MS 600
+#define GAME_OVER_WAVE_WIDTH 3
+#define GAME_OVER_COL_DELAY_MS 20
+#define COUNTDOWN_DELAY_MS 1200
+#define MIN_SNAKE_LEN 5
 
 /* Game state */
 static point_t snake[SNAKE_MAX];
@@ -105,7 +113,7 @@ static int snake_step(void)
         spawn_food(&food_poison);
     }
 
-    if (snake_len < 5)
+    if (snake_len < MIN_SNAKE_LEN)
         return -1;
 
     return 0;
@@ -147,22 +155,18 @@ static void screensaver_loop(void)
     while (1) {
 
         if (!gpio_get_level(SW2_UP)) {
-            if (game_speed_ms > 40) game_speed_ms -= 20;
+            if (game_speed_ms > MIN_SPEED_MS) game_speed_ms -= SPEED_STEP_MS;
             vTaskDelay(pdMS_TO_TICKS(200));
         }
 
         if (!gpio_get_level(SW1_DOWN)) {
-            if (game_speed_ms < 400) game_speed_ms += 20;
+            if (game_speed_ms < MAX_SPEED_MS) game_speed_ms += SPEED_STEP_MS;
             vTaskDelay(pdMS_TO_TICKS(200));
         }
 
         if (!gpio_get_level(SW4_RIGHT)) {
-            // Cycle through colors
-            game_color_head = (game_color_head + 1) % (COLOR_BLACK + 1);
-            if (game_color_head == COLOR_BLACK) {
-                game_color_head = COLOR_RED; // Skip black
-            }
-            // Set body to half brightness version of head color
+            // Cycle through colors (skip COLOR_BLACK)
+            game_color_head = (game_color_head + 1) % COLOR_BLACK;
             game_color_body = game_color_head;
             vTaskDelay(pdMS_TO_TICKS(200));
         }
@@ -177,10 +181,15 @@ static void screensaver_loop(void)
         ss_snake[0].x += ss_dx;
         ss_snake[0].y += ss_dy;
 
-        if (ss_snake[0].x==tl.x && ss_snake[0].y==tl.y){ss_dx=1;ss_dy=0;}
-        else if (ss_snake[0].x==tr.x && ss_snake[0].y==tr.y){ss_dx=0;ss_dy=1;}
-        else if (ss_snake[0].x==br.x && ss_snake[0].y==br.y){ss_dx=-1;ss_dy=0;}
-        else if (ss_snake[0].x==bl.x && ss_snake[0].y==bl.y){ss_dx=0;ss_dy=-1;}
+        if (ss_snake[0].x == tl.x && ss_snake[0].y == tl.y) {
+            ss_dx = 1; ss_dy = 0;
+        } else if (ss_snake[0].x == tr.x && ss_snake[0].y == tr.y) {
+            ss_dx = 0; ss_dy = 1;
+        } else if (ss_snake[0].x == br.x && ss_snake[0].y == br.y) {
+            ss_dx = -1; ss_dy = 0;
+        } else if (ss_snake[0].x == bl.x && ss_snake[0].y == bl.y) {
+            ss_dx = 0; ss_dy = -1;
+        }
 
         rgb_triple_t head_rgb = color_to_rgb_triple(game_color_head, game_brightness);
         // Body uses same color but at half brightness
@@ -209,28 +218,23 @@ static void game_over(void)
     for (int i = 0; i < snake_len; i++) {
         set_pixel(snake[i].x, snake[i].y, red_rgb.r, red_rgb.g, red_rgb.b);
     }
-    vTaskDelay(pdMS_TO_TICKS(1200));
+    vTaskDelay(pdMS_TO_TICKS(GAME_OVER_SNAKE_DELAY_MS));
 
     // 2. Pauza pred pásom
-    vTaskDelay(pdMS_TO_TICKS(600));
+    vTaskDelay(pdMS_TO_TICKS(GAME_OVER_PAUSE_MS));
 
     // 3. Červený pás ide cez columns – obrátený smer (od COL15 po COL0)
-    const int wave_width = 3;
-    const int col_delay_ms = 20;
-
     clear_screen();
-
-    for (int start_col = COLS - 1; start_col >= -wave_width; start_col--) {
+    for (int start_col = COLS - 1; start_col >= -GAME_OVER_WAVE_WIDTH; start_col--) {
         clear_screen();
-
-        for (int col = start_col; col > start_col - wave_width && col >= 0; col--) {
-            if (col >= 0 && col < COLS) {
+        for (int col = start_col; col > start_col - GAME_OVER_WAVE_WIDTH && col >= 0; col--) {
+            if (col < COLS) {
                 for (int row = 0; row < ROWS; row++) {
                     set_pixel(col, row, red_rgb.r, red_rgb.g, red_rgb.b);
                 }
             }
         }
-        vTaskDelay(pdMS_TO_TICKS(col_delay_ms));
+        vTaskDelay(pdMS_TO_TICKS(GAME_OVER_COL_DELAY_MS));
     }
 
     // Screensaver – had v smere hodinových ručičiek so žltou hlavou
@@ -238,11 +242,11 @@ static void game_over(void)
 
     // Countdown 3-2-1
     draw_big_digit(font_3, red_rgb.r, red_rgb.g, red_rgb.b);
-    vTaskDelay(pdMS_TO_TICKS(1200));
+    vTaskDelay(pdMS_TO_TICKS(COUNTDOWN_DELAY_MS));
     draw_big_digit(font_2, yellow_rgb.r, yellow_rgb.g, yellow_rgb.b);
-    vTaskDelay(pdMS_TO_TICKS(1200));
+    vTaskDelay(pdMS_TO_TICKS(COUNTDOWN_DELAY_MS));
     draw_big_digit(font_1, green_rgb.r, green_rgb.g, green_rgb.b);
-    vTaskDelay(pdMS_TO_TICKS(1200));
+    vTaskDelay(pdMS_TO_TICKS(COUNTDOWN_DELAY_MS));
 
     snake_game_init();
 }
@@ -291,15 +295,16 @@ int snake_game_get_speed_ms(void)
 
 void snake_game_set_head_color(uint16_t r, uint16_t g, uint16_t b)
 {
-    // Convert RGB to closest color enum (simplified - uses first match)
-    // For full RGB support, you'd need a more sophisticated matching algorithm
-    // For now, we'll keep the enum-based system
-    (void)r; (void)g; (void)b; // Suppress unused parameter warnings
+    // Note: This function is kept for API compatibility but does nothing
+    // as the game now uses color enums. Consider removing from public API.
+    (void)r; (void)g; (void)b;
 }
 
 void snake_game_set_body_color(uint16_t r, uint16_t g, uint16_t b)
 {
-    (void)r; (void)g; (void)b; // Suppress unused parameter warnings
+    // Note: This function is kept for API compatibility but does nothing
+    // as the game now uses color enums. Consider removing from public API.
+    (void)r; (void)g; (void)b;
 }
 
 void snake_game_get_head_color(uint16_t *r, uint16_t *g, uint16_t *b)

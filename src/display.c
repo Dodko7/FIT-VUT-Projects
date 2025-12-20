@@ -4,7 +4,6 @@
 #include <string.h>
 #include "driver/gpio.h"
 #include "driver/spi_master.h"
-#include "esp_log.h"
 #include "esp_rom_sys.h"
 #include "esp_err.h"
 #include "freertos/FreeRTOS.h"
@@ -42,7 +41,7 @@ void set_pixel(int x, int y, uint16_t r, uint16_t g, uint16_t b)
 /* Column selection */
 static inline void select_column(uint8_t col)
 {
-    gpio_set_level(PIN_ADR0, (col >> 0) & 1);
+    gpio_set_level(PIN_ADR0, col & 1);
     gpio_set_level(PIN_ADR1, (col >> 1) & 1);
     gpio_set_level(PIN_ADR2, (col >> 2) & 1);
     gpio_set_level(PIN_ADR3, (col >> 3) & 1);
@@ -76,8 +75,7 @@ static void send_column(uint8_t col)
         .tx_buffer = tx
     };
     esp_err_t ret = spi_device_transmit(spi, &t);
-    if (ret != ESP_OK) {
-    }
+    ESP_ERROR_CHECK(ret);
 
     gpio_set_level(PIN_XLAT, 1);
     esp_rom_delay_us(1);

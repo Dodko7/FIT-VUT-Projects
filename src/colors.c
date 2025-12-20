@@ -1,20 +1,5 @@
 #include "../include/colors.h"
 
-static uint8_t global_brightness_percent = 100;
-
-void color_set_brightness(uint8_t brightness_percent)
-{
-    if (brightness_percent > 100) {
-        brightness_percent = 100;
-    }
-    global_brightness_percent = brightness_percent;
-}
-
-uint8_t color_get_brightness(void)
-{
-    return global_brightness_percent;
-}
-
 rgb_triple_t color_to_rgb_triple(color_enum_t color, uint8_t brightness_percent)
 {
     // Clamp brightness to valid range
