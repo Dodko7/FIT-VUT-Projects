@@ -12,9 +12,9 @@
 #include "esp_rom_sys.h"
 #include "esp_system.h"
 #include "esp_random.h"
+#include "esp_err.h"
+#include "esp_timer.h"
 
-/* ============================================================ */
-static const char *TAG = "SNAKE";
 /* ============================================================ */
 /* PINY – DISPLEJ */
 #define PIN_ADR0 25
@@ -56,6 +56,10 @@ static uint16_t framebuffer[COLS][ROWS][3];
 static uint16_t tlc[TLC_CHANNELS];
 static spi_device_handle_t spi;
 
+static const char *TAG = "SNAKE";
+
+static uint32_t column_delay_us = 250;  // Adjustable delay for column display time (in microseconds)
+
 /* ============================================================ */
 /* FRAMEBUFFER API */
 static inline void clear_screen(void)
@@ -69,6 +73,90 @@ static inline void set_pixel(int x, int y, uint16_t r, uint16_t g, uint16_t b)
     framebuffer[x][y][0] = r;
     framebuffer[x][y][1] = g;
     framebuffer[x][y][2] = b;
+}
+
+/* ============================================================ */
+/* VEĽKÉ ČÍSLICE 3, 2, 1 – S ROTÁCIOU 90° CW + FLIP UP-DOWN */
+
+/* Originálne fonty */
+static const uint8_t original_3[ROWS][5] = {
+    {1,1,1,1,1},
+    {0,0,0,0,1},
+    {0,0,0,0,1},
+    {1,1,1,1,1},
+    {0,0,0,0,1},
+    {0,0,0,0,1},
+    {0,0,0,0,1},
+    {1,1,1,1,1}
+};
+
+static const uint8_t original_2[ROWS][5] = {
+    {1,1,1,1,1},
+    {0,0,0,0,1},
+    {0,0,0,0,1},
+    {1,1,1,1,1},
+    {1,0,0,0,0},
+    {1,0,0,0,0},
+    {1,0,0,0,0},
+    {1,1,1,1,1}
+};
+
+static const uint8_t original_1[ROWS][5] = {
+    {0,0,1,0,0},
+    {0,1,1,0,0},
+    {0,0,1,0,0},
+    {0,0,1,0,0},
+    {0,0,1,0,0},
+    {0,0,1,0,0},
+    {0,0,1,0,0},
+    {1,1,1,1,1}
+};
+
+/* Transformované fonty */
+static uint8_t font_3[ROWS][5];
+static uint8_t font_2[ROWS][5];
+static uint8_t font_1[ROWS][5];
+
+static void transform_fonts(void)
+{
+    // 90° clockwise + flip up-down
+    const uint8_t (*orig[3])[ROWS][5] = { &original_3, &original_2, &original_1 };
+    uint8_t (*transformed[3])[ROWS][5] = { &font_3, &font_2, &font_1 };
+
+    for (int num = 0; num < 3; num++) {
+        // Najprv 90° CW
+        uint8_t temp[ROWS][5] = {0};
+        for (int old_y = 0; old_y < ROWS; old_y++) {
+            for (int old_x = 0; old_x < 5; old_x++) {
+                int new_x = old_y;
+                int new_y = 4 - old_x;
+                temp[new_x][new_y] = (*orig[num])[old_y][old_x];
+            }
+        }
+        // Potom flip up-down
+        for (int y = 0; y < ROWS; y++) {
+            for (int x = 0; x < 5; x++) {
+                (*transformed[num])[ROWS - 1 - y][x] = temp[y][x];
+            }
+        }
+    }
+}
+
+static void draw_big_digit(const uint8_t digit[ROWS][5], uint16_t r, uint16_t g, uint16_t b)
+{
+    clear_screen();
+
+    // Centrovanie
+    int offset_x = (COLS - 8) / 2;
+    int offset_y = (ROWS - 5) / 2;
+
+    for (int y = 0; y < 5; y++) {
+        for (int x = 0; x < ROWS; x++) {
+            if (digit[x][y]) {
+                set_pixel(offset_x + x, offset_y + y, r, g, b);
+            }
+        }
+    }
 }
 
 /* ============================================================ */
@@ -94,6 +182,8 @@ static void gpio_init_all(void)
     gpio_set_level(PIN_EN, 1);
     gpio_set_level(PIN_BLANK, 1);
     gpio_set_level(PIN_XLAT, 0);
+
+    // Assuming E0 and E1 of 74HC154 are tied low on the shield to keep the decoder always enabled.
 }
 
 static void spi_init(void)
@@ -110,8 +200,10 @@ static void spi_init(void)
         .spics_io_num = -1,
         .queue_size = 1
     };
-    spi_bus_initialize(SPI3_HOST, &bus, SPI_DMA_CH_AUTO);
-    spi_bus_add_device(SPI3_HOST, &dev, &spi);
+    esp_err_t ret = spi_bus_initialize(SPI3_HOST, &bus, SPI_DMA_CH_AUTO);
+    ESP_ERROR_CHECK(ret);
+    ret = spi_bus_add_device(SPI3_HOST, &dev, &spi);
+    ESP_ERROR_CHECK(ret);
 }
 
 /* ============================================================ */
@@ -150,7 +242,10 @@ static void send_column(uint8_t col)
         .length = TLC_TOTAL_BITS,
         .tx_buffer = tx
     };
-    spi_device_transmit(spi, &t);
+    esp_err_t ret = spi_device_transmit(spi, &t);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "SPI transmit failed");
+    }
 
     gpio_set_level(PIN_XLAT, 1);
     esp_rom_delay_us(1);
@@ -167,7 +262,7 @@ static void display_task(void *arg)
             send_column(c);
             gpio_set_level(PIN_EN, 0);
             gpio_set_level(PIN_BLANK, 0);
-            esp_rom_delay_us(250);
+            esp_rom_delay_us(column_delay_us);
         }
     }
 }
@@ -184,6 +279,8 @@ static int dx, dy;
 static point_t food_grow;
 static point_t food_poison;
 
+#define DEBOUNCE_TIME_US 50000  // 50ms debounce time
+
 /* ------------------------------------------------------------ */
 static int snake_contains(int x, int y)
 {
@@ -195,9 +292,17 @@ static int snake_contains(int x, int y)
 
 static void spawn_food(point_t *f)
 {
+    int attempts = 0;
+    const int max_attempts = 100;
+
     do {
         f->x = esp_random() % COLS;
         f->y = esp_random() % ROWS;
+        attempts++;
+        if (attempts > max_attempts) {
+            ESP_LOGW(TAG, "Spawn food: Max attempts reached, using last position");
+            break;
+        }
     } while (snake_contains(f->x, f->y) ||
              (f != &food_grow && f->x == food_grow.x && f->y == food_grow.y) ||
              (f != &food_poison && f->x == food_poison.x && f->y == food_poison.y));
@@ -219,10 +324,29 @@ static void snake_init(void)
 
 static void read_buttons(void)
 {
-    if (!gpio_get_level(SW1_DOWN) && dy == 0) { dx = 0; dy = 1; }
-    if (!gpio_get_level(SW2_UP)   && dy == 0) { dx = 0; dy = -1; }
-    if (!gpio_get_level(SW3_LEFT) && dx == 0) { dx = 1; dy = 0; }
-    if (!gpio_get_level(SW4_RIGHT)&& dx == 0) { dx = -1; dy = 0; }
+    static int64_t last_down_time = 0;
+    static int64_t last_up_time = 0;
+    static int64_t last_left_time = 0;
+    static int64_t last_right_time = 0;
+
+    int64_t now = esp_timer_get_time();
+
+    if (!gpio_get_level(SW1_DOWN) && (now - last_down_time > DEBOUNCE_TIME_US) && dy == 0) {
+        dx = 0; dy = 1;
+        last_down_time = now;
+    }
+    if (!gpio_get_level(SW2_UP) && (now - last_up_time > DEBOUNCE_TIME_US) && dy == 0) {
+        dx = 0; dy = -1;
+        last_up_time = now;
+    }
+    if (!gpio_get_level(SW3_LEFT) && (now - last_left_time > DEBOUNCE_TIME_US) && dx == 0) {
+        dx = 1; dy = 0;
+        last_left_time = now;
+    }
+    if (!gpio_get_level(SW4_RIGHT) && (now - last_right_time > DEBOUNCE_TIME_US) && dx == 0) {
+        dx = -1; dy = 0;
+        last_right_time = now;
+    }
 }
 
 static int snake_step(void)
@@ -257,25 +381,72 @@ static void snake_render(void)
 {
     clear_screen();
 
-    set_pixel(food_grow.x, food_grow.y, 0, 0, 4095);
-    set_pixel(food_poison.x, food_poison.y, 4095, 0, 0);
+    set_pixel(food_grow.x, food_grow.y, 0, 0, 4095);      // Blue grow food
+    set_pixel(food_poison.x, food_poison.y, 4095, 0, 0);  // Red poison food
 
     for (int i = 0; i < snake_len; i++) {
         if (i == 0)
-            set_pixel(snake[i].x, snake[i].y, 1024, 1024, 0);
+            set_pixel(snake[i].x, snake[i].y, 1024, 1024, 0);  // Head yellow
         else
-            set_pixel(snake[i].x, snake[i].y, 0, 512, 0);
+            set_pixel(snake[i].x, snake[i].y, 0, 512, 0);      // Body green
     }
 }
 
+static int is_any_button_pressed(void)
+{
+    if (!gpio_get_level(SW1_DOWN) || !gpio_get_level(SW2_UP) ||
+        !gpio_get_level(SW3_LEFT) || !gpio_get_level(SW4_RIGHT)) {
+        vTaskDelay(pdMS_TO_TICKS(50));
+        return 1;
+    }
+    return 0;
+}
 static void game_over(void)
 {
+    // 1. Zčervenaj celý had
     clear_screen();
-    for (int x = 0; x < COLS; x++)
-        for (int y = 0; y < ROWS; y++)
-            set_pixel(x, y, 4095, 0, 0);
+    for (int i = 0; i < snake_len; i++) {
+        set_pixel(snake[i].x, snake[i].y, 4095, 0, 0);
+    }
+    vTaskDelay(pdMS_TO_TICKS(1200));
 
-    vTaskDelay(pdMS_TO_TICKS(1000));
+    // 2. Pauza pred pásom
+    vTaskDelay(pdMS_TO_TICKS(600));
+
+    // 3. Červený pás ide cez columns – obrátený smer (od COL15 po COL0)
+    // Pri tvojom držaní boardu na výšku to bude zhora nadol
+    const int wave_width = 4;
+    const int col_delay_ms = 30;
+
+    clear_screen();
+
+    // Obrátený loop: začni od pravého kraja (vyššie col) a choď doľava
+    for (int start_col = COLS - 1; start_col >= -wave_width; start_col--) {
+        clear_screen();
+
+        for (int col = start_col; col > start_col - wave_width && col >= 0; col--) {
+            if (col >= 0 && col < COLS) {
+                for (int row = 0; row < ROWS; row++) {
+                    set_pixel(col, row, 4095, 0, 0);
+                }
+            }
+        }
+        vTaskDelay(pdMS_TO_TICKS(col_delay_ms));
+    }
+
+    // Čakanie na tlačidlo
+    while (!is_any_button_pressed()) {
+        vTaskDelay(pdMS_TO_TICKS(10));
+    }
+
+    // Countdown 3-2-1
+    draw_big_digit(font_3, 4095, 0, 0);
+    vTaskDelay(pdMS_TO_TICKS(1200));
+    draw_big_digit(font_2, 4095, 4095, 0);
+    vTaskDelay(pdMS_TO_TICKS(1200));
+    draw_big_digit(font_1, 0, 4095, 0);
+    vTaskDelay(pdMS_TO_TICKS(1200));
+
     snake_init();
 }
 
@@ -297,11 +468,12 @@ static void game_task(void *arg)
 /* ============================================================ */
 void app_main(void)
 {
-    ESP_LOGI(TAG, "Snake – two apples logic");
-
     gpio_init_all();
     spi_init();
     clear_screen();
+
+    // Transformovať fonty pri štarte
+    transform_fonts();
 
     xTaskCreate(display_task, "display", 4096, NULL, 5, NULL);
     xTaskCreate(game_task, "game", 4096, NULL, 4, NULL);
