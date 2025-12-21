@@ -1,3 +1,9 @@
+/**
+ * @file snake_game.h
+ * @brief Snake game logic interface
+ * @author Jozef Ondrejicka
+ */
+
 #ifndef SNAKE_GAME_H
 #define SNAKE_GAME_H
 

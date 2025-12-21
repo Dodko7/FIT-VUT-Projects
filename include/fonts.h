@@ -1,3 +1,9 @@
+/**
+ * @file fonts.h
+ * @brief Font definitions and rendering interface for countdown digits
+ * @author Jozef Ondrejicka
+ */
+
 #ifndef FONTS_H
 #define FONTS_H
 

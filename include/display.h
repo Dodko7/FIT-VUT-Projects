@@ -1,10 +1,16 @@
+/**
+ * @file display.h
+ * @brief Display driver interface for 16x8 RGB LED matrix
+ * @author Jozef Ondrejicka
+ */
+
 #ifndef DISPLAY_H
 #define DISPLAY_H
 
 #include <stdint.h>
 #include "driver/spi_master.h"
 
-/* TLC5940 configuration */
+/* TLC5947 configuration */
 #define TLC_CHANNELS     24
 #define TLC_BITS_PER_CH  12
 #define TLC_TOTAL_BITS   (TLC_CHANNELS * TLC_BITS_PER_CH)

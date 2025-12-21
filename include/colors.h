@@ -1,9 +1,15 @@
+/**
+ * @file colors.h
+ * @brief Unified color system interface
+ * @author Jozef Ondrejicka
+ */
+
 #ifndef COLORS_H
 #define COLORS_H
 
 #include <stdint.h>
 
-/* Maximum brightness value for 12-bit TLC5940 */
+/* Maximum brightness value for 12-bit TLC5947 */
 #define COLOR_BRIGHTNESS_MAX 4095
 
 /* Color enumeration */

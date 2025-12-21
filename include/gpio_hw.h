@@ -1,3 +1,9 @@
+/**
+ * @file gpio_hw.h
+ * @brief GPIO pin definitions and hardware initialization interface
+ * @author Jozef Ondrejicka
+ */
+
 #ifndef GPIO_HW_H
 #define GPIO_HW_H
 
@@ -10,6 +16,7 @@
 #define PIN_ADR3 27
 #define PIN_EN   14
 
+/* SPI pins */
 #define PIN_SPI_MOSI 23
 #define PIN_SPI_CLK  18
 #define PIN_XLAT     13

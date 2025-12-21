@@ -1,3 +1,9 @@
+/**
+ * @file snake_game.c
+ * @brief Snake game logic and state management
+ * @author Jozef Ondrejicka
+ */
+
 #include "../include/snake_game.h"
 #include "../include/display.h"
 #include "../include/fonts.h"
@@ -11,14 +17,14 @@
 #include "freertos/task.h"
 
 #define SNAKE_MAX 32
-#define DEBOUNCE_TIME_US 50000  // 50ms debounce time
+#define DEBOUNCE_TIME_US 50000 
 #define MIN_SPEED_MS 40
 #define MAX_SPEED_MS 400
 #define SPEED_STEP_MS 20
 #define GAME_OVER_SNAKE_DELAY_MS 1200
 #define GAME_OVER_PAUSE_MS 600
 #define GAME_OVER_WAVE_WIDTH 3
-#define GAME_OVER_COL_DELAY_MS 20
+#define GAME_OVER_COL_DELAY_MS 15
 #define COUNTDOWN_DELAY_MS 1200
 #define MIN_SNAKE_LEN 5
 
@@ -39,6 +45,12 @@ static color_enum_t game_color_body = COLOR_GREEN;
 static uint8_t game_brightness = 100;
 
 /* Helper functions */
+/**
+ * @brief Check if position is part of snake body
+ * @param x Column coordinate
+ * @param y Row coordinate
+ * @return 1 if snake contains position, 0 otherwise
+ */
 static int snake_contains(int x, int y)
 {
     for (int i = 0; i < snake_len; i++)
@@ -47,32 +59,59 @@ static int snake_contains(int x, int y)
     return 0;
 }
 
+/**
+ * @brief Spawn food at random position (not on snake or other food)
+ * @param f Pointer to food point to set
+ */
 static void spawn_food(point_t *f)
 {
     int attempts = 0;
     const int max_attempts = 100;
 
+    // Randomly select position until valid
     do {
         f->x = esp_random() % COLS;
         f->y = esp_random() % ROWS;
         attempts++;
         if (attempts > max_attempts) {
-            break;
+            // Fallback: find first available position
+            for (int x = 0; x < COLS; x++) {
+                for (int y = 0; y < ROWS; y++) {
+                    if (!snake_contains(x, y) &&
+                        !(f != &food_grow && x == food_grow.x && y == food_grow.y) &&
+                        !(f != &food_poison && x == food_poison.x && y == food_poison.y)) {
+                        f->x = x;
+                        f->y = y;
+                        return;
+                    }
+                }
+            }
+            // Last resort: use position 0,0 if all else fails
+            f->x = 0;
+            f->y = 0;
+            return;
         }
     } while (snake_contains(f->x, f->y) ||
              (f != &food_grow && f->x == food_grow.x && f->y == food_grow.y) ||
              (f != &food_poison && f->x == food_poison.x && f->y == food_poison.y));
 }
 
+/**
+ * @brief Read button inputs with debouncing
+ * Updates snake direction, prevents 180° turns
+ */
 static void read_buttons(void)
 {
+    // Read buttons and update direction with debouncing
     static int64_t last_down_time = 0;
     static int64_t last_up_time = 0;
     static int64_t last_left_time = 0;
     static int64_t last_right_time = 0;
 
+    // Get current time
     int64_t now = esp_timer_get_time();
 
+    // Read buttons and update direction
     if (!gpio_get_level(SW1_DOWN) && (now - last_down_time > DEBOUNCE_TIME_US) && dy == 0) {
         dx = 0; dy = 1;
         last_down_time = now;
@@ -91,36 +130,50 @@ static void read_buttons(void)
     }
 }
 
+/**
+ * @brief Update snake position and check collisions
+ * @return 0 on success, -1 on game over (collision or too short)
+ */
 static int snake_step(void)
 {
+    // Move body segments
     for (int i = snake_len - 1; i > 0; i--)
         snake[i] = snake[i - 1];
 
+    // Move head with wraparound
     snake[0].x = (snake[0].x - dy + COLS) % COLS;
     snake[0].y = (snake[0].y + dx + ROWS) % ROWS;
 
+    // Check self-collision
     for (int i = 1; i < snake_len; i++)
         if (snake[0].x == snake[i].x && snake[0].y == snake[i].y)
             return -1;
 
+    // Check food collision
     if (snake[0].x == food_grow.x && snake[0].y == food_grow.y) {
         if (snake_len < SNAKE_MAX) snake_len++;
         spawn_food(&food_grow);
     }
 
+    // Check poison collision
     if (snake[0].x == food_poison.x && snake[0].y == food_poison.y) {
         snake_len--;
         spawn_food(&food_poison);
     }
 
+    // Game over if snake too short
     if (snake_len < MIN_SNAKE_LEN)
         return -1;
 
     return 0;
 }
 
+/**
+ * @brief Render game state to framebuffer
+ */
 static void snake_render(void)
 {
+    // Head uses full brightness
     rgb_triple_t head_rgb = color_to_rgb_triple(game_color_head, game_brightness);
     // Body uses same color but at half brightness
     rgb_triple_t body_rgb = color_to_rgb_triple(game_color_body, game_brightness / 2);
@@ -128,9 +181,12 @@ static void snake_render(void)
     rgb_triple_t food_poison_rgb = color_to_rgb_triple(COLOR_RED, game_brightness);
 
     clear_screen();
+
+    // Draw food
     set_pixel(food_grow.x, food_grow.y, food_grow_rgb.r, food_grow_rgb.g, food_grow_rgb.b);
     set_pixel(food_poison.x, food_poison.y, food_poison_rgb.r, food_poison_rgb.g, food_poison_rgb.b);
 
+    // Draw snake
     for (int i = 0; i < snake_len; i++) {
         if (i == 0)
             set_pixel(snake[i].x, snake[i].y, head_rgb.r, head_rgb.g, head_rgb.b);
@@ -139,31 +195,41 @@ static void snake_render(void)
     }
 }
 
+/**
+ * @brief Screensaver mode - snake moves clockwise in rectangle
+ * Buttons: UP/DOWN adjust speed, RIGHT cycles colors, LEFT exits
+ */
 static void screensaver_loop(void)
 {
+    // Screensaver snake state
     point_t ss_snake[SNAKE_MAX];
     int ss_len = 6;
     int ss_dx = 0, ss_dy = -1;
 
+    // Rectangle corners for screensaver path
     point_t tl={6,2}, tr={9,2}, br={9,5}, bl={6,5};
 
+    // Initialize snake in starting position (bottom-left corner, vertical)
     for(int i=0;i<ss_len;i++){
         ss_snake[i].x = tl.x;
         ss_snake[i].y = bl.y - i;
     }
 
+    // Screensaver loop
     while (1) {
-
+        // Adjust speed up
         if (!gpio_get_level(SW2_UP)) {
             if (game_speed_ms > MIN_SPEED_MS) game_speed_ms -= SPEED_STEP_MS;
             vTaskDelay(pdMS_TO_TICKS(200));
         }
 
+        // Adjust speed down
         if (!gpio_get_level(SW1_DOWN)) {
             if (game_speed_ms < MAX_SPEED_MS) game_speed_ms += SPEED_STEP_MS;
             vTaskDelay(pdMS_TO_TICKS(200));
         }
 
+        // Change colors
         if (!gpio_get_level(SW4_RIGHT)) {
             // Cycle through colors (skip COLOR_BLACK)
             game_color_head = (game_color_head + 1) % COLOR_BLACK;
@@ -171,16 +237,20 @@ static void screensaver_loop(void)
             vTaskDelay(pdMS_TO_TICKS(200));
         }
 
+        // Exit screensaver
         if (!gpio_get_level(SW3_LEFT)) {
             return;
         }
 
+        // Move screensaver snake
         for (int i = ss_len - 1; i > 0; i--)
             ss_snake[i] = ss_snake[i - 1];
 
+        // Move head
         ss_snake[0].x += ss_dx;
         ss_snake[0].y += ss_dy;
 
+        // Change direction at corners
         if (ss_snake[0].x == tl.x && ss_snake[0].y == tl.y) {
             ss_dx = 1; ss_dy = 0;
         } else if (ss_snake[0].x == tr.x && ss_snake[0].y == tr.y) {
@@ -191,11 +261,14 @@ static void screensaver_loop(void)
             ss_dx = 0; ss_dy = -1;
         }
 
+        // Render screensaver snake
         rgb_triple_t head_rgb = color_to_rgb_triple(game_color_head, game_brightness);
         // Body uses same color but at half brightness
         rgb_triple_t body_rgb = color_to_rgb_triple(game_color_body, game_brightness / 2);
         
         clear_screen();
+
+        // Draw snake
         for (int i=0;i<ss_len;i++) {
             if (i==0)
                 set_pixel(ss_snake[i].x, ss_snake[i].y, head_rgb.r, head_rgb.g, head_rgb.b);
@@ -203,44 +276,51 @@ static void screensaver_loop(void)
                 set_pixel(ss_snake[i].x, ss_snake[i].y, body_rgb.r, body_rgb.g, body_rgb.b);
         }
 
+        // Delay based on current speed
         vTaskDelay(pdMS_TO_TICKS(game_speed_ms));
     }
 }
 
+/**
+ * @brief Game over sequence
+ * Shows red snake, red wave animation, screensaver, then countdown 3-2-1
+ */
 static void game_over(void)
 {
     rgb_triple_t red_rgb = color_to_rgb_triple(COLOR_RED, game_brightness);
     rgb_triple_t yellow_rgb = color_to_rgb_triple(COLOR_YELLOW, game_brightness);
     rgb_triple_t green_rgb = color_to_rgb_triple(COLOR_GREEN, game_brightness);
 
-    // 1. Zčervenaj celý had
+    // 1. Turn entire snake red
     clear_screen();
     for (int i = 0; i < snake_len; i++) {
         set_pixel(snake[i].x, snake[i].y, red_rgb.r, red_rgb.g, red_rgb.b);
     }
     vTaskDelay(pdMS_TO_TICKS(GAME_OVER_SNAKE_DELAY_MS));
 
-    // 2. Pauza pred pásom
+    // 2. Pause before wave
     vTaskDelay(pdMS_TO_TICKS(GAME_OVER_PAUSE_MS));
 
-    // 3. Červený pás ide cez columns – obrátený smer (od COL15 po COL0)
-    clear_screen();
-    for (int start_col = COLS - 1; start_col >= -GAME_OVER_WAVE_WIDTH; start_col--) {
+    // 3. Red wave animation (right to left)
+    for (int i = 0; i < 3; i++){
         clear_screen();
-        for (int col = start_col; col > start_col - GAME_OVER_WAVE_WIDTH && col >= 0; col--) {
-            if (col < COLS) {
-                for (int row = 0; row < ROWS; row++) {
-                    set_pixel(col, row, red_rgb.r, red_rgb.g, red_rgb.b);
+        for (int start_col = COLS - 1; start_col >= -GAME_OVER_WAVE_WIDTH; start_col--) {
+            clear_screen();
+            for (int col = start_col; col > start_col - GAME_OVER_WAVE_WIDTH && col >= 0; col--) {
+                if (col < COLS) {
+                    for (int row = 0; row < ROWS; row++) {
+                        set_pixel(col, row, red_rgb.r, red_rgb.g, red_rgb.b);
+                    }
                 }
             }
+            vTaskDelay(pdMS_TO_TICKS(GAME_OVER_COL_DELAY_MS));
         }
-        vTaskDelay(pdMS_TO_TICKS(GAME_OVER_COL_DELAY_MS));
     }
 
-    // Screensaver – had v smere hodinových ručičiek so žltou hlavou
+    // Screensaver - snake moves clockwise
     screensaver_loop();
 
-    // Countdown 3-2-1
+    // Countdown 3-2-1 (red, yellow, green)
     draw_big_digit(font_3, red_rgb.r, red_rgb.g, red_rgb.b);
     vTaskDelay(pdMS_TO_TICKS(COUNTDOWN_DELAY_MS));
     draw_big_digit(font_2, yellow_rgb.r, yellow_rgb.g, yellow_rgb.b);
@@ -251,9 +331,15 @@ static void game_over(void)
     snake_game_init();
 }
 
-static void game_task(void *arg)
+/**
+ * @brief Main game task 
+ * Game loop: read input, update game state, render, delay
+ */
+static void game_task()
 {
     snake_game_init();
+
+    // Main game loop
     while (1) {
         read_buttons();
         if (snake_step() < 0)
@@ -264,6 +350,10 @@ static void game_task(void *arg)
 }
 
 /* Public API */
+/**
+ * @brief Initialize game state
+ * Sets initial snake position, direction, and spawns food
+ */
 void snake_game_init(void)
 {
     snake_len = 6;
@@ -278,35 +368,60 @@ void snake_game_init(void)
     spawn_food(&food_poison);
 }
 
+/**
+ * @brief Start game task
+ */
 void snake_game_start_task(void)
 {
     xTaskCreate(game_task, "game", 4096, NULL, 4, NULL);
 }
 
+/**
+ * @brief Set game speed
+ * @param speed_ms Delay between game steps in milliseconds
+ */
 void snake_game_set_speed_ms(int speed_ms)
 {
     game_speed_ms = speed_ms;
 }
 
+/**
+ * @brief Get current game speed
+ * @return Delay between game steps in milliseconds
+ */
 int snake_game_get_speed_ms(void)
 {
     return game_speed_ms;
 }
 
+/**
+ * @brief Set head color (API compatibility - does nothing, uses color enums)
+ * @param r Red component (unused)
+ * @param g Green component (unused)
+ * @param b Blue component (unused)
+ */
 void snake_game_set_head_color(uint16_t r, uint16_t g, uint16_t b)
 {
-    // Note: This function is kept for API compatibility but does nothing
-    // as the game now uses color enums. Consider removing from public API.
     (void)r; (void)g; (void)b;
 }
 
+/**
+ * @brief Set body color (API compatibility - does nothing, uses color enums)
+ * @param r Red component (unused)
+ * @param g Green component (unused)
+ * @param b Blue component (unused)
+ */
 void snake_game_set_body_color(uint16_t r, uint16_t g, uint16_t b)
 {
-    // Note: This function is kept for API compatibility but does nothing
-    // as the game now uses color enums. Consider removing from public API.
     (void)r; (void)g; (void)b;
 }
 
+/**
+ * @brief Get head color RGB values
+ * @param r Pointer to store red component (can be NULL)
+ * @param g Pointer to store green component (can be NULL)
+ * @param b Pointer to store blue component (can be NULL)
+ */
 void snake_game_get_head_color(uint16_t *r, uint16_t *g, uint16_t *b)
 {
     rgb_triple_t rgb = color_to_rgb_triple(game_color_head, game_brightness);
@@ -315,6 +430,12 @@ void snake_game_get_head_color(uint16_t *r, uint16_t *g, uint16_t *b)
     if (b) *b = rgb.b;
 }
 
+/**
+ * @brief Get body color RGB values
+ * @param r Pointer to store red component (can be NULL)
+ * @param g Pointer to store green component (can be NULL)
+ * @param b Pointer to store blue component (can be NULL)
+ */
 void snake_game_get_body_color(uint16_t *r, uint16_t *g, uint16_t *b)
 {
     rgb_triple_t rgb = color_to_rgb_triple(game_color_body, game_brightness);
