@@ -163,9 +163,6 @@ export default function useGame(): LudoGameState {
 							return;
 						}
 
-						// Avoid race conditions
-						await new Promise((r) => setTimeout(r, 350));
-
 						invalidate();
 						setSelectedPawnId(null);
 						setHighlights([]);
@@ -222,8 +219,6 @@ export default function useGame(): LudoGameState {
 			);
 			return;
 		}
-		// Because prisma + sqllite = locking issues
-		await new Promise((r) => setTimeout(r, 350));
 		invalidate();
 		setTimeout(() => {
 			// Set state to awaiting pawn selection, but only if there are any pawns to select
