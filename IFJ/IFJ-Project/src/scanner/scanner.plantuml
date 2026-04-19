@@ -1,0 +1,37 @@
+@startuml
+
+state init
+state string
+state comment
+state operator
+state number
+state white
+state braces
+state lexeme
+
+[*] --> init
+
+init --> string: c == '\"'
+string --> string: c != '\"' || c != '\\n'
+string --> init: c == '\"' || c == '\\n'
+
+init --> comment: c == '/' && c+1 == '/'
+comment --> comment: c != '\\n'
+comment --> init: c == '\\n'
+
+init --> operator : c in ["+", "-", ",", "*", "=", "<", ">", "!", "&"]  \n|| (c == '|' && c+1 == '|')  \n|| (c == '/' && c+1 != '/')
+operator --> operator : c in ["+", "-", "," "*", "=", "<", ">", "!", "&"] \n|| (c == '|' && c+1 == '|')
+
+operator --> white : isspace(c)
+white --> white: isspace(c)
+
+white --> lexeme: isalpha(c) || c=='_'
+init --> lexeme: isalpha(c) || c=='_'
+lexeme --> lexeme: isalnum(c) || c=='_'
+lexeme --> operator: c in ["+", "-", "," "*", "=", "<", ">", "!", "&"] \n|| (c == '|' && c+1 == '|')
+
+
+init --> number : isdigit(c) || c == '.' || c == '-'
+number --> operator : c in ["+", "-", "," "*", "=", "<", ">", "!", "&"] \n|| (c == '|' && c+1 == '|')
+number --> number : isdigit(c) || c == '.' || c == 'e'
+@enduml

@@ -1,0 +1,302 @@
+   0 | tok_t_const          |  3 |const          |	
+   1 | tok_t_sym            |  1 |               |	std
+   2 | tok_t_ass            | 36 |               |	
+   3 | tok_t_import         | 22 |@import        |	
+   4 | tok_t_lpa            | 34 |               |	
+   5 | tok_t_str            | 28 |               |	std
+   6 | tok_t_rpa            | 35 |               |	
+   7 | tok_t_semicolon      | 53 |               |	
+   8 | tok_t_pub            | 12 |pub            |	
+   9 | tok_t_fn             |  5 |fn             |	
+  10 | tok_t_sym            |  1 |               |	main
+  11 | tok_t_lpa            | 34 |               |	
+  12 | tok_t_rpa            | 35 |               |	
+  13 | tok_t_sym            |  1 |               |	anyerror
+  14 | tok_t_not            | 41 |               |	
+  15 | tok_t_void           | 17 |void           |	
+  16 | tok_t_lcbr           | 32 |               |	
+  17 | tok_t_const          |  3 |const          |	
+  18 | tok_t_sym            |  1 |               |	a
+  19 | tok_t_colon          | 52 |               |	
+  20 | tok_t_i32            |  7 |i32            |	
+  21 | tok_t_ass            | 36 |               |	
+  22 | tok_t_int            | 27 |               |	1
+  23 | tok_t_semicolon      | 53 |               |	
+  24 | tok_t_const          |  3 |const          |	
+  25 | tok_t_sym            |  1 |               |	b
+  26 | tok_t_colon          | 52 |               |	
+  27 | tok_t_f64            |  8 |f64            |	
+  28 | tok_t_ass            | 36 |               |	
+  29 | tok_t_flt            | 26 |               |	2.0
+  30 | tok_t_semicolon      | 53 |               |	
+  31 | tok_t_const          |  3 |const          |	
+  32 | tok_t_sym            |  1 |               |	c
+  33 | tok_t_colon          | 52 |               |	
+  34 | tok_t_u8             | 14 |[]u8           |	
+  35 | tok_t_ass            | 36 |               |	
+  36 | tok_t_str            | 28 |               |	hello
+  37 | tok_t_semicolon      | 53 |               |	
+  38 | tok_t_const          |  3 |const          |	
+  39 | tok_t_sym            |  1 |               |	d
+  40 | tok_t_colon          | 52 |               |	
+  41 | tok_t_i32_opt        |  9 |?i32           |	
+  42 | tok_t_ass            | 36 |               |	
+  43 | tok_t_null           | 11 |null           |	
+  44 | tok_t_semicolon      | 53 |               |	
+  45 | tok_t_const          |  3 |const          |	
+  46 | tok_t_sym            |  1 |               |	e
+  47 | tok_t_colon          | 52 |               |	
+  48 | tok_t_f64_opt        | 10 |?f64           |	
+  49 | tok_t_ass            | 36 |               |	
+  50 | tok_t_flt            | 26 |               |	1.0
+  51 | tok_t_semicolon      | 53 |               |	
+  52 | tok_t_const          |  3 |const          |	
+  53 | tok_t_sym            |  1 |               |	f
+  54 | tok_t_colon          | 52 |               |	
+  55 | tok_t_u8_opt         | 15 |?[]u8          |	
+  56 | tok_t_ass            | 36 |               |	
+  57 | tok_t_str            | 28 |               |	world
+  58 | tok_t_semicolon      | 53 |               |	
+  59 | tok_t_var            | 16 |var            |	
+  60 | tok_t_sym            |  1 |               |	g
+  61 | tok_t_colon          | 52 |               |	
+  62 | tok_t_i32            |  7 |i32            |	
+  63 | tok_t_ass            | 36 |               |	
+  64 | tok_t_int            | 27 |               |	0
+  65 | tok_t_semicolon      | 53 |               |	
+  66 | tok_t_while          | 18 |while          |	
+  67 | tok_t_lpa            | 34 |               |	
+  68 | tok_t_sym            |  1 |               |	g
+  69 | tok_t_lt             | 44 |               |	
+  70 | tok_t_int            | 27 |               |	10
+  71 | tok_t_rpa            | 35 |               |	
+  72 | tok_t_colon          | 52 |               |	
+  73 | tok_t_lpa            | 34 |               |	
+  74 | tok_t_sym            |  1 |               |	g
+  75 | tok_t_plus           | 37 |               |	
+  76 | tok_t_ass            | 36 |               |	
+  77 | tok_t_int            | 27 |               |	1
+  78 | tok_t_rpa            | 35 |               |	
+  79 | tok_t_lcbr           | 32 |               |	
+  80 | tok_t_sym            |  1 |               |	std
+  81 | tok_t_dot            | 49 |               |	
+  82 | tok_t_sym            |  1 |               |	debug
+  83 | tok_t_dot            | 49 |               |	
+  84 | tok_t_sym            |  1 |               |	print
+  85 | tok_t_lpa            | 34 |               |	
+  86 | tok_t_str            | 28 |               |	{}
+  87 | tok_t_com            | 54 |               |	
+  88 | tok_t_dot            | 49 |               |	
+  89 | tok_t_lcbr           | 32 |               |	
+  90 | tok_t_sym            |  1 |               |	g
+  91 | tok_t_rcbr           | 33 |               |	
+  92 | tok_t_rpa            | 35 |               |	
+  93 | tok_t_semicolon      | 53 |               |	
+  94 | tok_t_rcbr           | 33 |               |	
+  95 | tok_t_if             |  6 |if             |	
+  96 | tok_t_lpa            | 34 |               |	
+  97 | tok_t_sym            |  1 |               |	a
+  98 | tok_t_eq             | 43 |               |	
+  99 | tok_t_int            | 27 |               |	1
+ 100 | tok_t_rpa            | 35 |               |	
+ 101 | tok_t_lcbr           | 32 |               |	
+ 102 | tok_t_sym            |  1 |               |	std
+ 103 | tok_t_dot            | 49 |               |	
+ 104 | tok_t_sym            |  1 |               |	debug
+ 105 | tok_t_dot            | 49 |               |	
+ 106 | tok_t_sym            |  1 |               |	print
+ 107 | tok_t_lpa            | 34 |               |	
+ 108 | tok_t_str            | 28 |               |	a is 1
+ 109 | tok_t_com            | 54 |               |	
+ 110 | tok_t_dot            | 49 |               |	
+ 111 | tok_t_lcbr           | 32 |               |	
+ 112 | tok_t_rcbr           | 33 |               |	
+ 113 | tok_t_rpa            | 35 |               |	
+ 114 | tok_t_semicolon      | 53 |               |	
+ 115 | tok_t_rcbr           | 33 |               |	
+ 116 | tok_t_else           |  4 |else           |	
+ 117 | tok_t_lcbr           | 32 |               |	
+ 118 | tok_t_sym            |  1 |               |	std
+ 119 | tok_t_dot            | 49 |               |	
+ 120 | tok_t_sym            |  1 |               |	debug
+ 121 | tok_t_dot            | 49 |               |	
+ 122 | tok_t_sym            |  1 |               |	print
+ 123 | tok_t_lpa            | 34 |               |	
+ 124 | tok_t_str            | 28 |               |	a is not 1
+ 125 | tok_t_com            | 54 |               |	
+ 126 | tok_t_dot            | 49 |               |	
+ 127 | tok_t_lcbr           | 32 |               |	
+ 128 | tok_t_rcbr           | 33 |               |	
+ 129 | tok_t_rpa            | 35 |               |	
+ 130 | tok_t_semicolon      | 53 |               |	
+ 131 | tok_t_rcbr           | 33 |               |	
+ 132 | tok_t_if             |  6 |if             |	
+ 133 | tok_t_lpa            | 34 |               |	
+ 134 | tok_t_sym            |  1 |               |	d
+ 135 | tok_t_rpa            | 35 |               |	
+ 136 | tok_t_alias          | 56 |               |	
+ 137 | tok_t_sym            |  1 |               |	x
+ 138 | tok_t_alias          | 56 |               |	
+ 139 | tok_t_lcbr           | 32 |               |	
+ 140 | tok_t_sym            |  1 |               |	std
+ 141 | tok_t_dot            | 49 |               |	
+ 142 | tok_t_sym            |  1 |               |	debug
+ 143 | tok_t_dot            | 49 |               |	
+ 144 | tok_t_sym            |  1 |               |	print
+ 145 | tok_t_lpa            | 34 |               |	
+ 146 | tok_t_str            | 28 |               |	d is not null and is {}
+ 147 | tok_t_com            | 54 |               |	
+ 148 | tok_t_dot            | 49 |               |	
+ 149 | tok_t_lcbr           | 32 |               |	
+ 150 | tok_t_sym            |  1 |               |	x
+ 151 | tok_t_rcbr           | 33 |               |	
+ 152 | tok_t_rpa            | 35 |               |	
+ 153 | tok_t_semicolon      | 53 |               |	
+ 154 | tok_t_rcbr           | 33 |               |	
+ 155 | tok_t_else           |  4 |else           |	
+ 156 | tok_t_lcbr           | 32 |               |	
+ 157 | tok_t_sym            |  1 |               |	std
+ 158 | tok_t_dot            | 49 |               |	
+ 159 | tok_t_sym            |  1 |               |	debug
+ 160 | tok_t_dot            | 49 |               |	
+ 161 | tok_t_sym            |  1 |               |	print
+ 162 | tok_t_lpa            | 34 |               |	
+ 163 | tok_t_str            | 28 |               |	d is null
+ 164 | tok_t_com            | 54 |               |	
+ 165 | tok_t_dot            | 49 |               |	
+ 166 | tok_t_lcbr           | 32 |               |	
+ 167 | tok_t_rcbr           | 33 |               |	
+ 168 | tok_t_rpa            | 35 |               |	
+ 169 | tok_t_semicolon      | 53 |               |	
+ 170 | tok_t_rcbr           | 33 |               |	
+ 171 | tok_t_if             |  6 |if             |	
+ 172 | tok_t_lpa            | 34 |               |	
+ 173 | tok_t_sym            |  1 |               |	e
+ 174 | tok_t_rpa            | 35 |               |	
+ 175 | tok_t_alias          | 56 |               |	
+ 176 | tok_t_sym            |  1 |               |	x
+ 177 | tok_t_alias          | 56 |               |	
+ 178 | tok_t_lcbr           | 32 |               |	
+ 179 | tok_t_sym            |  1 |               |	std
+ 180 | tok_t_dot            | 49 |               |	
+ 181 | tok_t_sym            |  1 |               |	debug
+ 182 | tok_t_dot            | 49 |               |	
+ 183 | tok_t_sym            |  1 |               |	print
+ 184 | tok_t_lpa            | 34 |               |	
+ 185 | tok_t_str            | 28 |               |	e is not null and is {}
+ 186 | tok_t_com            | 54 |               |	
+ 187 | tok_t_dot            | 49 |               |	
+ 188 | tok_t_lcbr           | 32 |               |	
+ 189 | tok_t_sym            |  1 |               |	x
+ 190 | tok_t_rcbr           | 33 |               |	
+ 191 | tok_t_rpa            | 35 |               |	
+ 192 | tok_t_semicolon      | 53 |               |	
+ 193 | tok_t_rcbr           | 33 |               |	
+ 194 | tok_t_else           |  4 |else           |	
+ 195 | tok_t_lcbr           | 32 |               |	
+ 196 | tok_t_sym            |  1 |               |	std
+ 197 | tok_t_dot            | 49 |               |	
+ 198 | tok_t_sym            |  1 |               |	debug
+ 199 | tok_t_dot            | 49 |               |	
+ 200 | tok_t_sym            |  1 |               |	print
+ 201 | tok_t_lpa            | 34 |               |	
+ 202 | tok_t_str            | 28 |               |	e is null
+ 203 | tok_t_com            | 54 |               |	
+ 204 | tok_t_dot            | 49 |               |	
+ 205 | tok_t_lcbr           | 32 |               |	
+ 206 | tok_t_rcbr           | 33 |               |	
+ 207 | tok_t_rpa            | 35 |               |	
+ 208 | tok_t_semicolon      | 53 |               |	
+ 209 | tok_t_rcbr           | 33 |               |	
+ 210 | tok_t_if             |  6 |if             |	
+ 211 | tok_t_lpa            | 34 |               |	
+ 212 | tok_t_sym            |  1 |               |	f
+ 213 | tok_t_rpa            | 35 |               |	
+ 214 | tok_t_alias          | 56 |               |	
+ 215 | tok_t_sym            |  1 |               |	x
+ 216 | tok_t_alias          | 56 |               |	
+ 217 | tok_t_lcbr           | 32 |               |	
+ 218 | tok_t_sym            |  1 |               |	std
+ 219 | tok_t_dot            | 49 |               |	
+ 220 | tok_t_sym            |  1 |               |	debug
+ 221 | tok_t_dot            | 49 |               |	
+ 222 | tok_t_sym            |  1 |               |	print
+ 223 | tok_t_lpa            | 34 |               |	
+ 224 | tok_t_str            | 28 |               |	f is not null and is {}
+ 225 | tok_t_com            | 54 |               |	
+ 226 | tok_t_dot            | 49 |               |	
+ 227 | tok_t_lcbr           | 32 |               |	
+ 228 | tok_t_sym            |  1 |               |	x
+ 229 | tok_t_rcbr           | 33 |               |	
+ 230 | tok_t_rpa            | 35 |               |	
+ 231 | tok_t_semicolon      | 53 |               |	
+ 232 | tok_t_rcbr           | 33 |               |	
+ 233 | tok_t_else           |  4 |else           |	
+ 234 | tok_t_lcbr           | 32 |               |	
+ 235 | tok_t_sym            |  1 |               |	std
+ 236 | tok_t_dot            | 49 |               |	
+ 237 | tok_t_sym            |  1 |               |	debug
+ 238 | tok_t_dot            | 49 |               |	
+ 239 | tok_t_sym            |  1 |               |	print
+ 240 | tok_t_lpa            | 34 |               |	
+ 241 | tok_t_str            | 28 |               |	f is null
+ 242 | tok_t_com            | 54 |               |	
+ 243 | tok_t_dot            | 49 |               |	
+ 244 | tok_t_lcbr           | 32 |               |	
+ 245 | tok_t_rcbr           | 33 |               |	
+ 246 | tok_t_rpa            | 35 |               |	
+ 247 | tok_t_semicolon      | 53 |               |	
+ 248 | tok_t_rcbr           | 33 |               |	
+ 249 | tok_t_import         | 22 |@import        |	
+ 250 | tok_t_lpa            | 34 |               |	
+ 251 | tok_t_str            | 28 |               |	package.zig
+ 252 | tok_t_rpa            | 35 |               |	
+ 253 | tok_t_semicolon      | 53 |               |	
+ 254 | tok_t_as             | 23 |@as            |	
+ 255 | tok_t_lpa            | 34 |               |	
+ 256 | tok_t_str            | 28 |               |	bool
+ 257 | tok_t_com            | 54 |               |	
+ 258 | tok_t_bool           | 57 |bool           |	
+ 259 | tok_t_rpa            | 35 |               |	
+ 260 | tok_t_semicolon      | 53 |               |	
+ 261 | tok_t_for            | 19 |for            |	
+ 262 | tok_t_lpa            | 34 |               |	
+ 263 | tok_t_sym            |  1 |               |	std
+ 264 | tok_t_dot            | 49 |               |	
+ 265 | tok_t_sym            |  1 |               |	debug
+ 266 | tok_t_dot            | 49 |               |	
+ 267 | tok_t_sym            |  1 |               |	getStderr
+ 268 | tok_t_lpa            | 34 |               |	
+ 269 | tok_t_rpa            | 35 |               |	
+ 270 | tok_t_dot            | 49 |               |	
+ 271 | tok_t_sym            |  1 |               |	writer
+ 272 | tok_t_lpa            | 34 |               |	
+ 273 | tok_t_rpa            | 35 |               |	
+ 274 | tok_t_dot            | 49 |               |	
+ 275 | tok_t_sym            |  1 |               |	buffer
+ 276 | tok_t_dot            | 49 |               |	
+ 277 | tok_t_sym            |  1 |               |	items
+ 278 | tok_t_rpa            | 35 |               |	
+ 279 | tok_t_alias          | 56 |               |	
+ 280 | tok_t_sym            |  1 |               |	item
+ 281 | tok_t_alias          | 56 |               |	
+ 282 | tok_t_lcbr           | 32 |               |	
+ 283 | tok_t_sym            |  1 |               |	std
+ 284 | tok_t_dot            | 49 |               |	
+ 285 | tok_t_sym            |  1 |               |	debug
+ 286 | tok_t_dot            | 49 |               |	
+ 287 | tok_t_sym            |  1 |               |	print
+ 288 | tok_t_lpa            | 34 |               |	
+ 289 | tok_t_str            | 28 |               |	{c}
+ 290 | tok_t_com            | 54 |               |	
+ 291 | tok_t_dot            | 49 |               |	
+ 292 | tok_t_lcbr           | 32 |               |	
+ 293 | tok_t_sym            |  1 |               |	item
+ 294 | tok_t_rcbr           | 33 |               |	
+ 295 | tok_t_rpa            | 35 |               |	
+ 296 | tok_t_semicolon      | 53 |               |	
+ 297 | tok_t_rcbr           | 33 |               |	
+ 298 | tok_t_unreach        | 61 |unreachable    |	
+ 299 | tok_t_semicolon      | 53 |               |	
+ 300 | tok_t_rcbr           | 33 |               |	
+ 301 | tok_t_eof            | 55 |               |	

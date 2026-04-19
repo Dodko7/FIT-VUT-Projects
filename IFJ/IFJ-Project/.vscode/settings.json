@@ -1,0 +1,19 @@
+{
+	"files.associations": {
+		"array": "c",
+		"string": "c",
+		"string_view": "c",
+		"span": "c",
+		"vector": "c",
+		"*.tcc": "c",
+		"memory_resource": "c",
+		"__hash_table": "c",
+		"__split_buffer": "c",
+		"deque": "c",
+		"memory": "c",
+		"unordered_map": "c",
+		"token_dll.h": "c",
+		"chrono": "c",
+		"typeinfo": "c"
+	}
+}

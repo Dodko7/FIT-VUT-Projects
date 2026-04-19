@@ -1,0 +1,40 @@
+const std = @import("std");
+
+pub fn main() anyerror!void {
+    const a: i32 = 1;
+    const b: f64 = 2.0;
+    const c: []u8 = "hello";
+    const d: ?i32 = null;
+    const e: ?f64 = 1.0;
+    const f: ?[]u8 = "world";
+    var g: i32 = 0;
+    while (g < 10) : (g += 1) {
+        std.debug.print("{}", .{g});
+    }
+    if (a == 1) {
+        std.debug.print("a is 1", .{});
+    } else {
+        std.debug.print("a is not 1", .{});
+    }
+    if (d) |x| {
+        std.debug.print("d is not null and is {}", .{x});
+    } else {
+        std.debug.print("d is null", .{});
+    }
+    if (e) |x| {
+        std.debug.print("e is not null and is {}", .{x});
+    } else {
+        std.debug.print("e is null", .{});
+    }
+    if (f) |x| {
+        std.debug.print("f is not null and is {}", .{x});
+    } else {
+        std.debug.print("f is null", .{});
+    }
+    @import("package.zig");
+    @as("bool", bool);
+    for (std.debug.getStderr().writer().buffer.items) |item| {
+        std.debug.print("{c}", .{item});
+    }
+    unreachable;
+}

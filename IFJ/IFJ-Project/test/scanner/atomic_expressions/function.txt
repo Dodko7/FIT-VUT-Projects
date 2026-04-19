@@ -1,0 +1,5 @@
+// nechteny komentar
+funkce(1, \\radek1
+//komentar mezi multiline stringem a cim delsi je tim vetsi opruz
+\\radek2
+, 3);

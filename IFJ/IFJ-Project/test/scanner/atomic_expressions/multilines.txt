@@ -1,0 +1,12 @@
+\\ this is a multiline string
+\\ and I hope
+	\\ compiler won't be bothered
+	\\ with all this 
+	  \\whitespace
+	 \\thrash
+
+var t = \\ otherwise
+	\\ it would be a little
+ \\ dissapointment
+  \\\xdd yeah
+  ;

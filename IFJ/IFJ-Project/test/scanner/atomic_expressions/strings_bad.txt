@@ -1,0 +1,3 @@
+"this should pass"
+\\\xgg this not
+"help\xno"

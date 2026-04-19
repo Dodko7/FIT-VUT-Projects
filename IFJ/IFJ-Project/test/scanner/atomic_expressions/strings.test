@@ -1,0 +1,12 @@
+   0 | tok_t_mstr           | 29 |               |	abcd
+efgh
+ijkl\nmno
+
+   1 | tok_t_str            | 28 |               |	help
+   2 | tok_t_str            | 28 |               |	help\x55
+   3 | tok_t_str            | 28 |               |	help\x55\n\t\r
+   4 | tok_t_str            | 28 |               |	
+   5 | tok_t_mstr           | 29 |               |	ss
+!
+
+   6 | tok_t_eof            | 55 |               |	
