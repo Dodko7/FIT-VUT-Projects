@@ -1,0 +1,53 @@
+# Third-party libraries
+lib/simlib/
+!lib/README.md
+
+# Build outputs
+build/
+*.o
+*.a
+*.so
+*.out
+
+# Simulation outputs
+output/
+*.dat
+*.log
+*.txt
+
+# Executables
+*.exe
+simple_example
+!src/
+
+# OS files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Docker
+.dockerignore
+
+# Compiled examples (keep source)
+src/examples/*
+!src/examples/*.cc
+!src/examples/*.h
+!src/examples/README.md
+
+src/main/*
+!src/main/*.cc
+!src/main/*.cpp
+!src/main/*.h
+!src/main/*.hpp
+!src/main/README.md

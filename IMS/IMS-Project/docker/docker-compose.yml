@@ -1,0 +1,15 @@
+services:
+  dev:
+    platform: linux/amd64
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: ims-dev-container
+    volumes:
+      - ..:/workspace
+    working_dir: /workspace
+    stdin_open: true
+    tty: true
+    command: /bin/bash
+    environment:
+      - SIMLIB_INSTALLED=1

@@ -1,0 +1,313 @@
+# Implementation of the Roman Military Logistics Simulation Model (SIMLIB/C++)
+
+## Overview
+
+This discrete-event simulation models a military supply chain system where convoys transport supplies from rear depots through intermediate staging points to a forward army position. The simulation tracks resource consumption, convoy operations, transportation costs, and the impact of random events (weather and attacks) on logistics efficiency. Implemented in C++ using the SIMLIB library for discrete-event simulation.
+
+## SIMLIB Objects Used
+
+### Facilities
+- **Town Facilities (5)**: Represent supply depots and staging points (Towns 1-5)
+  - Used to ensure mutually exclusive access during loading/unloading operations
+  - Prevent simultaneous convoy operations at the same location
+
+### Stores
+- **TownSupplies Storage (5)**: Track inventory at each location
+  - Stores five supply types: grain, fodder, salted meat, wine/oil, equipment
+  - Each storage tracks available wagons and mules
+  - Town 5 (final destination) represents army stockpile
+
+### Events
+- **BadWeatherEvent**: Triggers weather conditions that delay convoy travel
+  - Increases travel time by 50-100%
+  - Schedules WeatherClearEvent when weather ends
+  
+- **WeatherClearEvent**: Restores normal travel conditions
+  - Resets travel delay multiplier to 1.0
+  - Schedules next BadWeatherEvent
+
+### Processes
+- **Convoy**: Transports supplies between towns
+- **Town1ConvoyGenerator**: Creates convoys from Town 1 to Town 2
+- **Town4ConvoyGenerator**: Creates convoys from Town 4 to Town 5
+- **DailyConsumptionProcess**: Simulates army consumption at Town 5
+
+### Statistics
+- **ConvoyCountTown1**: Number of convoys from Town 1
+- **ConvoyCountTown4**: Number of convoys from Town 4
+- **TotalDeliveredToTown5**: Total supplies delivered to army
+- **RobberAttacksPerRoute[4]**: Attack count per route segment
+
+## Process Classes
+
+### Convoy (Process)
+
+**Purpose**: Simulates a supply convoy traveling between two towns with cargo.
+
+**Behavior() method logic**:
+1. **Loading Phase**
+   - Seizes source town facility (exclusive access)
+   - Removes cargo from source town storage
+   - Records wagon and mule allocation
+   - Releases source town facility
+
+2. **Travel Phase**
+   - Calculates base travel time with 10% random variation
+   - Applies weather delay multiplier if bad weather is active
+   - Adds travel cost to campaign total
+   - Tracks weekly costs per route
+   - Waits for travel duration
+
+3. **Attack Check**
+   - If robbers enabled, checks for attack based on route probability
+   - If attacked, randomly steals 20-40% of cargo
+   - Updates attack statistics
+
+4. **Unloading Phase**
+   - Seizes destination town facility
+   - Adds cargo to destination town storage
+   - Updates delivery statistics for Town 5
+   - Releases destination town facility
+
+5. **Chain Reaction** (Towns 2-4 only)
+   - Automatically generates next convoy to continue supply chain
+   - Calculates cargo based on available supplies at current location
+   - Activates new Convoy process immediately
+
+### Town1ConvoyGenerator (Process)
+
+**Purpose**: Periodically creates convoys from Town 1 (rear depot) to Town 2.
+
+**Behavior() method logic**:
+1. Generates fixed convoy composition (100 wagons + 200 mules)
+2. Loads supplies with randomized amounts:
+   - Grain: 40-50 tons
+   - Fodder: 10-15 tons
+   - Salted meat: 3-6 tons
+   - Wine/oil: 3-6 tons
+   - Equipment: 0.5-2 tons
+3. Activates new Convoy process
+4. Checks Town 5 supply level:
+   - If < 500 tons: increases frequency to 4 convoys/week (42-hour interval)
+   - Otherwise: maintains 3 convoys/week (56-hour interval)
+5. Schedules itself to activate again after calculated interval
+
+### Town4ConvoyGenerator (Process)
+
+**Purpose**: Frequently creates small convoys from Town 4 to Town 5 (final delivery).
+
+**Behavior() method logic**:
+1. Determines random cargo target (10-20 tons)
+2. Calculates wagons and mules needed based on available resources
+3. Loads supplies proportionally from Town 4 storage
+4. If no supplies available, cancels convoy but continues scheduling
+5. Activates new Convoy process
+6. Schedules itself every 5-6 hours (high frequency for final delivery)
+
+### DailyConsumptionProcess (Process)
+
+**Purpose**: Simulates daily army consumption at Town 5 and generates statistics.
+
+**Behavior() method logic**:
+1. Records initial state (Day 0)
+2. **Daily Loop**:
+   - Waits 24 hours
+   - Seizes Town 5 facility
+   - Consumes 30 tons from Town 5 supplies (proportionally across all types)
+   - If insufficient supplies, consumes what's available
+   - Releases Town 5 facility
+   - Records daily delivery count and calculates cumulative total
+   - Updates supply and cost history
+   - Generates all graphs (supply, cost, deliveries, weekly costs)
+   - Resets daily delivery counter
+
+## Global Parameters and Variables
+
+### Configuration Parameters
+- **NUM_TOWNS**: 5 locations in supply chain
+- **CONSUMPTION_PER_DAY_ACTIVE**: 30 tons/day consumed by army
+- **WAGON_CAPACITY**: 0.5 tons per wagon
+- **MULE_CARRY_CAPACITY**: 0.12 tons per mule
+- **Travel times**: [72, 24, 19.2, 72] hours (Town 1→2, 2→3, 3→4, 4→5)
+- **Travel costs**: [2500, 1500, 600, 300] money units per route
+
+### Statistical Variables
+- **campaignCost**: Total money spent on convoy operations
+- **dailyDeliveryCounter**: Supplies delivered to Town 5 within current day
+- **town5TotalDeliveredHistory**: Cumulative deliveries over time
+- **totalRobberAttacks**: Count of all attacks
+- **totalSuppliesStolen**: Total tons lost to attacks
+- **weeklyCostsAllRoutes[4]**: Weekly expenditure per route segment
+
+### Weather Parameters
+- **weatherDelayMultiplier**: 1.0 (normal) or 1.5-2.0 (bad weather)
+- **Weather duration**: 2-5 days per event
+- **Weather interval**: 10-15 days between events
+- **Delay percentage**: 50-100% travel time increase
+
+### Attack Parameters
+- **Attack probabilities**: [50%, 80%, 50%, 20%] per route
+- **Steal percentages**: 20-40% of cargo when attacked
+
+## Time Model
+
+**Simulation time unit**: Hours
+
+**Time mapping**:
+- 1 day = 24 hours
+- 1 week = 168 hours
+- Default simulation length: 100 days = 2400 hours
+
+**Time progression**:
+- Convoys travel for realistic durations (hours to days)
+- Consumption occurs every 24 hours precisely
+- Weather events last multiple days
+- Convoy generation follows configured intervals
+
+## Supply Chain Topology
+
+**Network structure**: Linear 5-town chain
+
+```
+Town 1 (Rear Depot)
+   ↓ (72h, 2500 cost)
+Town 2 (Staging Point)
+   ↓ (24h, 1500 cost)
+Town 3 (Staging Point)
+   ↓ (19.2h, 600 cost)
+Town 4 (Forward Depot)
+   ↓ (72h, 300 cost)
+Town 5 (Army Position)
+```
+
+**Convoy flow**:
+1. **Town 1 → Town 2**: Large convoys (100 wagons + 200 mules) every 2-3 days
+2. **Town 2 → Town 3**: Auto-generated when supplies arrive at Town 2
+3. **Town 3 → Town 4**: Auto-generated when supplies arrive at Town 3
+4. **Town 4 → Town 5**: Frequent small convoys every 5-6 hours
+
+**Initial stocks**:
+- Town 1: 10,000 tons (unlimited source)
+- Town 2-4: Empty (filled by convoys)
+- Town 5: 3,000 tons (army starting stockpile)
+
+## Random Events Implementation
+
+### Weather System
+
+**Implementation**: Event-based with state modification
+
+1. **BadWeatherEvent** activates after 10-20 days initially
+2. Sets `weatherDelayMultiplier` to 1.5-2.0 (random)
+3. Sets `isWeatherActive = true`
+4. Schedules **WeatherClearEvent** after 2-5 days
+5. **WeatherClearEvent** resets multiplier to 1.0
+6. Schedules next **BadWeatherEvent** after 10-15 days
+7. All active convoys use current multiplier for travel time
+
+**Disable**: Use command-line flag `--no-weather`
+
+### Robber Attacks
+
+**Implementation**: Probabilistic check during convoy travel
+
+1. After travel completes, random check against route probability
+2. If attack occurs:
+   - Random steal percentage (20-40%) calculated
+   - Percentage applies to all supply types proportionally
+   - Cargo reduced, statistics updated
+3. Route-specific probabilities:
+   - Town 1→2: 50% (safest rear route)
+   - Town 2→3: 80% (most dangerous)
+   - Town 3→4: 50% (moderate risk)
+   - Town 4→5: 20% (close to army protection)
+
+**Disable**: Use command-line flag `--no-robbers`
+
+### Randomization Sources
+
+- **Uniform()**: Travel time variation (±10%)
+- **Uniform()**: Weather delay percentage (50-100%)
+- **Uniform()**: Weather event timing and duration
+- **Uniform()**: Convoy cargo amounts (within ranges)
+- **Uniform()**: Attack steal percentage
+- **Random()**: Attack probability check
+
+## Build and Run Instructions
+
+### Prerequisites
+- SIMLIB library installed (system-wide for native, included for Docker)
+- C++17 compatible compiler (g++)
+- Docker (optional, for containerized builds)
+
+### Build
+
+**Native compilation** (on servers with SIMLIB installed):
+```bash
+make
+```
+
+**Docker compilation** (local development):
+```bash
+make build    # Build Docker image (first time only)
+make          # Compile simulation
+```
+
+### Run
+
+**Default execution** (100 days, weather enabled, robbers enabled):
+```bash
+make run
+```
+
+**Custom parameters**:
+```bash
+make run ARGS="--days=150 --seed=42"
+make run ARGS="--no-weather --no-robbers"
+make run ARGS="--days=200 --no-weather"
+```
+
+**Available flags**:
+- `--days=N`: Set simulation duration (default: 100)
+- `--seed=N`: Set random seed (default: 12345)
+- `--weather` / `--no-weather`: Enable/disable weather events
+- `--robbers` / `--no-robbers`: Enable/disable attacks
+- `--experiment`: Run experiment mode (multiple runs with varying parameters)
+- `--help`: Show usage information
+
+### Direct execution (inside Docker shell):
+```bash
+make shell              # Enter Docker container
+make main               # Compile
+./build/main/simulation # Run with defaults
+cd output && ../build/main/simulation --no-weather  # Run with flags
+```
+
+### Output Files
+
+All outputs are generated in `output/` directory:
+
+**Text report**:
+- `simulation_output.txt`: Detailed simulation statistics and final results
+
+**ASCII graphs** (visualizations):
+- `town5_supply_graph.txt`: Army stockpile over time
+- `town5_deliveries_graph.txt`: Cumulative deliveries to army
+- `campaign_cost_graph.txt`: Total cumulative costs
+- `daily_cost_graph.txt`: Daily expenditure breakdown
+- `all_towns_weekly_cost_graph.txt`: Weekly costs across all routes
+
+**Typical run time**: < 1 second for 100-day simulation
+
+### Clean
+
+```bash
+make clean        # Remove compiled binaries
+make clean-all    # Remove binaries and all output files
+```
+
+### Package for Submission
+
+```bash
+make pack         # Creates 05_xondre16_xhashm00.zip
+```
