@@ -16,3 +16,6 @@ A collection of school projects from FIT VUT Brno, organized by subject.
 | [ISA](./ISA/) | Network Applications & Administration | C++ |
 | [ISS](./ISS/) | Signals & Systems | Python (Jupyter) |
 | [IUS](./IUS/) | Introduction to Software Engineering | — |
+| [IFJ](./IFJ/) | Formal Languages & Compilers | C |
+| [ICP](./ICP/) | C++ Seminar | C++ |
+| [ITU](./ITU/) | User Interface Programming | TypeScript, CSS |
