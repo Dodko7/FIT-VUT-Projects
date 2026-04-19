@@ -1,4 +1,4 @@
-# FIT VUT Projects
+# VUT FIT Projects
 
 A collection of school projects from FIT VUT Brno, organized by subject.
 
