@@ -1,0 +1,127 @@
+# DNS FILTER SERVER - ISA PROJEKT
+
+Autor:  Jozef Ondrejička
+Login:  xondre16
+Dátum:  17.11.2025
+
+## POPIS PROGRAMU
+
+Program dns je DNS proxy server, ktorý filtruje dotazy typu A smerujúce na 
+domény uvedené v zozname a ich subdomény. Ostatné dotazy preposiela 
+špecifikovanému DNS resolveru. Odpovede na preposlané dotazy predáva 
+pôvodnému klientovi.
+
+Program implementuje:
+  - Analýzu a zostavenie DNS správ priamo v kóde (bez DNS knižníc)
+  - Komunikáciu pomocou UDP (IPv4 aj IPv6)
+  - Filtrovanie domén podľa zoznamu (vrátane subdomén)
+  - Preposielanie povolených dotazov na upstream resolver
+  - Mapovanie transaction ID pre správne smerovanie odpovedí
+  - Spracovanie iba dotazov typu A (ostatné typy vracajú NOTIMP)
+
+Implementácia:
+  - Jazyk: C++17
+  - Knižnice: iba štandardné C++ STL, BSD sockets, pthread
+  - Architektúra: modulárna (13 samostatných modulov)
+  - I/O multiplexing: poll() pre obsluhu viacerých klientov
+
+## OBMEDZENIA
+
+  - Podporovaný iba protokol UDP (nie TCP)
+  - Spracovávané iba dotazy typu A (AAAA, MX, TXT atď. vracajú NOTIMP)
+  - DNS správy s viacerými otázkami (QDCOUNT > 1) vracajú FORMERR
+  - Bez podpory DNSSEC
+  - Bez cachovania odpovedí
+  - Blokované domény vracajú REFUSED (RCODE 5)
+
+## PRÍKLADY SPUSTENIA
+
+Základné použitie s neprivilegovaným portom:
+
+    ./dns -s 8.8.8.8 -p 5000 -f filter.txt
+
+Použitie výchozieho portu 53 (vyžaduje root oprávnenia):
+
+    sudo ./dns -s 8.8.8.8 -f filter.txt
+
+S verbose výstupom:
+
+    ./dns -s 8.8.8.8 -p 5000 -f filter.txt -v
+
+S IPv6 resolverom:
+
+    ./dns -s 2001:4860:4860::8888 -p 5353 -f filter.txt
+
+S vlastným timeoutom (voliteľné rozšírenie):
+
+    ./dns -s 8.8.8.8 -p 5000 -f filter.txt -t 30
+
+Zobrazenie nápovedy:
+
+    ./dns -h
+
+Parametre:
+  -s, --server <server>       IP adresa alebo doménové meno DNS resolvera (povinné)
+  -p, --port <port>           Číslo portu pre príjem dotazov (výchozí: 53)
+  -f, --filter <filter_file>  Súbor so zoznamom blokovaných domén (povinné)
+  -t, --timeout <seconds>     Timeout dotazov v sekundách (výchozí: 10, rozsah: 1-3600)
+  -v, --verbose               Verbose režim - detailný výpis (voliteľné)
+  -h, --help                  Zobrazí túto nápovedu a ukončí program
+
+Testovanie:
+
+    dig @127.0.0.1 -p 5000 google.com A        # Povolený dotaz
+    dig @127.0.0.1 -p 5000 doubleclick.net A   # Blokovaný dotaz
+
+## PREKLAD A SPUSTENIE
+
+Preklad:
+
+    make              Preloží program (vytvorí spustiteľný súbor ./dns)
+    make clean        Odstráni objektové súbory a výsledný binárny súbor
+    make test         Spustí automatické testy (vyžaduje Python 3)
+
+Požiadavky:
+  - Kompilátor: g++ s podporou C++17 (verzia 7.0 alebo novšia)
+  - GNU Make
+  - POSIX operačný systém (Linux, FreeBSD)
+
+Testované na:
+  - merlin.fit.vutbr.cz
+  - eva.fit.vutbr.cz
+  - Ubuntu 24.04 LTS
+
+## ZOZNAM ODOVZDANÝCH SÚBOROV
+
+Zdrojové súbory (src/):
+- main.cpp              Vstupný bod programu, obsluha signálov
+- arg_parser.cpp        Parsovanie argumentov príkazového riadku
+- server.cpp            Hlavná slučka servera s poll()
+- dns_protocol.cpp      Parsovanie a validácia DNS správ
+- dns_compression.cpp   Dekompresia DNS mien (podpora pointerov)
+- dns_response.cpp      Zostavenie DNS odpovedí
+- filter.cpp            Načítanie a vyhľadávanie v zozname blokovaných domén
+- domain_utils.cpp      Normalizácia a validácia doménových mien
+- id_mapper.cpp         Mapovanie transaction ID pre viacero klientov
+- socket_manager.cpp    Správa socketov (IPv4/IPv6)
+- addr_resolver.cpp     Preklad adresy upstream resolvera (getaddrinfo)
+- logger.cpp            Výpis logovacích správ
+- query_handler.cpp     Logika spracovania dotazov
+
+Hlavičkové súbory (include/):
+- *.h                   Hlavičky pre všetky moduly
+- common.h              Spoločné konštanty a definície
+
+Dokumentácia:
+- README                Tento súbor
+- manual.pdf            Technická dokumentácia
+
+Preklad:
+- Makefile              Automatizácia prekladu
+
+Testovanie:
+- tests.py              Automatické testy (54 testov)
+- filter.txt            Výchozí zoznam blokovaných domén (3439 domén)
+- queries.txt           Ukážkové dotazy pre dnsperf
+
+

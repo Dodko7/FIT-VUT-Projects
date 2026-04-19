@@ -1,0 +1,236 @@
+#!/bin/bash
+
+# set POSIXLY_CORRECT 
+POSIXLY_CORRECT=yes
+
+# XTF_PROFIT=20
+if [ -z "$XTF_PROFIT" ]; then
+    XTF_PROFIT=20
+fi
+
+# set profit 
+profit=$(echo "scale=4; 1 + $XTF_PROFIT / 100" | bc)
+
+# set variables
+afterCounter=0
+beforeCounter=0
+userCounter=0
+filterCounter=0
+currencyCounter=0
+
+# print help message
+printHelp() {
+    echo "This is the help message for the xtf program."
+    echo "Its purpose is to process trading logs. You can use the following commands and filters:"
+    echo "Commands:"
+    echo "  list - displays records for a given user"
+    echo "  list-currency - displays a sorted list of currencies owned by the user"
+    echo "  status - displays the sorted account status of the user"
+    echo "  profit - displays the sorted account status of the user with 'fictional' profit included"
+    echo "Filters:"
+    echo "  -a [DATETIME] - after: returns records AFTER this date"
+    echo "  -b [DATETIME] - before: returns records BEFORE this date"
+    echo "  -c [CURRENCY] - returns records matching the given currency, can be used multiple times"
+}
+
+# check arguments
+checkArgs() {
+    if [ "$afterCounter" -gt 1 ]; then
+        echo "Too many -a filters!" >&2
+        exit 1
+    elif [ "$beforeCounter" -gt 1 ]; then
+        echo "Too many -b filters!" >&2
+        exit 1
+    elif [ "$userCounter" -gt 1 ]; then
+        echo "Invalid arguments!" >&2
+        exit 1
+    elif [ "$userCounter" -eq 0 ]; then
+        echo "No user specified!" >&2
+        exit 1
+    elif [ "$filterCounter" -gt 1 ]; then
+        echo "Too many commands!" >&2
+        exit 1
+    fi
+}
+
+# check logs format
+checkLogs() {
+    for file in $files; do
+        while IFS= read -r line; do
+            if ! echo "$line" | grep -qE '^[^;]+;[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2};[A-Z]+;[-]?[0-9]+(\.[0-9]+)?$'; then
+                echo "Invalid format: $line" >&2
+                exit 1
+            fi
+        done < "$file"
+    done
+}
+
+# check date format
+checkDate() {
+    local date_regex='^[0-9]{4}-[0-1][0-9]-[0-3][0-9] [0-2][0-9]:[0-5][0-9]:[0-5][0-9]$'
+    if ! [[ "$dateAfter" =~ $date_regex  || "$dateBefore" =~ $date_regex ]]; then
+        echo "Invalid date format!" >&2
+        exit 1
+    fi
+}
+
+# check currency format
+checkCurrency() {
+    if ! echo "$currency" | grep -qE '^[A-Z]{3}$'; then
+        echo "Invalid currency format!" >&2
+        exit 1
+    fi
+}
+
+# print logs
+list() {
+    for file in $files; do  
+        if echo "$file" | grep -q '\.gz$'; then
+            gzip -dc "$file" | grep "$user"
+        else
+            grep -w "$user" "$file"
+        fi
+    done
+}
+
+# filter list-currency
+listCurrency() {
+    cut -d';' -f3 | sort | uniq
+}
+
+# filter status
+status() {
+    LC_NUMERIC=C awk -F';' '{
+        sum[$3]+=$4
+    }
+    END {
+        for (currency in sum) {
+            printf "%s : %.4f\n", currency, sum[currency]
+        }
+    }' | sort
+}
+
+# filter profit
+profit() {
+    LC_NUMERIC=C awk -F';' -v profit="$profit" '{
+        sum[$3]+=$4
+    }
+    END {
+        for (currency in sum) {
+            printf "%s : %.4f\n", currency, (sum[currency] >= 0 ? sum[currency] * profit : sum[currency])
+        }
+    }' | sort
+}
+
+# filter after
+filterAfter() {
+    awk -v date="$dateAfter" -F';' '$2 > date'
+}
+
+# filter before
+filterBefore() {
+    awk -v date="$dateBefore" -F';' '$2 < date'
+}
+
+# filter currency
+filterCurrency() {
+    awk -F';' -v currencies="${currencyArray[*]}" '
+        BEGIN { split(currencies, currenciesArr, " ") }
+        {
+            for (i in currenciesArr) {
+                if ($3 == currenciesArr[i]) {
+                    print
+                }
+            }
+        }
+    '
+}
+
+# filter check
+filter() {
+    if [ "$afterCounter" -eq 1 ]; then
+        filterAfter
+        checkDate
+    elif [ "$beforeCounter" -eq 1 ]; then
+        filterBefore
+        checkDate
+    elif [ "$currencyCounter" -gt 0 ]; then
+        filterCurrency
+    else
+        list
+    fi
+}
+
+# filter switch
+filterList(){
+    if [ "$filterCounter" -gt 1 ]; then
+        echo "Only 1 command!" >&2
+        exit 1
+    elif [ "$filter" == "list-currency" ]; then
+        list | filter | listCurrency
+    elif [ "$filter" == "status" ]; then
+        list | filter | status
+    elif [ "$filter" == "profit" ]; then
+        list | filter | profit 
+    else 
+        list | filter
+    fi
+}
+
+# cycle through arguments
+while [[ $# -gt 0 ]]; do    
+    case $1 in
+        -h|--help)
+            printHelp
+            exit 0
+            ;;
+        -a)
+            dateAfter="$2"
+            ((afterCounter+=1))
+            checkDate
+            shift 2
+            ;;
+        -b)
+            dateBefore="$2"
+            ((beforeCounter+=1))
+            checkDate
+            shift 2
+            ;;
+        -c)
+            currency="$2"
+            ((currencyCounter+=1))
+            currencyArray+=("$currency")
+            checkCurrency
+            shift 2
+            ;;
+        list | list-currency | status | profit)
+            filter="$1"
+            ((filterCounter+=1))
+            shift
+            ;;
+        *) 
+            if [[ $userCounter -eq 0 && ! -f "$1" ]]; then
+                userCounter+=1
+                user="$1"
+            else
+                if [ -f "$1" ]; then
+                    if [ -z "${files}" ]; then
+                        files="$1"
+                    else
+                        files="$files $1"
+                    fi
+                else
+                    userCounter+=1
+                fi
+            fi
+            shift
+            ;;
+    esac
+done
+
+# check arguments
+checkArgs
+# check records format in files
+checkLogs
+# run filter 
+filterList
